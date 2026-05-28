@@ -60,7 +60,7 @@
     <div class="langwrap"><select id="lang" aria-label="Language"></select></div>
     <img class="avatar" src="nils.jpg" alt="Nils Röthlisberger">
     <h1>Nils Röthlisberger</h1>
-    <p class="tag" data-i18n="tag">Engineer · independent Android developer</p>
+    <p class="tag" data-i18n="tag">Industrial Engineer (BSc) · independent Android developer</p>
     <p class="bio" data-i18n="bio">I build small, fast Android tools that do one thing well — and respect your privacy while doing it. No accounts, no tracking, no clutter.</p>
     <div class="links">
       <a class="btn" href="https://www.linkedin.com/in/nils-r%C3%B6thlisberger-36630034a/" target="_blank" rel="noopener">in · LinkedIn</a>
@@ -74,15 +74,15 @@
       <h2 data-i18n="apps">Apps</h2>
       <p class="lead" data-i18n="lead">A growing family of focused utilities for Android.</p>
       <div class="grid">
-        <div class="app"><div class="ico">🔦</div><div><h3>Flashlight</h3><p>LED torch, SOS &amp; strobe with a widget and Quick Settings tile.</p></div></div>
-        <div class="app"><div class="ico">🧭</div><div><h3>Compass</h3><p>Tilt-compensated true-north compass with GPS coordinates.</p></div></div>
-        <div class="app"><div class="ico">📍</div><div><h3>GeoFinder</h3><p>Navigate to any coordinate — geocaching, hiking, surveying.</p></div></div>
-        <div class="app"><div class="ico">📐</div><div><h3>Bubble Level &amp; Ruler</h3><p>2-axis spirit level plus an on-screen ruler.</p></div></div>
-        <div class="app"><div class="ico">📏</div><div><h3>Protractor</h3><p>Sensor-based angle meter with snap-to-common angles.</p></div></div>
-        <div class="app"><div class="ico">🧲</div><div><h3>Metal Detector</h3><p>Magnetometer-based finder with an honest delta meter.</p></div></div>
-        <div class="app"><div class="ico">🔊</div><div><h3>Sound Meter</h3><p>A-weighted dB readout with peak &amp; average.</p></div></div>
-        <div class="app"><div class="ico">🚗</div><div><h3>Speedometer</h3><p>HUD-style GPS speed, km/h ↔ mph, mirror mode.</p></div></div>
-        <div class="app"><div class="ico">📡</div><div><h3>NFC Reader</h3><p>Single-purpose NDEF tag reader, full payload view.</p></div></div>
+        <div class="app"><div class="ico">🔦</div><div><h3 data-i18n="t_flashlight">Flashlight</h3><p data-i18n="d_flashlight">LED torch, SOS and strobe with a widget and Quick Settings tile.</p></div></div>
+        <div class="app"><div class="ico">🧭</div><div><h3 data-i18n="t_compass">Compass</h3><p data-i18n="d_compass">Tilt-compensated true-north compass with GPS coordinates.</p></div></div>
+        <div class="app"><div class="ico">📍</div><div><h3 data-i18n="t_geofinder">GeoFinder</h3><p data-i18n="d_geofinder">Navigate to any coordinate — geocaching, hiking, surveying.</p></div></div>
+        <div class="app"><div class="ico">📐</div><div><h3 data-i18n="t_bubble">Bubble Level &amp; Ruler</h3><p data-i18n="d_bubble">Two-axis spirit level plus an on-screen ruler.</p></div></div>
+        <div class="app"><div class="ico">📏</div><div><h3 data-i18n="t_protractor">Protractor</h3><p data-i18n="d_protractor">Sensor-based angle meter with snap-to-common angles.</p></div></div>
+        <div class="app"><div class="ico">🧲</div><div><h3 data-i18n="t_metal">Metal Detector</h3><p data-i18n="d_metal">Magnetometer-based finder with an honest delta meter.</p></div></div>
+        <div class="app"><div class="ico">🔊</div><div><h3 data-i18n="t_sound">Sound Meter</h3><p data-i18n="d_sound">A-weighted decibel readout with peak and average.</p></div></div>
+        <div class="app"><div class="ico">🚗</div><div><h3 data-i18n="t_speed">Speedometer</h3><p data-i18n="d_speed">HUD-style GPS speed, km/h and mph, with a mirror mode.</p></div></div>
+        <div class="app"><div class="ico">📡</div><div><h3 data-i18n="t_nfc">NFC Reader</h3><p data-i18n="d_nfc">Single-purpose NDEF tag reader with full payload view.</p></div></div>
       </div>
       <div class="values">
         <span>🔒 <span data-i18n="vTrack">No tracking</span></span>
@@ -100,66 +100,15 @@
 
   <script>
   document.getElementById('y').textContent=new Date().getFullYear();
-  const I18N={
-    en:{tag:"Engineer · independent Android developer",bio:"I build small, fast Android tools that do one thing well — and respect your privacy while doing it. No accounts, no tracking, no clutter.",privacy:"Privacy",apps:"Apps",lead:"A growing family of focused utilities for Android.",vTrack:"No tracking",vAcct:"No accounts",vLang:"Many languages",vLight:"Lightweight"},
-    de:{tag:"Ingenieur · unabhängiger Android-Entwickler",bio:"Ich baue kleine, schnelle Android-Tools, die eine Sache gut machen — und dabei deine Privatsphäre respektieren. Keine Konten, kein Tracking, kein Ballast.",privacy:"Datenschutz",apps:"Apps",lead:"Eine wachsende Familie fokussierter Android-Tools.",vTrack:"Kein Tracking",vAcct:"Keine Konten",vLang:"Viele Sprachen",vLight:"Leichtgewichtig"},
-    fr:{tag:"Ingénieur · développeur Android indépendant",bio:"Je crée de petits outils Android rapides qui font une chose bien — tout en respectant votre vie privée. Pas de comptes, pas de pistage, pas d'encombrement.",privacy:"Confidentialité",apps:"Applications",lead:"Une famille grandissante d'utilitaires Android ciblés.",vTrack:"Aucun pistage",vAcct:"Aucun compte",vLang:"De nombreuses langues",vLight:"Léger"},
-    it:{tag:"Ingegnere · sviluppatore Android indipendente",bio:"Creo piccoli e veloci strumenti Android che fanno bene una cosa sola — rispettando la tua privacy. Niente account, niente tracciamento, niente fronzoli.",privacy:"Privacy",apps:"App",lead:"Una famiglia in crescita di utilità Android mirate.",vTrack:"Nessun tracciamento",vAcct:"Nessun account",vLang:"Molte lingue",vLight:"Leggero"},
-    es:{tag:"Ingeniero · desarrollador Android independiente",bio:"Creo herramientas Android pequeñas y rápidas que hacen una cosa bien, respetando tu privacidad. Sin cuentas, sin rastreo, sin estorbos.",privacy:"Privacidad",apps:"Apps",lead:"Una familia creciente de utilidades Android enfocadas.",vTrack:"Sin rastreo",vAcct:"Sin cuentas",vLang:"Muchos idiomas",vLight:"Ligero"},
-    pt:{tag:"Engenheiro · desenvolvedor Android independente",bio:"Crio ferramentas Android pequenas e rápidas que fazem uma coisa bem — respeitando a sua privacidade. Sem contas, sem rastreamento, sem excessos.",privacy:"Privacidade",apps:"Apps",lead:"Uma família crescente de utilitários Android focados.",vTrack:"Sem rastreamento",vAcct:"Sem contas",vLang:"Muitos idiomas",vLight:"Leve"},
-    nl:{tag:"Ingenieur · onafhankelijke Android-ontwikkelaar",bio:"Ik maak kleine, snelle Android-tools die één ding goed doen — met respect voor je privacy. Geen accounts, geen tracking, geen rommel.",privacy:"Privacy",apps:"Apps",lead:"Een groeiende familie van gerichte Android-hulpmiddelen.",vTrack:"Geen tracking",vAcct:"Geen accounts",vLang:"Veel talen",vLight:"Lichtgewicht"},
-    pl:{tag:"Inżynier · niezależny deweloper Androida",bio:"Tworzę małe, szybkie narzędzia na Androida, które robią jedną rzecz dobrze — szanując Twoją prywatność. Bez kont, bez śledzenia, bez bałaganu.",privacy:"Prywatność",apps:"Aplikacje",lead:"Rosnąca rodzina skupionych narzędzi na Androida.",vTrack:"Brak śledzenia",vAcct:"Brak kont",vLang:"Wiele języków",vLight:"Lekki"},
-    ru:{tag:"Инженер · независимый Android-разработчик",bio:"Я создаю маленькие быстрые инструменты для Android, которые хорошо делают одно дело — и уважают вашу приватность. Без аккаунтов, без слежки, без лишнего.",privacy:"Конфиденциальность",apps:"Приложения",lead:"Растущее семейство компактных утилит для Android.",vTrack:"Без слежки",vAcct:"Без аккаунтов",vLang:"Много языков",vLight:"Лёгкий"},
-    uk:{tag:"Інженер · незалежний Android-розробник",bio:"Я створюю маленькі швидкі інструменти для Android, які добре роблять одну справу — і поважають вашу приватність. Без акаунтів, без стеження, без зайвого.",privacy:"Конфіденційність",apps:"Застосунки",lead:"Зростаюча родина компактних утиліт для Android.",vTrack:"Без стеження",vAcct:"Без акаунтів",vLang:"Багато мов",vLight:"Легкий"},
-    cs:{tag:"Inženýr · nezávislý vývojář pro Android",bio:"Tvořím malé, rychlé nástroje pro Android, které dělají jednu věc dobře — a respektují vaše soukromí. Žádné účty, žádné sledování, žádný nepořádek.",privacy:"Soukromí",apps:"Aplikace",lead:"Rostoucí rodina cílených nástrojů pro Android.",vTrack:"Žádné sledování",vAcct:"Žádné účty",vLang:"Mnoho jazyků",vLight:"Lehký"},
-    da:{tag:"Ingeniør · uafhængig Android-udvikler",bio:"Jeg laver små, hurtige Android-værktøjer, der gør én ting godt — og respekterer dit privatliv. Ingen konti, ingen sporing, intet rod.",privacy:"Privatliv",apps:"Apps",lead:"En voksende familie af fokuserede Android-værktøjer.",vTrack:"Ingen sporing",vAcct:"Ingen konti",vLang:"Mange sprog",vLight:"Letvægts"},
-    sv:{tag:"Ingenjör · oberoende Android-utvecklare",bio:"Jag bygger små, snabba Android-verktyg som gör en sak bra — och respekterar din integritet. Inga konton, ingen spårning, inget krångel.",privacy:"Integritet",apps:"Appar",lead:"En växande familj av fokuserade Android-verktyg.",vTrack:"Ingen spårning",vAcct:"Inga konton",vLang:"Många språk",vLight:"Lättviktig"},
-    ro:{tag:"Inginer · dezvoltator Android independent",bio:"Creez unelte Android mici și rapide care fac un lucru bine — respectându-ți confidențialitatea. Fără conturi, fără urmărire, fără dezordine.",privacy:"Confidențialitate",apps:"Aplicații",lead:"O familie în creștere de utilitare Android concentrate.",vTrack:"Fără urmărire",vAcct:"Fără conturi",vLang:"Multe limbi",vLight:"Ușor"},
-    hu:{tag:"Mérnök · független Android-fejlesztő",bio:"Kicsi, gyors Android-eszközöket készítek, amelyek egy dolgot csinálnak jól — tiszteletben tartva a magánszférádat. Nincs fiók, nincs követés, nincs felesleg.",privacy:"Adatvédelem",apps:"Alkalmazások",lead:"Fókuszált Android-eszközök növekvő családja.",vTrack:"Nincs követés",vAcct:"Nincs fiók",vLang:"Sok nyelv",vLight:"Könnyű"},
-    el:{tag:"Μηχανικός · ανεξάρτητος προγραμματιστής Android",bio:"Φτιάχνω μικρά, γρήγορα εργαλεία Android που κάνουν ένα πράγμα καλά — σεβόμενος το απόρρητό σας. Χωρίς λογαριασμούς, χωρίς παρακολούθηση, χωρίς περιττά.",privacy:"Απόρρητο",apps:"Εφαρμογές",lead:"Μια αυξανόμενη οικογένεια εστιασμένων εργαλείων Android.",vTrack:"Χωρίς παρακολούθηση",vAcct:"Χωρίς λογαριασμούς",vLang:"Πολλές γλώσσες",vLight:"Ελαφρύ"},
-    tr:{tag:"Mühendis · bağımsız Android geliştiricisi",bio:"Tek bir işi iyi yapan küçük, hızlı Android araçları yapıyorum — gizliliğinize saygı duyarak. Hesap yok, takip yok, karmaşa yok.",privacy:"Gizlilik",apps:"Uygulamalar",lead:"Odaklı Android araçlarından oluşan büyüyen bir aile.",vTrack:"Takip yok",vAcct:"Hesap yok",vLang:"Birçok dil",vLight:"Hafif"},
-    ar:{tag:"مهندس · مطوّر Android مستقل",bio:"أصنع أدوات Android صغيرة وسريعة تؤدي مهمة واحدة بإتقان — مع احترام خصوصيتك. بلا حسابات، بلا تتبّع، بلا فوضى.",privacy:"الخصوصية",apps:"التطبيقات",lead:"عائلة متنامية من أدوات Android المركّزة.",vTrack:"بلا تتبّع",vAcct:"بلا حسابات",vLang:"لغات عديدة",vLight:"خفيف"},
-    fa:{tag:"مهندس · توسعه‌دهنده مستقل اندروید",bio:"ابزارهای کوچک و سریع اندروید می‌سازم که یک کار را خوب انجام می‌دهند — و به حریم خصوصی شما احترام می‌گذارند. بدون حساب، بدون ردیابی، بدون شلوغی.",privacy:"حریم خصوصی",apps:"برنامه‌ها",lead:"خانواده‌ای رو به رشد از ابزارهای متمرکز اندروید.",vTrack:"بدون ردیابی",vAcct:"بدون حساب",vLang:"زبان‌های متعدد",vLight:"سبک"},
-    he:{tag:"מהנדס · מפתח אנדרואיד עצמאי",bio:"אני בונה כלי אנדרואיד קטנים ומהירים שעושים דבר אחד היטב — תוך כבוד לפרטיות שלך. בלי חשבונות, בלי מעקב, בלי עומס.",privacy:"פרטיות",apps:"אפליקציות",lead:"משפחה גדלה של כלי אנדרואיד ממוקדים.",vTrack:"בלי מעקב",vAcct:"בלי חשבונות",vLang:"שפות רבות",vLight:"קליל"},
-    hi:{tag:"इंजीनियर · स्वतंत्र Android डेवलपर",bio:"मैं छोटे, तेज़ Android टूल बनाता हूँ जो एक काम अच्छे से करते हैं — और आपकी निजता का सम्मान करते हैं। कोई खाता नहीं, कोई ट्रैकिंग नहीं, कोई अव्यवस्था नहीं।",privacy:"गोपनीयता",apps:"ऐप्स",lead:"केंद्रित Android उपयोगिताओं का बढ़ता परिवार।",vTrack:"कोई ट्रैकिंग नहीं",vAcct:"कोई खाता नहीं",vLang:"कई भाषाएँ",vLight:"हल्का"},
-    bn:{tag:"প্রকৌশলী · স্বাধীন Android ডেভেলপার",bio:"আমি ছোট, দ্রুত Android টুল তৈরি করি যা একটি কাজ ভালোভাবে করে — এবং আপনার গোপনীয়তাকে সম্মান করে। কোনো অ্যাকাউন্ট নেই, কোনো ট্র্যাকিং নেই, কোনো জঞ্জাল নেই।",privacy:"গোপনীয়তা",apps:"অ্যাপস",lead:"মনোযোগী Android ইউটিলিটির ক্রমবর্ধমান পরিবার।",vTrack:"কোনো ট্র্যাকিং নেই",vAcct:"কোনো অ্যাকাউন্ট নেই",vLang:"অনেক ভাষা",vLight:"হালকা"},
-    ur:{tag:"انجینئر · آزاد Android ڈویلپر",bio:"میں چھوٹے، تیز Android ٹولز بناتا ہوں جو ایک کام اچھی طرح کرتے ہیں — اور آپ کی پرائیویسی کا احترام کرتے ہیں۔ کوئی اکاؤنٹ نہیں، کوئی ٹریکنگ نہیں، کوئی بے ترتیبی نہیں۔",privacy:"پرائیویسی",apps:"ایپس",lead:"مرکوز Android افادیتوں کا بڑھتا خاندان۔",vTrack:"کوئی ٹریکنگ نہیں",vAcct:"کوئی اکاؤنٹ نہیں",vLang:"بہت سی زبانیں",vLight:"ہلکا"},
-    th:{tag:"วิศวกร · นักพัฒนา Android อิสระ",bio:"ผมสร้างเครื่องมือ Android ขนาดเล็กที่รวดเร็ว ทำสิ่งเดียวได้ดี — และเคารพความเป็นส่วนตัวของคุณ ไม่มีบัญชี ไม่มีการติดตาม ไม่มีความรกรุงรัง",privacy:"ความเป็นส่วนตัว",apps:"แอป",lead:"ครอบครัวเครื่องมือ Android ที่เน้นเฉพาะทางซึ่งกำลังเติบโต",vTrack:"ไม่มีการติดตาม",vAcct:"ไม่มีบัญชี",vLang:"หลายภาษา",vLight:"น้ำหนักเบา"},
-    vi:{tag:"Kỹ sư · nhà phát triển Android độc lập",bio:"Tôi tạo những công cụ Android nhỏ, nhanh, làm tốt một việc — và tôn trọng quyền riêng tư của bạn. Không tài khoản, không theo dõi, không rườm rà.",privacy:"Quyền riêng tư",apps:"Ứng dụng",lead:"Một gia đình ngày càng lớn các tiện ích Android tập trung.",vTrack:"Không theo dõi",vAcct:"Không tài khoản",vLang:"Nhiều ngôn ngữ",vLight:"Nhẹ"},
-    id:{tag:"Insinyur · pengembang Android independen",bio:"Saya membuat alat Android kecil dan cepat yang melakukan satu hal dengan baik — sambil menghormati privasi Anda. Tanpa akun, tanpa pelacakan, tanpa kekacauan.",privacy:"Privasi",apps:"Aplikasi",lead:"Keluarga utilitas Android terfokus yang terus berkembang.",vTrack:"Tanpa pelacakan",vAcct:"Tanpa akun",vLang:"Banyak bahasa",vLight:"Ringan"},
-    ms:{tag:"Jurutera · pembangun Android bebas",bio:"Saya membina alat Android kecil dan pantas yang melakukan satu perkara dengan baik — sambil menghormati privasi anda. Tiada akaun, tiada penjejakan, tiada kekemasan.",privacy:"Privasi",apps:"Apl",lead:"Keluarga utiliti Android tertumpu yang semakin berkembang.",vTrack:"Tiada penjejakan",vAcct:"Tiada akaun",vLang:"Banyak bahasa",vLight:"Ringan"},
-    tl:{tag:"Inhinyero · independent na Android developer",bio:"Gumagawa ako ng maliliit at mabilis na Android tools na mahusay sa isang bagay — at iginagalang ang iyong privacy. Walang account, walang pagsubaybay, walang kalat.",privacy:"Privacy",apps:"Mga app",lead:"Lumalagong pamilya ng nakatuong Android utilities.",vTrack:"Walang pagsubaybay",vAcct:"Walang account",vLang:"Maraming wika",vLight:"Magaan"},
-    ja:{tag:"エンジニア · 独立系 Android 開発者",bio:"ひとつのことをしっかりこなす、小さくて速い Android ツールを作っています。あなたのプライバシーを尊重します。アカウント不要、追跡なし、無駄なし。",privacy:"プライバシー",apps:"アプリ",lead:"集中した Android ユーティリティの成長中のファミリー。",vTrack:"追跡なし",vAcct:"アカウント不要",vLang:"多言語対応",vLight:"軽量"},
-    ko:{tag:"엔지니어 · 독립 Android 개발자",bio:"한 가지를 제대로 해내는 작고 빠른 Android 도구를 만듭니다 — 당신의 개인정보를 존중하면서요. 계정 없음, 추적 없음, 군더더기 없음.",privacy:"개인정보",apps:"앱",lead:"집중된 Android 유틸리티의 성장하는 제품군.",vTrack:"추적 없음",vAcct:"계정 없음",vLang:"다국어 지원",vLight:"가벼움"},
-    "zh-CN":{tag:"工程师 · 独立 Android 开发者",bio:"我打造小巧快速、专注做好一件事的 Android 工具，同时尊重你的隐私。无账户、无跟踪、无冗余。",privacy:"隐私",apps:"应用",lead:"不断壮大的专注型 Android 工具家族。",vTrack:"无跟踪",vAcct:"无账户",vLang:"多种语言",vLight:"轻量"},
-    "zh-TW":{tag:"工程師 · 獨立 Android 開發者",bio:"我打造小巧快速、專注做好一件事的 Android 工具，同時尊重你的隱私。無帳戶、無追蹤、無冗餘。",privacy:"隱私",apps:"應用程式",lead:"不斷壯大的專注型 Android 工具家族。",vTrack:"無追蹤",vAcct:"無帳戶",vLang:"多種語言",vLight:"輕量"}
-  };
-  I18N["de-CH"]=I18N.de; // Swiss German readers use standard German content
   const LANGS=[["en","🇬🇧","English"],["de","🇩🇪","Deutsch"],["de-CH","🇨🇭","Deutsch (Schweiz)"],["fr","🇫🇷","Français"],["it","🇮🇹","Italiano"],["es","🇪🇸","Español"],["pt","🇵🇹","Português"],["nl","🇳🇱","Nederlands"],["pl","🇵🇱","Polski"],["ru","🇷🇺","Русский"],["uk","🇺🇦","Українська"],["cs","🇨🇿","Čeština"],["da","🇩🇰","Dansk"],["sv","🇸🇪","Svenska"],["ro","🇷🇴","Română"],["hu","🇭🇺","Magyar"],["el","🇬🇷","Ελληνικά"],["tr","🇹🇷","Türkçe"],["ar","🇸🇦","العربية"],["fa","🇮🇷","فارسی"],["he","🇮🇱","עברית"],["hi","🇮🇳","हिन्दी"],["bn","🇧🇩","বাংলা"],["ur","🇵🇰","اردو"],["th","🇹🇭","ไทย"],["vi","🇻🇳","Tiếng Việt"],["id","🇮🇩","Indonesia"],["ms","🇲🇾","Melayu"],["tl","🇵🇭","Filipino"],["ja","🇯🇵","日本語"],["ko","🇰🇷","한국어"],["zh-CN","🇨🇳","简体中文"],["zh-TW","🇹🇼","繁體中文"]];
   const RTL=["ar","fa","he","ur"];
   const sel=document.getElementById('lang');
   LANGS.forEach(function(l){var o=document.createElement('option');o.value=l[0];o.textContent=l[1]+"  "+l[2];sel.appendChild(o);});
-  function pick(){
-    var saved=localStorage.getItem('lang');
-    if(saved&&I18N[saved])return saved;
-    var ls=navigator.languages||[navigator.language||'en'];
-    for(var i=0;i<ls.length;i++){
-      var l=ls[i];if(I18N[l])return l;
-      var base=l.split('-')[0];
-      if(base==='zh')return /TW|HK|MO|Hant/i.test(l)?'zh-TW':'zh-CN';
-      if(I18N[base])return base;
-    }
-    return 'en';
-  }
-  function apply(code){
-    var t=I18N[code]||I18N.en;
-    document.querySelectorAll('[data-i18n]').forEach(function(e){var k=e.getAttribute('data-i18n');if(t[k])e.textContent=t[k];});
-    document.documentElement.lang=code;
-    document.documentElement.dir=RTL.indexOf(code)>=0?'rtl':'ltr';
-    sel.value=code;
-  }
-  apply(pick());
+  let I18N={};
+  function pick(){var s=localStorage.getItem('lang');if(s&&I18N[s])return s;var ls=navigator.languages||[navigator.language||'en'];for(var i=0;i<ls.length;i++){var l=ls[i];if(I18N[l])return l;var b=l.split('-')[0];if(b==='zh')return /TW|HK|MO|Hant/i.test(l)?'zh-TW':'zh-CN';if(I18N[b])return b;}return 'en';}
+  function apply(code){var t=I18N[code]||I18N.en||{};document.querySelectorAll('[data-i18n]').forEach(function(e){var k=e.getAttribute('data-i18n');if(t[k])e.textContent=t[k];});document.documentElement.lang=code;document.documentElement.dir=RTL.indexOf(code)>=0?'rtl':'ltr';sel.value=code;}
   sel.addEventListener('change',function(e){localStorage.setItem('lang',e.target.value);apply(e.target.value);});
+  fetch('i18n.json').then(function(r){return r.json();}).then(function(d){I18N=d;apply(pick());}).catch(function(){});
   </script>
 </body>
 </html>
