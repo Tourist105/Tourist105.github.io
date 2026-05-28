@@ -3,14 +3,101 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ch.roethlisberger apps</title>
+  <title>Nils Röthlisberger — Android apps</title>
+  <meta name="description" content="Small, fast, privacy-respecting Android utility apps by Nils Röthlisberger.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧭</text></svg>">
+  <style>
+    :root{
+      --ink:#1a2233; --muted:#5b6678; --line:#e7ebf2; --card:#ffffff;
+      --accent:#4f46e5; --accent2:#0ea5a4; --bg:#f6f8fc;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);
+      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+      line-height:1.6;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent);text-decoration:none}
+
+    .hero{position:relative;overflow:hidden;color:#fff;text-align:center;
+      padding:72px 20px 88px;
+      background:linear-gradient(135deg,#4f46e5 0%,#6d28d9 45%,#0ea5a4 100%)}
+    .hero::after{content:"";position:absolute;inset:0;
+      background:radial-gradient(60% 60% at 50% -10%,rgba(255,255,255,.22),transparent 70%);pointer-events:none}
+    .avatar{width:132px;height:132px;border-radius:50%;object-fit:cover;
+      border:4px solid rgba(255,255,255,.85);box-shadow:0 12px 30px rgba(0,0,0,.25);
+      background:#dfe3ee}
+    .hero h1{margin:18px 0 4px;font-size:2rem;font-weight:800;letter-spacing:-.02em}
+    .hero .tag{margin:0;font-size:1.05rem;font-weight:500;opacity:.95}
+    .hero .bio{max-width:560px;margin:16px auto 0;opacity:.92;font-size:1rem}
+    .links{margin-top:24px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:999px;
+      font-weight:600;font-size:.95rem;background:rgba(255,255,255,.16);color:#fff;
+      border:1px solid rgba(255,255,255,.35);backdrop-filter:blur(4px);transition:.18s}
+    .btn:hover{background:#fff;color:var(--accent);transform:translateY(-1px)}
+
+    .wrap{max-width:920px;margin:0 auto;padding:0 20px}
+    .section{margin:-44px auto 0;position:relative;z-index:2}
+    .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;
+      padding:30px 26px;box-shadow:0 18px 50px rgba(20,30,60,.08)}
+    h2{font-size:1.35rem;margin:0 0 4px;letter-spacing:-.01em}
+    .lead{color:var(--muted);margin:0 0 22px}
+
+    .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+    .app{display:flex;gap:12px;align-items:flex-start;padding:14px;border:1px solid var(--line);
+      border-radius:14px;background:#fcfdff;transition:.18s}
+    .app:hover{border-color:#cdd6ea;box-shadow:0 8px 22px rgba(20,30,60,.07);transform:translateY(-2px)}
+    .ico{flex:0 0 40px;width:40px;height:40px;border-radius:11px;display:grid;place-items:center;
+      font-size:20px;background:linear-gradient(135deg,#eef0ff,#e6fbf7)}
+    .app h3{margin:0 0 2px;font-size:1rem}
+    .app p{margin:0;color:var(--muted);font-size:.85rem;line-height:1.45}
+
+    .values{margin-top:26px;display:flex;gap:18px;flex-wrap:wrap;color:var(--muted);font-size:.9rem}
+    .values span{display:inline-flex;align-items:center;gap:7px}
+
+    footer{max-width:920px;margin:34px auto 50px;padding:0 20px;color:var(--muted);
+      font-size:.86rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+    @media(max-width:520px){.hero{padding:56px 18px 80px}.hero h1{font-size:1.7rem}}
+  </style>
 </head>
 <body>
-  <h1>ch.roethlisberger.* apps</h1>
-  <p>Small, privacy-respecting Android utility apps.</p>
-  <p>
-    <a href="/privacy/">Privacy Policy</a> &middot;
-    <a href="https://github.com/Tourist105">GitHub</a>
-  </p>
+  <header class="hero">
+    <img class="avatar" src="nils.jpg" alt="Nils Röthlisberger">
+    <h1>Nils Röthlisberger</h1>
+    <p class="tag">Engineer · independent Android developer</p>
+    <p class="bio">I build small, fast Android tools that do one thing well — and respect your
+      privacy while doing it. No accounts, no tracking, no clutter.</p>
+    <div class="links">
+      <a class="btn" href="https://www.linkedin.com/in/nilsroethlisberger" target="_blank" rel="noopener">in · LinkedIn</a>
+      <a class="btn" href="https://github.com/Tourist105" target="_blank" rel="noopener">⌥ GitHub</a>
+      <a class="btn" href="/privacy/">🔒 Privacy</a>
+    </div>
+  </header>
+
+  <main class="wrap section">
+    <section class="panel">
+      <h2>Apps</h2>
+      <p class="lead">A growing family of focused utilities for Android.</p>
+      <div class="grid">
+        <div class="app"><div class="ico">🔦</div><div><h3>Flashlight</h3><p>LED torch, SOS &amp; strobe with a widget and Quick Settings tile.</p></div></div>
+        <div class="app"><div class="ico">🧭</div><div><h3>Compass</h3><p>Tilt-compensated true-north compass with GPS coordinates.</p></div></div>
+        <div class="app"><div class="ico">📍</div><div><h3>GeoFinder</h3><p>Navigate to any coordinate — geocaching, hiking, surveying.</p></div></div>
+        <div class="app"><div class="ico">📐</div><div><h3>Bubble Level &amp; Ruler</h3><p>2-axis spirit level plus an on-screen ruler.</p></div></div>
+        <div class="app"><div class="ico">📏</div><div><h3>Protractor</h3><p>Sensor-based angle meter with snap-to-common angles.</p></div></div>
+        <div class="app"><div class="ico">🧲</div><div><h3>Metal Detector</h3><p>Magnetometer-based finder with an honest delta meter.</p></div></div>
+        <div class="app"><div class="ico">🔊</div><div><h3>Sound Meter</h3><p>A-weighted dB readout with peak &amp; average.</p></div></div>
+        <div class="app"><div class="ico">🚗</div><div><h3>Speedometer</h3><p>HUD-style GPS speed, km/h ↔ mph, mirror mode.</p></div></div>
+        <div class="app"><div class="ico">📡</div><div><h3>NFC Reader</h3><p>Single-purpose NDEF tag reader, full payload view.</p></div></div>
+      </div>
+      <div class="values">
+        <span>🔒 No tracking</span><span>🚫 No accounts</span><span>🌍 35+ languages</span><span>⚡ Lightweight</span>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span>© <span id="y"></span> Nils Röthlisberger</span>
+    <span><a href="/privacy/">Privacy Policy</a> · <a href="https://github.com/Tourist105">GitHub</a></span>
+  </footer>
+  <script>document.getElementById('y').textContent=new Date().getFullYear()</script>
 </body>
 </html>
