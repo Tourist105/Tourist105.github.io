@@ -327,18 +327,21 @@
   };
 
   S.seiteRohr = function (name, opt) {
-    const R = S.altSeite(T(TITEL[name]), T('leiste_blatt'), () => pdfErstellen());
+    const primBox0 = h('div', { class: 'primbox' });
+    const R = S.weitereShell({ titel: T(TITEL[name]), tabs: [T('ansicht_skizze'), T('ansicht_3d')], dreiD: 1, primBox: primBox0, beiPdf: () => pdfErstellen(), beiTeilen: () => blattTeilen(),
+      beiTab: (i, ist3, merken) => { st.d3 = ist3; if (ist3) S.nachLayout(() => { live.setzeGroesse(R.karte.clientWidth, R.karte.clientHeight, window.devicePixelRatio || 1); live.zeichnen(); }); if (merken) speichere(); } });
     const { inh } = R, mt = S.mt, grau = S.grau, text = S.text, art = ART[name], defs = FELDER[name], quer = S.vp.quer;
-    const eingabe = {}, st = { mat: 0, dicke: 1, einheit: 1, d3: false };
+    const eingabe = {}, st = { mat: 0, dicke: 1, einheit: 1, d3: false, mehr: false };
     const sk = 'rohr_' + name + '.';
     const standard = (f, einheit) => f[2] === 'L' ? E().umrechnen(1, einheit, f[3]) : f[3];
-    try { const j = JSON.parse(S.lies(sk + 'state')); if (j) { Object.assign(eingabe, j.eingabe || {}); st.mat = j.mat | 0; st.dicke = j.dicke == null ? 1 : j.dicke; st.einheit = j.einheit == null ? 1 : j.einheit; } } catch (e) { /* frisch */ }
+    try { const j = JSON.parse(S.lies(sk + 'state')); if (j) { Object.assign(eingabe, j.eingabe || {}); st.mat = j.mat | 0; st.dicke = j.dicke == null ? 1 : j.dicke; st.einheit = j.einheit == null ? 1 : j.einheit; st.mehr = !!j.mehr; } } catch (e) { /* frisch */ }
     st.mat = min(6, max(0, st.mat)); st.dicke = min(WS()[st.mat].dicken.length - 1, max(0, st.dicke)); st.einheit = min(2, max(0, st.einheit));
     for (const f of defs) if (eingabe[f[0]] == null) eingabe[f[0]] = standard(f, st.einheit);
     if (eingabe.g_tb == null) eingabe.g_tb = E().umrechnen(1, st.einheit, '1000'); if (eingabe.g_tl == null) eingabe.g_tl = E().umrechnen(1, st.einheit, '2000'); if (eingabe.g_vsp == null) eingabe.g_vsp = '10';
     if (eingabe.o_datum == null) eingabe.o_datum = datumHeute(); if (eingabe.o_ort == null) eingabe.o_ort = ''; if (eingabe.o_nr == null) eingabe.o_nr = '';
-    st.d3 = opt.modus === '3d' ? true : opt.modus === '2d' ? false : S.lies(sk + 'd3') === 'true';
-    const speichere = () => { S.schreibe(sk + 'state', JSON.stringify({ eingabe, mat: st.mat, dicke: st.dicke, einheit: st.einheit })); S.schreibe(sk + 'd3', st.d3); };
+    if (opt.mehr != null) st.mehr = opt.mehr;
+    st.d3 = opt.modus === '3d' || opt.ansicht === '3d' ? true : opt.modus === '2d' || opt.ansicht === '2d' ? false : S.lies(sk + 'd3') === 'true';
+    const speichere = () => { S.schreibe(sk + 'state', JSON.stringify({ eingabe, mat: st.mat, dicke: st.dicke, einheit: st.einheit, mehr: st.mehr })); S.schreibe(sk + 'd3', st.d3); };
     const bild = new RohrBild(); let modell = null, letztesGueltiges = null, ergebnis = null;
     const einheit = () => st.einheit;
     const cm = k => { const v = S.parseNum(eingabe[k] == null ? '' : eingabe[k]); return v == null ? 0 : E().zuCm(einheit(), v); };
@@ -346,15 +349,14 @@
     const grund = () => art === 'reduktion' ? [0.55, 0.3] : [0.35, 0.25];
 
     // ---- Kopf: 3D live
-    const cvLive = h('canvas', { 'aria-label': T('d3_rohr_beschreibung') }); R.karte.append(cvLive);
-    R.tag(T('live_3d'), 'links');
-    const live = new root.Szene3D.Ansicht3D(cvLive); live.leerText = T('d3_leer'); live.interaktivAus = false; live.grundstellung(grund()[0], grund()[1]);
+    const cvLive = R.cv3;
+    const live = new root.Szene3D.Ansicht3D(cvLive); live.leerText = T('d3_leer'); live.fuellend = true; live.grundZoom = 1.1; live.grundstellung(grund()[0], grund()[1]);
     live.etikett = i => { const t = (modell || letztesGueltiges) && (modell || letztesGueltiges).teile[i]; return t ? E().text(einheit(), t.mantel.breite) + ' x ' + E().text(einheit(), t.mantel.laenge) + ' ' + E().liste[einheit()].kurz : ''; };
     R.onGroesse = (w, hh) => { live.setzeGroesse(w, hh, window.devicePixelRatio || 1); };
     let fokusKey = null, liveTimer = null;
     const liveAus = () => { live.masseAn = false; live.leuchte = null; live.zeichnen(); };
-    const hebeHervor = k => { live.leuchte = teileZuFeld(art, k); live.masseAn = true; live.zeichnen(); clearTimeout(liveTimer); if (fokusKey !== k) liveTimer = setTimeout(liveAus, 2500); };
-    const fokus = (k, an) => { if (an) { fokusKey = k; hebeHervor(k); } else if (fokusKey === k) { fokusKey = null; clearTimeout(liveTimer); liveTimer = setTimeout(liveAus, 900); } };
+    const hebeHervor = k => { live.leuchte = teileZuFeld(name, k); live.masseAn = true; live.zeichnen(); clearTimeout(liveTimer); if (fokusKey !== k) liveTimer = setTimeout(liveAus, 2500); };
+    const fokus = (k, an) => { if (an) { R.view.aktiv = k; } else if (R.view.aktiv === k) R.view.aktiv = null; if (an) { fokusKey = k; hebeHervor(k); } else if (fokusKey === k) { fokusKey = null; clearTimeout(liveTimer); liveTimer = setTimeout(liveAus, 900); } };
 
     // ---- 3D-Karte
     const cvD3 = h('canvas', { 'aria-label': T('d3_rohr_beschreibung') }), d3Box = h('div', { style: { position: 'relative', width: '100%' } }, cvD3);
@@ -390,17 +392,14 @@
     const globalFeld = (k, labelKey, laenge) => { const b = S.feld(T(labelKey) + (laenge ? ' (' + E().liste[einheit()].kurz + ')' : ''), eingabe[k], { onChange: v => { eingabe[k] = v; aktualisiere(); }, onFokus: an => { if (an) { fokusKey = k; liveAus(); } else if (fokusKey === k) fokusKey = null; } }); felder[k] = b; b._laenge = [labelKey, laenge]; return b; };
 
     const beispielText = S.infoband(T('rohr_beispiel'), quer ? 13 : 15); if (quer) beispielText.style.padding = '3px 14px';
-    const skizzeTitel = text(T('rohr_skizze_titel') + ' (' + E().liste[einheit()].kurz + ')', 18, true);
-    const cvSk = h('canvas', { 'aria-label': T('rohr_skizze_titel'), style: { display: 'block', width: '100%' } });
-    const skizzeKarte = S.karte(skizzeTitel, cvSk);
-    const ansichtSeg = S.segment([T('ansicht_skizze'), T('ansicht_3d')], st.d3 ? 1 : 0, i => { st.d3 = i === 1; ansichtAnwenden(); aktualisiere(); speichere(); });
-    const ansichtKarte = S.karte(ansichtSeg);
     const einheitSeg = S.segment(E().liste.map((x, i) => i === 2 ? T('u_zoll') : x.kurz), st.einheit, neu => einheitWechseln(neu));
     const fehlerText = text('', 16, true), warnText = text('', 15, true), tabelle = text('', 16), kpi = text('', 18, true), status = text('', 16); status.style.minHeight = '19px';
     fehlerText.style.color = 'var(--fehler)'; warnText.style.color = 'rgb(140,90,0)'; tabelle.style.whiteSpace = 'pre-wrap'; kpi.style.whiteSpace = 'pre-line'; warnText.style.whiteSpace = 'pre-line';
-    const masse = S.karte(text(T('rohr_masse_titel'), 18, true), text(T('l_einheit'), 16, true), einheitSeg);
-    for (let i = 0; i < defs.length; i += 2) { const a = feldBauen(defs[i]); masse.append(mt(i + 1 < defs.length ? S.zweispalt(a, feldBauen(defs[i + 1])) : a, 8)); }
-    masse.append(mt(fehlerText, 8), mt(warnText, 4), mt(text(T('annahme_rohr'), 14), 8)); if (art === 'hosenrohr') masse.append(mt(text(T('pdf_hose_annahme'), 14), 6));
+    const masse = S.karte(text(T('l_einheit'), 16, true), einheitSeg);
+    primBox0.append(h('div', { class: 'primreihe' }, defs.slice(0, 3).map(f => feldBauen(f))));
+    const extra = defs.slice(3);
+    for (let i = 0; i < extra.length; i += 2) { const a = feldBauen(extra[i]); masse.append(mt(i + 1 < extra.length ? S.zweispalt(a, feldBauen(extra[i + 1])) : a, 8)); }
+    masse.append(mt(text(T('annahme_rohr'), 14), 8)); if (art === 'hosenrohr') masse.append(mt(text(T('pdf_hose_annahme'), 14), 6));
     const spMat = S.waehler(S.TA('werkstoffe'), st.mat, i => { if (i !== st.mat) { st.mat = i; st.dicke = S.dickeStandard(i); S.waehlerFuelle(spDicke, S.dickenTexte(i), S.dickenReihenfolge(i).indexOf(st.dicke)); aktualisiere(); } });
     const spDicke = S.waehler(S.dickenTexte(st.mat), S.dickenReihenfolge(st.mat).indexOf(st.dicke), p => { const idx = S.dickenReihenfolge(st.mat)[p]; if (idx != null && idx !== st.dicke) { st.dicke = idx; aktualisiere(); } });
     const ortF = S.feld(T('o_ort'), eingabe.o_ort, { text: true, onChange: v => { eingabe.o_ort = v; speichere(); } }); ortF.input.placeholder = T('hint_ort');
@@ -410,9 +409,20 @@
       S.zweispalt(globalFeld('g_tb', 'l_tb', true), globalFeld('g_tl', 'l_tl', true)), globalFeld('g_vsp', 'r_vsp', false));
     const ergKarte = S.karte(text(T('rohr_ergebnis_titel'), 22, true), tabelle, kpi);
     const warn = S.warnband(T('warn_home'), 16); if (quer) { warn.style.fontSize = '14px'; warn.style.padding = '4px 14px'; }
-    inh.append(mt(warn, quer ? 4 : 10), mt(ansichtKarte, 10), mt(d3k.karte, 10), mt(beispielText, 10), mt(skizzeKarte, 10), mt(masse, 10), mt(material, 10), mt(ergKarte, 10),
-      mt(S.rmKarte(art, T(TITEL[name]), () => snapshot()), 12), mt(S.knopf(T('btn_pdf'), true, () => pdfErstellen()), 10), mt(status, 6));
-    function ansichtAnwenden() { d3k.karte.style.display = st.d3 ? '' : 'none'; skizzeKarte.style.display = st.d3 ? 'none' : ''; if (st.d3) S.nachLayout(() => { d3Groesse(); d3.zeichnen(); }); }
+    // Mehr Masse (wie Android setzeMehr): Zugabe, Einheit, Material, Baustelle
+    const mehrKnopf = h('button', { class: 'mehrknopf' }), mehrBox = h('div', {}, masse, mt(material, 10));
+    const setzeMehr = an => {
+      st.mehr = an; mehrBox.style.display = an ? '' : 'none';
+      const kz = T(an ? 'ss_weniger' : 'ss_mehr'), info = T('w_mehr_rohr');
+      mehrKnopf.innerHTML = ''; mehrKnopf.append(h('b', {}, S.dreieck(an), kz), h('small', { text: info })); mehrKnopf.setAttribute('aria-label', kz + ', ' + info);
+    };
+    mehrKnopf.addEventListener('click', () => { setzeMehr(!st.mehr); speichere(); });
+    setzeMehr(st.mehr);
+    if (quer) inh.append(mt(S.karte(text(T('ss_masse'), 18, true), primBox0), 0), mt(warn, 8)); else inh.append(mt(warn, 10));
+    inh.append(mt(fehlerText, quer ? 8 : 0), mt(warnText, 4), mt(beispielText, 6), mt(mehrKnopf, 8), mt(mehrBox, 6), mt(ergKarte, 10), mt(d3k.karte, 10),
+      mt(S.rmKarte(art, T(TITEL[name]), () => snapshot()), 12), mt(status, 6));
+    const fokusiere = k => { const f = felder[k]; if (!f) return; if (!st.mehr && defs.findIndex(d => d[0] === k) >= 3) { setzeMehr(true); speichere(); } f.input.focus(); };
+    R.view.beiMass = fokusiere;
 
     function einheitWechseln(neu) {
       const alt = einheit(); st.einheit = neu;
@@ -420,7 +430,6 @@
       for (const k of ['g_tb', 'g_tl']) eingabe[k] = E().umrechnen(alt, neu, eingabe[k]);
       for (const f of defs) { const b = felder[f[0]]; b.lab.textContent = feldLabel(f).replace('Aufkantung H', 'Aufkantung\nH'); if (b.input.value !== eingabe[f[0]]) b.input.value = eingabe[f[0]]; }
       for (const k of ['g_tb', 'g_tl', 'g_vsp']) { const b = felder[k]; if (b._laenge[1]) b.lab.textContent = T(b._laenge[0]) + ' (' + E().liste[neu].kurz + ')'; if (b.input.value !== eingabe[k]) b.input.value = eingabe[k]; }
-      skizzeTitel.textContent = T('rohr_skizze_titel') + ' (' + E().liste[neu].kurz + ')';
       aktualisiere();
     }
 
@@ -460,21 +469,21 @@
       if (bild.hose) s += T('rz_hose', fmt(bild.hose.gehrungGrad, 2)) + '\n';
       return s + T('rz_total', String(r.stueck), S.fmtM2(r.m2));
     }
-    function skizzeZeichnen() {
-      const w = skizzeKarte.clientWidth - 32 || 338; if (!(w > 0)) return;
-      const hh = Math.trunc(w * bild.verhaeltnis()), dpr = window.devicePixelRatio || 1;
-      cvSk.style.height = hh + 'px'; cvSk.width = Math.round(w * dpr); cvSk.height = Math.round(hh * dpr);
-      const ctx = cvSk.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, hh); bild.zeichne(ctx, w, hh, 1);
+    function skizzeAktualisieren(gueltig) {
+      if (!gueltig) { R.cv2.style.opacity = .4; return; }
+      const id = art, mo = bild.modell, bo = bild.bogen, ha = bild.hals, ho = bild.hose, ke = bild.kegel, en = einheit();
+      R.view.bauer = (_, w, hh, t) => root.Ze.WB.rohr(id, mo, bo, ha, ho, ke, c => E().text(en, c), w, hh, t);
+      R.cv2.style.opacity = 1; R.view.baue(true);
     }
     function aktualisiere() {
-      const mel = pruefeFelder(art, eingabe, v => E().zuCm(einheit(), v));
+      const mel = pruefeFelder(name, eingabe, v => E().zuCm(einheit(), v));
       for (const k in felder) felder[k].fehler(mel[k] ? meldungText(mel[k]) : null);
       let a; if (!Object.keys(mel).length) a = aufbauen(); else { leeren(); a = { fehler: T('fe_rot') }; }
       if (a.modell) letztesGueltiges = a.modell; modell = a.modell || null;
       beispielText.style.display = beispielAktiv() ? '' : 'none';
       fehlerText.textContent = a.fehler || ''; fehlerText.style.display = a.fehler ? '' : 'none';
       warnText.textContent = a.fehler ? '' : [cm('z') <= 0 ? T('warn_keine_zugabe') : null].concat(S.werkstoffWarnungen(st.mat)).filter(Boolean).join('\n'); warnText.style.display = warnText.textContent ? '' : 'none';
-      skizzeZeichnen();
+      skizzeAktualisieren(!a.fehler);
       if (a.fehler) { ergebnis = null; tabelle.textContent = a.fehler; kpi.textContent = ''; leiste(); d3Aktualisieren(); speichere(); return; }
       const w = WS()[st.mat], tb = cm('g_tb') <= 0 ? 100 : cm('g_tb'), tl = cm('g_tl') <= 0 ? 200 : cm('g_tl');
       const r = K.RohrRechnung.rechnen(a.posten, w.dicken[st.dicke], w.dichte, zahl('g_vsp'), tb, tl); ergebnis = r;
@@ -492,29 +501,38 @@
     }
     function leiste() {
       const r = ergebnis;
-      if (!r) { R.lt.textContent = T('leiste_leer'); R.ld.textContent = T('fe_leer'); }
-      else { R.lt.textContent = S.TP('leiste_teile_n', r.stueck, String(r.stueck), S.fmtM2(r.m2Verschnitt)); R.ld.textContent = T('leiste_detail', T('bedarf_tafeln', String(r.tafeln))); }
+      if (!r) R.leiste_leer(); else R.leiste_gueltig(T('ss_ergebnis_kamin'), r.m2Verschnitt, v => S.fmtM2(v) + ' m²');
     }
     function snapshot() { return art + ': ' + Object.keys(eingabe).filter(k => String(eingabe[k]).trim() !== '').sort().map(k => k + '=' + eingabe[k]).join(', ') + ', ' + S.TA('werkstoffe')[st.mat] + ' ' + fmtTrim(WS()[st.mat].dicken[st.dicke], 2) + ' mm'; }
+    async function blattDatei() {
+      const r = ergebnis; if (!r) return null;
+      const c = document.createElement('canvas'), W = 1240, H = 1500, ctx = c.getContext('2d'); c.width = W; c.height = H; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = '#141C26'; ctx.font = '700 40px Roboto, sans-serif'; ctx.fillText(T('pdf_rohr_titel') + ': ' + T(TITEL[name]), 40, 70);
+      ctx.font = '24px Roboto, sans-serif'; ctx.fillText((eingabe.o_ort || '') + '   ' + eingabe.o_datum, 40, 110);
+      const sc = document.createElement('canvas'); sc.width = W - 80; sc.height = Math.round((W - 80) * bild.verhaeltnis()); bild.zeichne(sc.getContext('2d'), sc.width, sc.height, 2.2); ctx.drawImage(sc, 40, 140);
+      const y0 = 140 + sc.height + 50; ctx.font = '24px Roboto, sans-serif'; zeilenText(r).split('\n').forEach((z, i) => ctx.fillText(z, 40, y0 + i * 32));
+      const blob = await new Promise(res => c.toBlob(res, 'image/png'));
+      return { blob, name: 'Werkblatt_' + name + '_' + new Date().toISOString().slice(0, 10) + '.png', titel: T('share_rohr_titel', T(TITEL[name]), eingabe.o_ort || '') };
+    }
     async function pdfErstellen() {
-      const r = ergebnis; if (!r) { status.textContent = T('status_leer'); return; }
+      if (!ergebnis) { status.textContent = T('status_leer'); return; }
       status.textContent = '';
-      try {
-        const c = document.createElement('canvas'), W = 1240, H = 1500, ctx = c.getContext('2d'); c.width = W; c.height = H; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
-        ctx.fillStyle = '#141C26'; ctx.font = '700 40px Roboto, sans-serif'; ctx.fillText(T('pdf_rohr_titel') + ': ' + T(TITEL[name]), 40, 70);
-        ctx.font = '24px Roboto, sans-serif'; ctx.fillText((eingabe.o_ort || '') + '   ' + eingabe.o_datum, 40, 110);
-        const sc = document.createElement('canvas'); sc.width = W - 80; sc.height = Math.round((W - 80) * bild.verhaeltnis()); bild.zeichne(sc.getContext('2d'), sc.width, sc.height, 2.2); ctx.drawImage(sc, 40, 140);
-        const y0 = 140 + sc.height + 50; ctx.font = '24px Roboto, sans-serif'; zeilenText(r).split('\n').forEach((z, i) => ctx.fillText(z, 40, y0 + i * 32));
-        const blob = await new Promise(res => c.toBlob(res, 'image/png'));
-        S.pdfDialog(blob, 'Werkblatt_' + name + '_' + new Date().toISOString().slice(0, 10) + '.png', T('share_rohr_titel', T(TITEL[name]), eingabe.o_ort || ''), m => { status.textContent = m; });
-      } catch (x) { status.textContent = T('status_pdf_fehler'); }
+      try { const d = await blattDatei(); S.pdfDialog(d.blob, d.name, d.titel, m => { status.textContent = m; }); } catch (x) { status.textContent = T('status_pdf_fehler'); }
+    }
+    async function blattTeilen() {
+      if (!ergebnis) { status.textContent = T('status_leer'); return; }
+      let d; try { d = await blattDatei(); } catch (x) { d = null; }
+      if (!d) { status.textContent = T('status_pdf_fehler'); return; }
+      status.textContent = '';
+      R.teilenFertig(async () => { const r = await S.teilen(d.blob, d.name, d.titel); if (r === 'download') status.textContent = d.name; });
     }
 
-    ansichtAnwenden();
+    S.nachLayout(() => { d3Groesse(); d3.zeichnen(); });
     return {
-      el: R.el, overlay: { zurueck: true },
-      nachEinbau() { R.layout(); aktualisiere(); S.nachLayout(() => { skizzeZeichnen(); if (st.d3) d3Groesse(); S.autosizeAlle(R.el); S.setzeScroll(R, opt); }); S.setzeScroll(R, opt); },
-      layout() { R.layout(); skizzeZeichnen(); if (st.d3) d3Groesse(); }, speichere, zerstoere() { speichere(); R.ro.disconnect(); clearTimeout(liveTimer); }
+      el: R.el, overlay: { zurueck: true }, art: name,
+      nachEinbau() { R.layout(); aktualisiere(); R.setzeTab(st.d3 ? 1 : 0, false); S.nachLayout(() => { d3Groesse(); S.autosizeAlle(R.el); S.setzeScroll(R, opt); }); S.setzeScroll(R, opt); },
+      kontext() { return { ansicht: st.d3 ? T('ansicht_3d') : T('ansicht_skizze'), eingaben: snapshot() }; },
+      layout() { R.layout(); d3Groesse(); }, speichere, zerstoere() { speichere(); R.ro.disconnect(); clearTimeout(liveTimer); }
     };
   };
 })(window);

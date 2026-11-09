@@ -146,34 +146,25 @@
     { n: 'vl_z', s: [30, 60, 30], w: [90, 90], l: [false, true] }, { n: 'vl_leer', s: [100], w: [], l: [] }];
 
   S.seiteProfil = function (opt) {
-    const R = S.altSeite(T('profil_titel'), T('profil_blatt'), () => pdfErstellen());
+    const primBox0 = h('div', { class: 'primbox' }), schenkelReihe = h('div', { class: 'primreihe', style: { overflowX: 'auto' } });
+    primBox0.append(schenkelReihe);
+    const R = S.weitereShell({ titel: T('profil_titel'), tabs: [T('ansicht_skizze'), T('ss_zuschnitt')], dreiD: -1, primBox: primBox0, beiPdf: () => pdfErstellen(), beiTeilen: () => blattTeilen(), anteil: 0.80 });
     const { inh } = R, mt = S.mt, grau = S.grau, text = S.text;
-    const st = { schenkel: [], winkel: [], links: [], mat: 0, dicke: 2, laenge: '1000', stueck: '1', modus: 0, radius: '', eigen: '1.4' };
+    const st = { schenkel: [], winkel: [], links: [], mat: 0, dicke: 2, laenge: '1000', stueck: '1', modus: 0, radius: '', eigen: '1.4', mehr: false };
     const lade = () => { try { const j = JSON.parse(S.lies('profil.state')); if (j && Array.isArray(j.schenkel) && j.schenkel.length) Object.assign(st, j); } catch (e) { /* frisch */ } };
     const vorlageLaden = i => { const v = VORLAGEN[i]; st.schenkel = v.s.map(x => fmtTrim(x, 1)); st.winkel = v.w.map(x => fmtTrim(x, 1)); st.links = v.l.slice(); };
     vorlageLaden(0); lade();
     st.mat = Math.min(6, Math.max(0, st.mat | 0)); st.dicke = Math.min(WS()[st.mat].dicken.length - 1, Math.max(0, st.dicke | 0));
     const speichere = () => S.schreibe('profil.state', JSON.stringify(st));
 
-    // Kopf: Live-Skizze
-    const cv = h('canvas', { 'aria-label': T('profil_live') }); R.karte.append(cv);
-    R.tag(T('profil_live'), 'links'); const pille = R.tag('', 'rechts');
-    let letzteGueltig = null, blass = false, cw = 0, chh = 0;
-    const zeichne = () => {
-      if (!cw || !chh) return; const dpr = window.devicePixelRatio || 1;
-      if (cv.width !== Math.round(cw * dpr) || cv.height !== Math.round(chh * dpr)) { cv.width = Math.round(cw * dpr); cv.height = Math.round(chh * dpr); }
-      const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cw, chh);
-      const e = blass ? letzteGueltig : letzteEingabe; if (e) zeichneProfil(ctx, e, [0, 34, cw, chh], 1, 14, blass);
-    };
-    R.onGroesse = (w, hh) => { cw = w; chh = hh; zeichne(); };
-
+    let letzteGueltig = null;
     // Seite
     const ergTitel = text(T('profil_ergebnis_titel'), 18, true), zuschnitt = text('', 24, true), summe = grau('', 15), meldungBox = h('div', { class: 'flexspalte' }), folge = text('', 16), liste = text('', 16);
+    const winkelBox = h('div', { class: 'flexspalte' });
     zuschnitt.style.color = 'var(--pri-dunkel)';
     const status = text('', 16); status.style.minHeight = '19px';
     let letzteEingabe = null, letztes = null, schenkelFelder = [], winkelFelder = [];
     const num = v => { const x = S.parseNum(v); return x == null ? 0 : x; };
-    const schenkelBox = h('div', { class: 'flexspalte' });
     const vl = S.waehler([T('profil_vorlage') + ' ...'].concat(VORLAGEN.map(v => T(v.n))), 0, i => { if (i > 0) { vorlageLaden(i - 1); reihenBauen(); aktualisiere(); } vl.querySelector('select').value = '0'; });
     const plus = S.knopf(T('profil_plus_schenkel'), false, () => schenkelPlus(false));
     const umsch = S.knopf(T('profil_plus_umschlag'), false, () => schenkelPlus(true));
@@ -188,26 +179,38 @@
     const modusSeg = S.segment([T('profil_modus_din'), T('profil_modus_faust'), T('profil_modus_eigen')], st.modus, i => { st.modus = i; modusAnzeigen(); aktualisiere(); });
     const modusAnzeigen = () => { modusInfo.textContent = T(['profil_info_din', 'profil_info_faust', 'profil_info_eigen'][st.modus]); radiusF.style.display = st.modus === 0 ? '' : 'none'; eigenF.style.display = st.modus === 2 ? '' : 'none'; };
 
-    inh.append(mt(S.warnband(T('profil_warn'), 16), S.vp.quer ? 4 : 10));
-    if (S.vp.quer) { const w = inh.lastChild; w.style.fontSize = '14px'; w.style.padding = '4px 14px'; }
-    inh.append(mt(S.karte(text(T('profil_vorlage'), 18, true), vl, grau(T('profil_vorlage_info'), 14)), 10),
-      mt(S.karte(text(T('profil_schenkel_titel'), 18, true), grau(T('profil_hinweis_winkel'), 14), schenkelBox, plus, umsch, minus), 10),
-      mt(S.karte(text(T('profil_material'), 18, true), matSp, dickeSp, S.zweispalt(lf, sf)), 10),
-      mt(S.karte(text(T('profil_abzug_titel'), 18, true), modusSeg, modusInfo, radiusF, eigenF), 10),
+    const mehrKnopf = h('button', { class: 'mehrknopf' });
+    const mehrBox = h('div', {}, mt(S.karte(text(T('profil_material'), 18, true), matSp, dickeSp, S.zweispalt(lf, sf)), 6), mt(S.karte(text(T('profil_abzug_titel'), 18, true), modusSeg, modusInfo, radiusF, eigenF), 10));
+    const setzeMehr = an => {
+      st.mehr = an; mehrBox.style.display = an ? '' : 'none';
+      const kz = T(an ? 'ss_weniger' : 'ss_mehr'), info = T('w_mehr_profil');
+      mehrKnopf.innerHTML = ''; mehrKnopf.append(h('b', {}, S.dreieck(an), kz), h('small', { text: info })); mehrKnopf.setAttribute('aria-label', kz + ', ' + info);
+    };
+    mehrKnopf.addEventListener('click', () => { setzeMehr(!st.mehr); speichere(); });
+    setzeMehr(st.mehr);
+    const winkelKarte = S.karte(text(T('w_winkel_titel'), 18, true), grau(T('profil_hinweis_winkel'), 14), winkelBox, plus, umsch, minus);
+    if (S.vp.quer) inh.append(S.karte(text(T('ss_masse'), 18, true), primBox0), mt(winkelKarte, 10)); else inh.append(winkelKarte);
+    inh.append(mt(mehrKnopf, 10), mt(mehrBox, 6),
+      mt(S.karte(text(T('w_beispiele'), 18, true), vl, grau(T('profil_vorlage_info'), 14)), 10),
       mt(S.karte(ergTitel, zuschnitt, summe, meldungBox, text(T('profil_folge_titel'), 18, true), grau(T('profil_folge_info'), 14), folge, liste), 10),
       mt(S.rmKarte('profil', T('profil_titel'), () => snapshot()), 12),
       mt(S.karte(text(T('profil_annahmen'), 15), S.knopf(T('an_karte_knopf'), false, () => S.gehe('annahmen'))), 12),
-      mt(S.knopf(T('profil_leeren'), false, () => { vorlageLaden(0); st.radius = ''; st.modus = 0; speichere(); S.rendere(true); }), 12), mt(status, 6));
+      mt(S.knopf(T('profil_leeren'), false, () => { vorlageLaden(0); st.radius = ''; st.modus = 0; speichere(); S.rendere(true); }), 12), mt(status, 6), mt(S.warnband(T('profil_warn'), 14), 12));
+    const fokus = (key, an) => { if (an) R.view.aktiv = key; else if (R.view.aktiv === key) R.view.aktiv = null; };
+    const fokusiere = key => { const i = parseInt(key.slice(1), 10); if (isNaN(i)) return; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; if (f) f.input.focus(); };
+    R.view.beiMass = fokusiere;
 
     function reihenBauen() {
-      schenkelBox.innerHTML = ''; schenkelFelder = []; winkelFelder = [];
+      schenkelReihe.innerHTML = ''; winkelBox.innerHTML = ''; schenkelFelder = []; winkelFelder = [];
+      const gleich = st.schenkel.length <= 3 && !S.vp.quer;
       st.schenkel.forEach((sc, i) => {
-        const f = S.feld(T('profil_schenkel_n', Profil.buchstabe(i)), sc, { onChange: v => { st.schenkel[i] = v; aktualisiere(); } }); schenkelFelder.push(f); schenkelBox.append(mt(f, i === 0 ? 6 : 4));
+        const f = S.feld(T('profil_schenkel_kurz', Profil.buchstabe(i)), sc, { onChange: v => { st.schenkel[i] = v; aktualisiere(); }, onFokus: an => fokus('s' + i, an) }); schenkelFelder.push(f);
+        f.style.flex = gleich ? '1 1 0' : '0 0 112px'; f.style.minWidth = gleich ? '0' : '112px'; schenkelReihe.append(f);
         if (i < st.schenkel.length - 1) {
-          const w = S.feld(T('profil_winkel_n', Profil.buchstabe(i), Profil.buchstabe(i + 1)), st.winkel[i], { onChange: v => { st.winkel[i] = v; aktualisiere(); } }); winkelFelder.push(w);
+          const w = S.feld(T('profil_winkel_n', Profil.buchstabe(i), Profil.buchstabe(i + 1)), st.winkel[i], { onChange: v => { st.winkel[i] = v; aktualisiere(); }, onFokus: an => fokus('w' + i, an) }); winkelFelder.push(w);
           const seg = S.segment([T('profil_links'), T('profil_rechts')], st.links[i] ? 0 : 1, s => { st.links[i] = s === 0; aktualisiere(); });
           const r = h('div', {}, h('div', { class: 'lab', style: { fontSize: '16px', fontWeight: 700, letterSpacing: '.045em', padding: '0 0 4px 2px' }, text: T('profil_richtung') }), seg);
-          schenkelBox.append(mt(S.zweispalt(w, r), 4));
+          winkelBox.append(mt(S.zweispalt(w, r), i === 0 ? 6 : 10));
         }
       });
       S.nachLayout(() => S.autosizeAlle(R.el));
@@ -233,12 +236,13 @@
       gf(radiusF, 'pf_radius'); gf(lf, 'pf_laenge'); gf(sf, 'pf_stueck');
       meldungBox.innerHTML = '';
       if (meld.length) {
-        letztes = null; blass = true; zeichne(); pille.textContent = '-'; zuschnitt.textContent = '-'; summe.textContent = fehlerText(meld[0]); folge.textContent = ''; liste.textContent = '';
-        R.lt.textContent = T('profil_leiste_leer'); R.ld.textContent = fehlerText(meld[0]); speichere(); return;
+        letztes = null; R.cv2.style.opacity = .4; zuschnitt.textContent = '-'; summe.textContent = fehlerText(meld[0]); folge.textContent = ''; liste.textContent = '';
+        R.leiste_leer(fehlerText(meld[0])); speichere(); return;
       }
-      const r = Profil.rechne(e); letztes = r; letzteGueltig = e; blass = false; zeichne();
+      const r = Profil.rechne(e); letztes = r; letzteGueltig = e; R.cv2.style.opacity = 1;
+      R.view.bauer = (a, w, hh, t) => a === 1 ? root.Ze.WB.zuschnitt(e, r, w, hh, t, Profil) : root.Ze.WB.profil(e, w, hh, t, Profil); R.view.baue(true);
       const zs = fmtTrim(r.breite, 1);
-      pille.textContent = T('profil_zuschnitt_kurz', zs); zuschnitt.textContent = T('profil_zuschnitt', zs);
+      zuschnitt.textContent = T('profil_zuschnitt', zs);
       summe.textContent = r.bieg.length ? T('profil_summe', fmtTrim(r.summe, 1), fmt(r.summe - r.breite, 2), String(r.bieg.length)) : T('profil_ohne_biegung');
       const zl = r.bieg.map(b => T('profil_folge_zeile', String(b.nr), b.von, b.nach, fmtTrim(b.oeffnung, 1), T(b.links ? 'profil_links' : 'profil_rechts'), fmt(b.abzug, 2), b.umschlag ? T('profil_folge_umschlag') : ''));
       folge.textContent = zl.join('\n'); folge.style.whiteSpace = 'pre-line'; folge.style.display = zl.length ? '' : 'none';
@@ -246,7 +250,7 @@
       r.kurz.forEach(i => meldungBox.append(mt(S.warnband(T('pw_umschlag', Profil.buchstabe(i)), 14), 6)));
       if (r.ueberRolle) meldungBox.append(mt(S.warnband(T('pw_rolle'), 14), 6)); else if (r.ueberTafel) meldungBox.append(mt(S.warnband(T('pw_tafel'), 14), 6));
       S.werkstoffWarnungen(st.mat).forEach(t => meldungBox.append(mt(S.warnband(t, 14), 6)));
-      R.lt.textContent = T('profil_zuschnitt_kurz', zs); R.ld.textContent = T('profil_leiste_detail', String(e.stueck), fmtTrim(e.laenge, 1), S.fmtKg(r.kg));
+      R.leiste_gueltig(T('w_ergebnis_profil'), r.breite, v => fmtTrim(v, 1) + ' mm');
       speichere();
     }
     function snapshot() {
@@ -257,22 +261,37 @@
       return s;
     }
     const datum = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear(); };
-    async function pdfErstellen() {
-      const e = letzteEingabe, r = letztes;
-      if (!e || !r) { status.textContent = T('status_leer'); return; }
-      status.textContent = '';
-      try {
+    async function blattDatei() {
+      const e = letzteEingabe, r = letztes; if (!e || !r) return null;
+      {
         const c = document.createElement('canvas'), W = 1240, H = 900, ctx = c.getContext('2d'); c.width = W; c.height = H; ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
         zeichneProfil(ctx, e, [40, 120, W - 40, H - 220], 2, 28, false);
         ctx.fillStyle = '#141C26'; ctx.font = '700 40px Roboto, sans-serif'; ctx.textAlign = 'left'; ctx.fillText(T('profil_pdf_titel'), 40, 70);
         ctx.font = '700 34px Roboto, sans-serif'; ctx.fillText(T('profil_zuschnitt', fmtTrim(r.breite, 1)), 40, H - 150); ctx.font = '24px Roboto, sans-serif';
         ctx.fillText(T('profil_stueckliste', S.TA('werkstoffe')[st.mat], fmtTrim(e.dicke, 2), String(e.stueck), fmtTrim(e.laenge, 1), S.fmtM2(r.m2), S.fmtKg(r.kg)), 40, H - 100); ctx.fillText(datum(), 40, H - 60);
         const blob = await new Promise(res => c.toBlob(res, 'image/png'));
-        S.pdfDialog(blob, 'Profil_' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.png', T('profil_share_titel'), m => { status.textContent = m; });
-      } catch (x) { status.textContent = T('status_pdf_fehler'); }
+        return { blob, name: 'Profil_' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.png', titel: T('profil_share_titel') };
+      }
+    }
+    async function pdfErstellen() {
+      if (!letztes) { status.textContent = T('status_leer'); return; }
+      status.textContent = '';
+      try { const d = await blattDatei(); S.pdfDialog(d.blob, d.name, d.titel, m => { status.textContent = m; }); } catch (x) { status.textContent = T('status_pdf_fehler'); }
+    }
+    async function blattTeilen() {
+      if (!letztes) { status.textContent = T('status_leer'); return; }
+      let d; try { d = await blattDatei(); } catch (x) { d = null; }
+      if (!d) { status.textContent = T('status_pdf_fehler'); return; }
+      status.textContent = '';
+      R.teilenFertig(async () => { const r = await S.teilen(d.blob, d.name, d.titel); if (r === 'download') status.textContent = d.name; });
     }
 
     reihenBauen(); modusAnzeigen();
-    return { el: R.el, overlay: { zurueck: true }, nachEinbau() { R.layout(); aktualisiere(); S.autosizeAlle(R.el); S.nachLayout(() => { S.autosizeAlle(R.el); }); S.setzeScroll(R, opt); }, layout() { R.layout(); }, speichere, zerstoere() { speichere(); R.ro.disconnect(); } };
+    if (opt.mehr != null) setzeMehr(opt.mehr);
+    const wunschTab = opt.ansicht === 'zuschnitt' ? 1 : 0;
+    return { el: R.el, overlay: { zurueck: true }, art: 'profil',
+      nachEinbau() { R.layout(); aktualisiere(); R.setzeTab(wunschTab, false); S.autosizeAlle(R.el); S.nachLayout(() => { S.autosizeAlle(R.el); }); S.setzeScroll(R, opt); },
+      kontext() { return { ansicht: R.tab === 1 ? T('ss_zuschnitt') : T('ansicht_skizze'), eingaben: snapshot().replace(/\n/g, ' | ') }; },
+      layout() { R.layout(); }, speichere, zerstoere() { speichere(); R.ro.disconnect(); } };
   };
 })(window);
