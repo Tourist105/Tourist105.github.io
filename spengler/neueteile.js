@@ -6,6 +6,7 @@
   const L = (de, en) => S.sprache() === 'en' ? en : de;
 
   const DEFS = () => ({
+    fallrohr: [['h', 'Gesamthöhe (mm)', 'Total height (mm)', '6000'], ['s', 'Steckung (mm)', 'Insertion (mm)', '50']],
     dachrinne: [['l', 'Länge der Traufe (mm)', 'Length of the eaves (mm)', '10000'], ['w', 'Abwicklung (mm)', 'Girth (mm)', '330'], ['g', 'Gefälle (mm/m)', 'Fall (mm/m)', '5'],
       ['h', 'Halterabstand (mm)', 'Bracket spacing (mm)', '700'], ['d', 'Dilatation alle (mm)', 'Expansion joint every (mm)', '5000'], ['a', 'Ablaufrohre (Anzahl)', 'Downpipes (number)', '1'],
       ['ea', 'Aussenecken (Anzahl)', 'Outside corners (number)', '0'], ['ei', 'Innenecken (Anzahl)', 'Inside corners (number)', '0'], ['v', 'Verschnitt (%)', 'Waste (%)', '5'], ['tb', 'Tafelbreite (mm)', 'Sheet width (mm)', '1000']],
@@ -16,31 +17,35 @@
     kehle: [['l', 'Länge der Kehle (mm)', 'Valley length (mm)', '4000'], ['w', 'Abwicklung (mm)', 'Girth (mm)', '670'], ['a', 'Aufkantung je Seite (mm)', 'Upstand each side (mm)', '15'],
       ['m', 'Höchste Stücklänge (mm)', 'Longest piece (mm)', '3000'], ['u', 'Überlappung (mm)', 'Overlap (mm)', '100'], ['k', 'Kehlwinkel im Blech (Grad)', 'Valley angle in the sheet (degrees)', '130'], ['v', 'Verschnitt (%)', 'Waste (%)', '5']]
   });
-  const PRIMAER = { dachrinne: ['l', 'w', 'g'], mauerabdeckung: ['b', 'l', 'g'], kehle: ['l', 'w', 'a'] };
-  const TITEL = { dachrinne: 'ablauf_dachrinne', mauerabdeckung: 'ablauf_mauerabdeckung', kehle: 'ablauf_kehle' };
+  const PRIMAER = { fallrohr: ['h', 's'], dachrinne: ['l', 'w', 'g'], mauerabdeckung: ['b', 'l', 'g'], kehle: ['l', 'w', 'a'] };
+  const TITEL = { fallrohr: 'ablauf_fallrohr', dachrinne: 'ablauf_dachrinne', mauerabdeckung: 'ablauf_mauerabdeckung', kehle: 'ablauf_kehle' };
   const CHIPS = { dachrinne: 'rinne', mauerabdeckung: 'mauer', kehle: 'kehle' };
+  const FALL_CHIPS = [{ feld: 'h', einheit: 'mm', werte: [3000, 4000, 5000, 6000, 8000], vorgabe: 6000 }, { feld: 's', einheit: 'mm', werte: [30, 40, 50], vorgabe: 50 }];
   const FARBE = { beleg: '#105E32', annahme: '#965000', unsicher: '#B00020' };
 
   S.seiteNeu = function (art, opt) {
     opt = opt || {};
     const defs = DEFS()[art], prim = PRIMAER[art], quer = S.vp.quer, D = root.NEUETEILE_DATEN, norm = NT;
-    const st = { werte: {}, mat: 0, dn: 100, stueck: 5000, mitte: false, streifen: false, notiz: '', mehr: false, ansicht: 0 };
+    const FR = root.Fallrohr;
+    const st = { werte: {}, mat: 0, dn: 100, stueck: 5000, mitte: false, streifen: false, notiz: '', mehr: false, ansicht: 0, teile: [] };
     const pref = k => S.lies('neu_' + art + '.' + k), setp = (k, v) => S.schreibe('neu_' + art + '.' + k, v);
     for (const [k, , , v] of defs) st.werte[k] = pref(k) != null ? pref(k) : v;
     st.mat = Math.min(norm.werkstoffe.length - 1, Math.max(0, +pref('mat') || 0)); st.dn = +pref('dn') || 100; st.stueck = +pref('stueck') || 5000;
+    if (art === 'fallrohr') st.teile = FR.teileVon(pref('teile')) || FR.STANDARD();
     st.mitte = pref('mitte') === 'true'; st.streifen = pref('streifen') === 'true'; st.notiz = pref('notiz') || ''; st.mehr = pref('mehr') === 'true';
     if (opt.werte) for (const k in opt.werte) {
       if (k === 'mat') st.mat = Math.min(norm.werkstoffe.length - 1, Math.max(0, +opt.werte[k]));
       else if (k === 'dn') st.dn = +opt.werte[k]; else if (k === 'stueck') st.stueck = +opt.werte[k];
+      else if (k === 'teile' && art === 'fallrohr') { const tv = FR.teileVon(String(opt.werte[k]).replace(/_/g, ':').replace(/,/g, ';')); if (tv) st.teile = tv; }
       else if (k === 'mitte') st.mitte = opt.werte[k] === '1'; else if (k === 'streifen') st.streifen = opt.werte[k] === '1';
       else if (k in st.werte) st.werte[k] = opt.werte[k];
     }
     if (opt.mehr != null) st.mehr = opt.mehr;
-    const speichere = () => { for (const k in st.werte) setp(k, st.werte[k]); setp('mat', st.mat); setp('dn', st.dn); setp('stueck', st.stueck); setp('mitte', st.mitte); setp('streifen', st.streifen); setp('notiz', st.notiz); setp('mehr', st.mehr); };
+    const speichere = () => { for (const k in st.werte) setp(k, st.werte[k]); setp('mat', st.mat); setp('dn', st.dn); setp('stueck', st.stueck); setp('mitte', st.mitte); setp('streifen', st.streifen); setp('notiz', st.notiz); if (art === 'fallrohr') setp('teile', FR.teileText(st.teile)); setp('mehr', st.mehr); };
 
     const arten = art === 'kehle' ? [1, 2, 3] : [1, 2];
     const artenAlle = quer ? arten : [0].concat(arten);
-    const namen = artenAlle.map(a => a === 0 ? S.T('ss_uebersicht') : a === 1 ? (art === 'dachrinne' ? L('Ansicht', 'Side view') : L('Querschnitt', 'Section')) : a === 2 ? L('Abwicklung', 'Girth') : L('Stücke', 'Pieces'));
+    const namen = artenAlle.map(a => a === 0 ? S.T('ss_uebersicht') : a === 1 ? (art === 'dachrinne' || art === 'fallrohr' ? L('Ansicht', 'Side view') : L('Querschnitt', 'Section')) : a === 2 ? (art === 'fallrohr' ? L('Zuschnitt', 'Cutting') : L('Abwicklung', 'Girth')) : L('Stücke', 'Pieces'));
     const felder = {};
     const zahl = k => { const v = S.parseNum(st.werte[k] == null ? '' : st.werte[k]); return v == null ? NaN : v; };
     const ganz = k => { const v = zahl(k); return isNaN(v) || v > 1000 ? -1 : Math.trunc(v); };
@@ -99,7 +104,7 @@
     const chipKarte = h('div', {});
     chipKarte.append(S.text(L('Übliche Werte', 'Usual values'), 18, true), mt(S.text(L('Antippen setzt das Mass. Die Auswahl sind die gebräuchlichen Varianten, nicht ein Vorschlag von Alex.', 'Tap to set the dimension. These are the common variants, not a suggestion from Alex.'), 13, false), 2));
     chipKarte.lastChild.style.color = 'var(--text2)';
-    for (const cr of D.chips[CHIPS[art]]) {
+    for (const cr of (art === 'fallrohr' ? FALL_CHIPS : D.chips[CHIPS[art]])) {
       const d = defs.find(x => x[0] === cr.feld); if (!d) continue;
       const lab = mt(S.text(L(d[1], d[2]), 14, true), 10); lab.style.color = 'var(--text2)';
       const zeile = h('div', { style: { display: 'flex', overflowX: 'auto', marginTop: '4px' } });
@@ -111,15 +116,23 @@
     }
     const chipsAkt = () => { for (const [cr, w, b] of chipTasten) b.classList.toggle('an', Math.abs(zahl(cr.feld) - w) < 1e-9); };
 
+    // Eine Reihe grosser Chips [Text, Wert]
+    const chipZeile = (werte, aktuell, hoehe, f) => {
+      const z = h('div', { style: { display: 'flex', overflowX: 'auto', marginTop: '4px' } });
+      for (const [txt, w] of werte) z.append(h('button', { class: 'chip' + (Math.abs(aktuell - w) < 1e-9 ? ' an' : ''), text: txt, style: { marginRight: '6px', minWidth: '64px', flex: '0 0 auto', minHeight: hoehe + 'px' }, onclick: () => f(w) }));
+      return z;
+    };
+
     // Normteile waehlen
     function baueNormBox() {
       normBox.innerHTML = '';
       const wk = norm.werkstoffe[st.mat];
       normBox.append(S.text(norm.D.hinweis, 13, false));
       normBox.lastChild.style.color = 'var(--text2)';
-      normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), mt(S.waehler(norm.werkstoffe.map(w => w.name), st.mat, i => { st.mat = i; baueNormBox(); aktualisiere(); }), 4));
-      const dicke = art === 'dachrinne' ? wk.rinne : art === 'mauerabdeckung' ? wk.mauer : wk.kehle;
-      normBox.append(statusZeile(dicke.s, L('Dicke ', 'Thickness ') + nz(dicke.v, 2) + ' mm. ' + dicke.q));
+      normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), chipZeile(norm.werkstoffe.map((w, i) => [w.name, i]), st.mat, 56, v => { if (v !== st.mat) { st.mat = v; baueNormBox(); aktualisiere(); } }));
+      if (art === 'fallrohr') normBox.append(statusZeile(wk.rohrDicke.s, L('Dicke ', 'Thickness ') + wk.rohrDicke.fuer(st.dn) + '. ' + wk.rohrDicke.q));
+      else { const dicke = art === 'dachrinne' ? wk.rinne : art === 'mauerabdeckung' ? wk.mauer : wk.kehle;
+        normBox.append(statusZeile(dicke.s, L('Dicke ', 'Thickness ') + nz(dicke.v, 2) + ' mm. ' + dicke.q)); }
       if (art === 'dachrinne') {
         normBox.append(mt(S.text(L('Rinnenstück (Länge)', 'Gutter piece (length)'), 14, true), 12));
         const z1 = h('div', { style: { display: 'flex', overflowX: 'auto', marginTop: '4px' } });
@@ -133,10 +146,71 @@
         normBox.append(z2);
         const dd = norm.dnVon(st.dn); if (dd) normBox.append(statusZeile(dd.s, 'Nenn ' + dd.dn + ': ' + dd.q));
       }
+      if (art === 'fallrohr') {
+        normBox.append(mt(S.text(L('Fallrohr (Nennweite)', 'Downpipe (nominal size)'), 14, true), 12), chipZeile(norm.durchmesser.map(d => [String(d.dn), d.dn]), st.dn, 48, v => { st.dn = v; baueNormBox(); baueTeileBox(); aktualisiere(); }));
+        const dd = norm.dnVon(st.dn); if (dd) normBox.append(statusZeile(dd.s, 'Nenn ' + dd.dn + ': ' + dd.q));
+      }
     }
     baueNormBox();
 
-    const annahmenListe = () => art === 'dachrinne' ? K.RinneSkizze.annahmenListe() : art === 'mauerabdeckung' ? K.MauerSkizze.annahmenListe() : K.KehleSkizze.annahmenListe();
+    // ---- Fallrohr: Bauteile von oben nach unten
+    const teileBox = h('div', {});
+    const typName = tp => ({ rohr: L('Rohrstück', 'Pipe section'), versatz: L('Versatz (2 Bögen)', 'Offset (2 bends)'), bogen: L('Bogen am Ende', 'Bend at the end'), abzweig: L('Abzweiger (Hosenrohr)', 'Branch (trouser pipe)'),
+      reduktion: L('Reduktion', 'Reducer'), muffe: L('Muffe', 'Coupler'), schelle: L('Schelle', 'Clamp'), endstueck: L('Endstück', 'End piece') })[tp];
+    const kurzName = tp => ({ rohr: L('Rohr', 'Pipe'), versatz: L('Versatz', 'Offset'), bogen: L('Bogen', 'Bend'), abzweig: L('Abzweiger', 'Branch'), reduktion: L('Reduktion', 'Reducer'),
+      muffe: L('Muffe', 'Coupler'), schelle: L('Schelle', 'Clamp'), endstueck: L('Endstück', 'End piece') })[tp];
+    const frBeschr = () => ({ name: kurzName, ansicht: L('Ansicht', 'View'), zuschnitt: L('Zuschnitt', 'Cutting'), rest: L('Rest', 'rest'), achs: L('Achs', 'axis'), leer: L('Kein Rohrstück', 'No pipe section') });
+    const fallEin = () => ({ hoehe: zahl('h'), steckung: zahl('s'), dn: st.dn, teile: st.teile.slice() });
+    const dnVor = i => { let d = st.dn; for (let j = 0; j < i; j++) if (st.teile[j].typ === 'reduktion' && isFinite(st.teile[j].w)) d = Math.trunc(st.teile[j].w); return d; };
+    const teileGeaendert = () => { baueTeileBox(); aktualisiere(); };
+    const neuesTeil = tp => tp === 'versatz' ? FR.FT(tp, 72, 250) : tp === 'bogen' ? FR.FT(tp, 40) : tp === 'abzweig' ? FR.FT(tp, 72)
+      : tp === 'reduktion' ? FR.FT(tp, Math.max(60, ...norm.durchmesser.filter(d => d.dn < dnVor(st.teile.length)).map(d => d.dn))) : FR.FT(tp);
+    const knopf = (txt, an, cd, f) => h('button', { class: 'chip', text: txt, 'aria-label': cd, disabled: !an, style: { width: '44px', height: '44px', minWidth: '0', padding: '0', marginLeft: '4px', opacity: an ? 1 : .35 }, onclick: f });
+    function baueTeileBox() {
+      teileBox.innerHTML = '';
+      for (const k of Object.keys(felder)) if (/^p\d/.test(k)) delete felder[k];
+      if (!st.teile.length) { const e = S.text(L('Noch kein Bauteil. Unten eines hinzufügen.', 'No part yet. Add one below.'), 14, false); e.style.color = 'var(--text2)'; teileBox.append(e); }
+      st.teile.forEach((p, i) => {
+        const k = h('div', { style: { border: '1px solid var(--linie)', borderRadius: '14px', padding: '8px 12px 10px', marginTop: i ? '10px' : '0' } });
+        const kopfZ = h('div', { style: { display: 'flex', alignItems: 'center' } }, h('div', { style: { flex: '1' } }, S.text((i + 1) + '. ' + typName(p.typ), 16, true)),
+          knopf('↑', i > 0, L('nach oben', 'move up'), () => { const x = st.teile[i]; st.teile[i] = st.teile[i - 1]; st.teile[i - 1] = x; teileGeaendert(); }),
+          knopf('↓', i < st.teile.length - 1, L('nach unten', 'move down'), () => { const x = st.teile[i]; st.teile[i] = st.teile[i + 1]; st.teile[i + 1] = x; teileGeaendert(); }),
+          knopf('✕', true, L('Bauteil entfernen', 'Remove part'), () => { st.teile.splice(i, 1); teileGeaendert(); }));
+        k.append(kopfZ);
+        const key = 'p' + i;
+        const zahlFeld = (label, wert, hint, set) => {
+          const f = S.feld(label, isNaN(wert) ? '' : nz(wert, 2).replace(',', '.'), { onChange: v => { const x = v.trim() === '' ? NaN : (S.parseNum(v) == null ? -1 : S.parseNum(v)); st.teile[i] = set(x); aktualisiere(); }, onFokus: an => fokus(key, an) });
+          f.input.placeholder = hint; felder[key] = f; k.append(mt(f, 6));
+        };
+        const winkelChips = liste => k.append(mt(chipZeile(liste.map(g => [nz(g, 0) + '°', g]), p.w, 48, w => { st.teile[i] = Object.assign({}, st.teile[i], { w }); teileGeaendert(); }), 6));
+        const dnJetzt = dnVor(i), mset = v => Object.assign({}, st.teile[i], { m: v });
+        switch (p.typ) {
+          case 'rohr': zahlFeld(L('Länge (mm), leer = Rest', 'Length (mm), empty = rest'), p.m, L('Rest', 'rest'), mset); break;
+          case 'versatz': winkelChips(norm.winkel.map(w => w.grad)); zahlFeld(L('Achsmass (mm)', 'Axis offset (mm)'), p.m, '', mset); break;
+          case 'bogen': winkelChips(norm.winkel.map(w => w.grad)); break;
+          case 'abzweig': winkelChips((norm.D.abzweig || []).map(a => a.grad)); zahlFeld(L('Bauhöhe (mm), leer = Katalog', 'Height (mm), empty = catalog'), p.m, nz((FR.abzweig(p.w) || { bh: 0 }).bh, 0), mset); break;
+          case 'reduktion': {
+            const ziele = norm.durchmesser.filter(d => d.dn < dnJetzt);
+            if (!ziele.length) k.append(mt(S.text(L('Kleiner als Nenn ' + dnJetzt + ' gibt es im Katalog nicht.', 'There is nothing smaller than ' + dnJetzt + ' in the catalog.'), 14, false), 6));
+            else k.append(mt(chipZeile(ziele.map(d => [dnJetzt + ' → ' + d.dn, d.dn]), p.w, 48, w => { st.teile[i] = Object.assign({}, st.teile[i], { w }); teileGeaendert(); }), 6));
+            zahlFeld(L('Baulänge (mm), leer = Katalog', 'Length (mm), empty = catalog'), p.m, nz(Math.max(FR.muffe(dnJetzt), FR.muffe(Math.trunc(p.w))), 0), mset); break;
+          }
+          case 'muffe': zahlFeld(L('Baulänge (mm), leer = Katalog', 'Length (mm), empty = catalog'), p.m, nz(FR.muffe(dnJetzt), 0), mset); break;
+          case 'endstueck': zahlFeld(L('Baulänge (mm), leer = 0', 'Length (mm), empty = 0'), p.m, '0', mset); break;
+          default: { const e = S.text(L('Wird gezählt, braucht keine Höhe.', 'Is counted, needs no height.'), 14, false); e.style.color = 'var(--text2)'; k.append(mt(e, 4)); }
+        }
+        teileBox.append(k);
+      });
+      teileBox.append(mt(S.text(L('Bauteil hinzufügen', 'Add part'), 15, true), 14));
+      for (let a = 0; a < FR.TYPEN.length; a += 2) {
+        const r = h('div', { style: { display: 'flex', marginTop: '8px' } });
+        FR.TYPEN.slice(a, a + 2).forEach((tp, j) => r.append(h('button', { class: 'chip', text: '+ ' + typName(tp), style: { flex: '1', minHeight: '56px', marginLeft: j ? '8px' : '0' }, onclick: () => { st.teile.push(neuesTeil(tp)); teileGeaendert(); } })));
+        teileBox.append(r);
+      }
+    }
+    if (art === 'fallrohr') baueTeileBox();
+
+    const annahmenListe = () => art === 'fallrohr' ? FR.annahmenListe() : art === 'dachrinne' ? K.RinneSkizze.annahmenListe() : art === 'mauerabdeckung' ? K.MauerSkizze.annahmenListe() : K.KehleSkizze.annahmenListe();
     const belegText = b => b === 'QUELLE' ? NT.statusText('beleg') : b === 'HERLEITUNG' ? L('Eigene Herleitung', 'Own derivation') : NT.statusText('annahme');
     const annBox = h('div', {});
     annahmenListe().forEach((a, i) => {
@@ -144,7 +218,7 @@
       const q = h('div', { style: { fontSize: '12.5px', marginTop: '2px', color: a.beleg === 'ANNAHME' ? FARBE.annahme : 'var(--text2)' }, text: belegText(a.beleg) + (a.quelle.trim() ? ': ' + a.quelle : '') }); annBox.append(q);
     });
 
-    inh.append(mt(S.karte(chipKarte), 10), mt(S.karte(S.text(L('Normteile wählen', 'Choose standard parts'), 18, true), mt(normBox, 8)), 10),
+    inh.append(...(art === 'fallrohr' ? [mt(S.karte(S.text(L('Bauteile von oben nach unten', 'Parts from top to bottom'), 18, true), mt(teileBox, 8)), 10)] : []), mt(S.karte(chipKarte), 10), mt(S.karte(S.text(L('Normteile wählen', 'Choose standard parts'), 18, true), mt(normBox, 8)), 10),
       mt(S.karte(S.text(S.T('ss_ergebnis'), 18, true), detail), 10), mt(hinweisBox, 10), mt(S.karte(S.text(L('Materialliste', 'Bill of materials'), 18, true), mt(materialBox, 8)), 10),
       mt(S.karte(S.text(L('Annahmen und Quellen', 'Assumptions and sources'), 18, true), mt(annBox, 8)), 10),
       mt(S.karte(S.feld(S.T('ss_notiz'), st.notiz, { text: true, ende: true, onChange: v => { st.notiz = v; } })), 10),
@@ -164,7 +238,7 @@
         if (!(z && z.elems.some(e => e.key === key))) for (let i = 0; i < namen.length; i++) if (i !== st.ansicht) { const q = view.zeichnungFuer(i); if (q && q.elems.some(e => e.key === key)) { waehleAnsicht(i); break; } }
       }
     }
-    function fokusiere(key) { const f = felder[key]; if (!f) return; if (!st.mehr && !prim.includes(key)) setzeMehr(true); f.input.focus(); }
+    function fokusiere(key) { const f = felder[key]; if (!f) return; if (!st.mehr && !prim.includes(key) && art !== 'fallrohr') setzeMehr(true); f.input.focus(); }
     view.beiMass = fokusiere; view.beiLeerTipp = () => vollbild();
     function vollbild() { const a = st.ansicht; S.vollbildZeigen((w, hh) => view.zeichnungMit(a, w, hh), view.aktiv); }
 
@@ -172,10 +246,14 @@
     const fehlerText = m => {
       switch (m.fehler) {
         case 'NICHT_POSITIV': return S.T('ss_e_pos'); case 'NEGATIV': return S.T('ss_e_neg'); case 'ZU_GROSS': return S.T('ss_e_gross');
-        case 'WINKEL_BEREICH': return art === 'kehle' ? L('Der Winkel muss zwischen 60 und 180 Grad liegen.', 'The angle must be between 60 and 180 degrees.') : L('Das Gefälle muss zwischen 0 und 45 Grad liegen.', 'The slope must be between 0 and 45 degrees.');
+        case 'WINKEL_BEREICH': if (art === 'fallrohr') return L('Der Winkel muss zwischen 0 und 90 Grad liegen.', 'The angle must be between 0 and 90 degrees.'); return art === 'kehle' ? L('Der Winkel muss zwischen 60 und 180 Grad liegen.', 'The angle must be between 60 and 180 degrees.') : L('Das Gefälle muss zwischen 0 und 45 Grad liegen.', 'The slope must be between 0 and 45 degrees.');
         case 'KEHLE_AUFKANTUNG_ZU_GROSS': return L('Die Aufkantung ist zu gross: zwei Aufkantungen sind so gross wie die ganze Abwicklung.', 'The upstand is too large: two upstands are as large as the whole girth.');
         case 'STUECK_KUERZER_ALS_UEBERLAPPUNG': return L('Ein Stück darf nicht kürzer sein als die Überlappung.', 'A piece must not be shorter than the overlap.');
         case 'VERSCHNITT_BEREICH': return L('Der Verschnitt muss zwischen 0 und 50 Prozent liegen.', 'Waste must be between 0 and 50 percent.');
+        case 'FALLROHR_ZU_HOCH': return L('Die Bauteile brauchen mehr Höhe als die Gesamthöhe. Ein Bauteil kürzen oder entfernen, oder die Gesamthöhe erhöhen.', 'The parts need more height than the total height. Shorten or remove a part, or raise the total height.');
+        case 'FALLROHR_ACHS_ZU_KLEIN': return L('Das Achsmass ist zu klein: zwei Bögen brauchen mehr Versatz.', 'The axis offset is too small: two bends need more offset.');
+        case 'FALLROHR_BOGEN_ENDE': return L('Ein einzelner Bogen gehört ans Ende. Danach nur noch Schelle oder Endstück.', 'A single bend belongs at the end. Only a clamp or end piece may follow.');
+        case 'FALLROHR_REDUKTION': return L('Die Reduktion muss auf eine kleinere Nennweite aus dem Katalog gehen.', 'The reducer must go to a smaller nominal size from the catalog.');
       }
       return String(m.fehler);
     };
@@ -184,7 +262,7 @@
     const datum = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear(); };
     const annahmenKurz = () => L('Annahme, Alex prüft: ', 'Assumption, Alex to check: ') + annahmenListe().filter(a => a.beleg === 'ANNAHME').map(a => a.text + ' (' + a.wert + ')').join('. ') + '.';
     const blattTexte = (label, gross, zeilen, legende) => ({ titel: S.T(TITEL[art]), datum: datum(), kunde: S.T('ss_kunde'), ergebnisLabel: label, gross, zeilen, annahmenTitel: S.T('ss_annahmen_titel'), annahmen: annahmenKurz(), legende,
-      aufrissTitel: L('Ansicht', 'View'), grundrissTitel: L('Abwicklung', 'Girth'), zuschnittTitel: L('Stücke', 'Pieces'), stutzenTitel: '', faltlinie: S.T('ss_leg_falz'), fuss: S.T('ss_fuss') });
+      aufrissTitel: L('Ansicht', 'View'), grundrissTitel: L('Abwicklung', 'Girth'), zuschnittTitel: art === 'fallrohr' ? L('Zuschnitt', 'Cutting') : L('Stücke', 'Pieces'), stutzenTitel: '', faltlinie: S.T('ss_leg_falz'), fuss: S.T('ss_fuss') });
     const matTexte = () => ({ summen: L('Summen', 'Totals'), hinweise: L('Hinweise', 'Notes'), annahmen: L('Annahmen und Quellen', 'Assumptions and sources'), status: s => NT.statusText(s), beleg: b => belegText(b) });
     const wahl = () => ({ dn: st.dn, werkstoff: norm.werkstoffe[st.mat].id, rinneStueck: st.stueck, rohrStueck: 2000 });
 
@@ -202,7 +280,7 @@
     const Neu = Ze.Neu;
 
     function aktualisiere() {
-      const meld = art === 'dachrinne' ? K.RinneSkizze.pruefe(rinneEin()) : art === 'mauerabdeckung' ? K.MauerSkizze.pruefe(mauerEin()) : K.KehleSkizze.pruefe(kehleEin());
+      const meld = art === 'fallrohr' ? FR.pruefe(fallEin()) : art === 'dachrinne' ? K.RinneSkizze.pruefe(rinneEin()) : art === 'mauerabdeckung' ? K.MauerSkizze.pruefe(mauerEin()) : K.KehleSkizze.pruefe(kehleEin());
       for (const k in felder) { const m = meld.find(x => x.feld === k); felder[k].fehler(m ? fehlerText(m) : null); }
       hinweisBox.innerHTML = ''; chipsAkt();
       if (meld.length) {
@@ -212,7 +290,18 @@
       }
       cv2.style.opacity = 1; teilenKnopf.disabled = false; teilenKnopf.style.opacity = 1; gueltig = true;
       const lb = beschr(); let ml, hinw = [], basis;
-      if (art === 'dachrinne') {
+      if (art === 'fallrohr') {
+        const f = FR.Fallrohr(fallEin()), fb = frBeschr();
+        view.bauer = (a, w, hh, t) => a === 0 ? FR.blatt(f, w, hh, t, fb) : a === 1 ? FR.ansicht(f, w, hh, t, fb) : FR.zuschnitt(f, w, hh, t, fb);
+        ml = FR.material(f, wahl());
+        const lm = fmtTrim(f.laufmeterRohr, 2), sz = ml.zeilen.find(x => x.teil.startsWith('Rohrschelle')), schellen = sz ? Math.trunc(sz.menge) : 0;
+        zeilen = [L('Rohr: ' + f.schnitte.length + ' Zuschnitte, ' + lm + ' m', 'Pipe: ' + f.schnitte.length + ' cuts, ' + lm + ' m'),
+          L('Bögen: ' + f.bogenAnzahl + ', Schellen: ' + schellen, 'Bends: ' + f.bogenAnzahl + ', clamps: ' + schellen),
+          f.nRest > 0 ? L('Rest je Rohrstück: ' + fmtTrim(f.restLaenge, 1) + ' mm', 'Rest per pipe section: ' + fmtTrim(f.restLaenge, 1) + ' mm') : L('Gesamthöhe ' + fmtTrim(f.e.hoehe, 1) + ' mm', 'Total height ' + fmtTrim(f.e.hoehe, 1) + ' mm')];
+        grossText = lm + ' m'; ergLabel = L('Rohr, nur die Zuschnitte', 'Pipe, cuts only');
+        zaehleHoch(f.laufmeterRohr, v => fmtTrim(v, 2) + ' m');
+        basis = () => [Bl.neu.fallrohr(f, blattTexte(ergLabel, grossText, zeilen, [['STUTZEN', L('Rohr', 'Pipe')], ['BLECH', L('Bogen, Abzweiger', 'Bend, branch')], ['AKZENT', L('Reduktion', 'Reducer')], ['AUFKANT2', L('Muffe', 'Coupler')], ['UMSCHLAG', L('Schelle', 'Clamp')]]), fb)];
+      } else if (art === 'dachrinne') {
         const r = K.RinneSkizze(rinneEin());
         view.bauer = (a, w, hh, t) => a === 0 ? Neu.rinneBlatt(r, w, hh, t, lb) : a === 1 ? Neu.rinneAnsicht(r, w, hh, t, lb) : Neu.rinneAbwicklung(r, w, hh, t, lb);
         ml = NT.rinne(r, wahl());
@@ -266,6 +355,7 @@
     const snapshot = () => {
       let s = ''; for (const k in st.werte) s += k + '=' + st.werte[k] + ' ';
       s += 'werkstoff=' + norm.werkstoffe[st.mat].id + ' dn=' + st.dn + ' stueck=' + Math.trunc(st.stueck);
+      if (art === 'fallrohr') s += ' teile=' + FR.teileText(st.teile);
       if (art === 'dachrinne') s += ' ablauf=' + (st.mitte ? 'mitte' : 'ende'); if (art === 'mauerabdeckung') s += ' befestigung=' + (st.streifen ? 'eingehaengt' : 'haften');
       if (letzteListe) for (const z of letzteListe.zeilen) s += '\n' + NT.zeile(z);
       return s;
@@ -294,7 +384,7 @@
       const insTop = S.inset('top'), insBot = S.inset('bottom');
       el.style.paddingBottom = (vp.tastatur ? Math.max(vp.ime, 0) : insBot) + 'px';
       if (!quer) {
-        const wunsch = vp.voll * (vp.tastatur ? 0.52 : 0.80);
+        const wunsch = vp.voll * (vp.tastatur ? 0.52 : art === 'fallrohr' ? 0.62 : 0.80);
         const frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
         let kh = wunsch; if (frei > 0) kh = Math.min(wunsch, Math.max(300, frei - 96));
         kopf.style.height = kh + 'px';
@@ -307,6 +397,7 @@
     const ro = new ResizeObserver(() => view.groesse(karte.clientWidth, karte.clientHeight)); ro.observe(karte);
 
     setzeMehr(st.mehr);
+    if (art === 'fallrohr') { mehrKnopf.style.display = 'none'; mehrBox.style.display = 'none'; }
     const nr = { uebersicht: 0, aufriss: 1, querschnitt: 1, ansicht: 1, grundriss: 2, abwicklung: 2, zuschnitt: 2, stuecke: 3 }[opt.ansicht];
     if (nr != null) { const idx = artenAlle.indexOf(nr); st.ansicht = idx >= 0 ? idx : 0; }
     view.ansicht = st.ansicht; zeigeChips();
