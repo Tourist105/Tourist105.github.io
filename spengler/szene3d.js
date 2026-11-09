@@ -437,8 +437,56 @@
     const rad2 = g => g * PI / 180;
 
     // Offene Profile (Halbkreis usw.) laengs eines Pfades: je zwei benachbarte Profile ergeben ein Band aus Vierecken
-    function band(p0, p1, art, inst, farbe, ordnung, aus) {
-      for (let k = 0; k < p0.length - 1; k++) aus.push(WF([p0[k], p0[k + 1], p1[k + 1], p1[k]], inst, art, false, null, true, farbe, ordnung, null));
+    function band(p0, p1, art, inst, farbe, ordnung, aus, beide) {
+      for (let k = 0; k < p0.length - 1; k++) {
+        const q = [p0[k], p0[k + 1], p1[k + 1], p1[k]];
+        aus.push(WF(q, inst, art, false, null, true, farbe, ordnung, null));
+        if (beide) aus.push(WF(q.slice().reverse(), inst, art, false, null, true, farbe, ordnung, null));   // beide Seiten sichtbar (Rueckseitenauswahl)
+      }
+    }
+
+    // Mauerabdeckung: abgekantetes Blechprofil ueber einem Mauerkoerper, Tropfkanten, Stossstellen (Ueberlappung) und Dilatationen
+    function mauer(m) {
+      const e = m.e, L = e.laenge, kq = max(1, min(5, L / (5 * (e.mauerBreite + 2 * e.ueberstand)))), b = e.mauerBreite * kq, u = e.ueberstand * kq, sh = e.schenkel * kq, t = min(max(e.abkantung, 0) * kq, max(u - 1, 0)), f = [], masse = [];   // Querschnitt bei langen Mauern bis 5-fach ueberhoeht
+      const tg = tan(e.gefaelle * PI / 180), dick = max(2, b * 0.012), hw = max(b * 0.8, 120), c = dick * 1.4;
+      const yA = -b / 2 - u, yB = b / 2 + u, zA = c, zB = c + (yB - yA) * tg;
+      const P = [[yA + t, zA - sh], [yA, zA - sh], [yA, zA], [yB, zB], [yB, zB - sh], [yB - t, zB - sh]];
+      const versch = (Q, dist) => Q.map((q, i) => {
+        const nrm = (a, b2) => { const dy = b2[0] - a[0], dz = b2[1] - a[1], l = Math.hypot(dy, dz) || 1; return [-dz / l, dy / l]; };
+        const n1 = i > 0 ? nrm(Q[i - 1], q) : null, n2 = i < Q.length - 1 ? nrm(q, Q[i + 1]) : null;
+        let nx = (n1 ? n1[0] : 0) + (n2 ? n2[0] : 0), nz2 = (n1 ? n1[1] : 0) + (n2 ? n2[1] : 0); const l = Math.hypot(nx, nz2) || 1;
+        return [q[0] + nx / l * dist, q[1] + nz2 / l * dist];
+      });
+      const Pin = versch(P, -dick), Pout = versch(P, dick * 0.6);
+      const at = (Q, x) => Q.map(q => [x, q[0], q[1]]);
+      // Mauerkoerper
+      const wf = rgb(214, 196, 170), wt = rgb(200, 182, 156), y0 = -b / 2, y1 = b / 2;
+      flach([[0, y0, 0], [L, y0, 0], [L, y1, 0], [0, y1, 0]], 'WAND', 9, wt, -1, true, f);
+      flach([[0, y0, -hw], [L, y0, -hw], [L, y0, 0], [0, y0, 0]], 'WAND', 9, wf, -1, true, f);
+      flach([[0, y1, -hw], [L, y1, -hw], [L, y1, 0], [0, y1, 0]], 'WAND', 9, wf, -1, true, f);
+      flach([[0, y0, -hw], [0, y1, -hw], [0, y1, 0], [0, y0, 0]], 'WAND', 9, wf, -1, true, f);
+      flach([[L, y0, -hw], [L, y1, -hw], [L, y1, 0], [L, y0, 0]], 'WAND', 9, wf, -1, true, f);
+      const n = max(1, m.stuecke), pl = e.stueckLaenge;
+      for (let k = 0; k < n; k++) {
+        const x0 = k * pl, x1 = k === n - 1 ? L : min(L, (k + 1) * pl), farbe = k % 2 === 0 ? rgb(150, 175, 205) : rgb(190, 208, 228);
+        band(at(Pout, x0), at(Pout, x1), 'BOGEN_ENDE', k, farbe, 0, f, true);
+        band(at(Pin, x0), at(Pin, x1), 'BOGEN_ENDE', k, hex('#8FA6C2'), 0, f, true);
+        band(at(Pout, x0), at(Pin, x0), 'BOGEN_ENDE', k, farbe, 0, f, true);
+        band(at(Pout, x1), at(Pin, x1), 'BOGEN_ENDE', k, farbe, 0, f, true);
+      }
+      const ov = max(b * 0.05, 12);
+      const streifen = (x, br, farbe, inst) => { const a = versch(P, dick * 1.8 + dick * 0.6), xa = max(0, x - br / 2), xb = min(L, x + br / 2); band(at(a, xa), at(a, xb), 'BOGEN_MITTE', inst, farbe, 1, f, true); band(at(Pout, xa), at(a, xa), 'BOGEN_MITTE', inst, farbe, 1, f, true); band(at(Pout, xb), at(a, xb), 'BOGEN_MITTE', inst, farbe, 1, f, true); };
+      for (let k = 1; k < n; k++) streifen(k * pl, ov, SF.UMSCHLAG, 20 + k);
+      for (let k = 1; k <= m.dilatationen; k++) streifen(min(L, k * e.dilatationAbstand), ov * 1.8, rgb(226, 128, 20), 40 + k);
+      const xe = L, zl = min(zA, zB) - sh;
+      masse.push(M('l', [0, yA, zA - sh - hw * 0.0], [L, yA, zA - sh], [0, -b * 0.25, -hw * 0.12], L));
+      masse.push(M('b', [xe, y0, -hw * 0.1], [xe, y1, -hw * 0.1], [0, 0, -hw * 0.2], e.mauerBreite));
+      masse.push(M('u', [xe, yA, zl], [xe, y0, zl], [0, 0, -hw * 0.28], e.ueberstand));
+      masse.push(M('s', [xe, yA, zA - sh], [xe, yA, zA], [0, -b * 0.22, 0], e.schenkel));
+      if (e.abkantung > 0) masse.push(M('t', [xe, yA + t / 2, zA - sh], null, [0, 0, -hw * 0.06], e.abkantung, '', '', false));
+      masse.push(M('g', [xe, 0, (zA + zB) / 2 + dick], null, [0, 0, hw * 0.1], e.gefaelle, '', '°', true));
+      if (n > 1 || pl < L) masse.push(M('p', [0, yB, zB], [min(pl, L), yB, zB], [0, b * 0.18, hw * 0.1], min(pl, L)));
+      return { szene: festeSzene(f, null), masse };
     }
     // Dachrinne: halbrunde Rinne, Laenge und Abwicklung echt, Querschnitt und Gefaelle fuer die Lesbarkeit ueberhoeht
     function dachrinne(rn) {
@@ -471,7 +519,7 @@
       if (rn.halter > 1) masse.push(M('h', [0, rd * 1.2, zAt(0)], [min(e.halterAbstand, L), rd * 1.2, zAt(min(e.halterAbstand, L))], [0, 0, rd * 0.5], e.halterAbstand));
       return { szene: festeSzene(f, null), masse };
     }
-    return { schwanenhals, dunstrohr, fallrohr, dachrinne };
+    return { schwanenhals, dunstrohr, fallrohr, dachrinne, mauer };
   })();
 
   function festeSzene(liste, kamin) { return { kamin, flaechen: () => liste }; }
