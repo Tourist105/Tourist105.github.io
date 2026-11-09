@@ -193,5 +193,5 @@
   const mauerBlatt = (m, w, h, t, lb) => neuKombi(w, h, t, 0.6, lb.querschnitt, lb.abwicklung, (ww, hh) => mauerQuerschnitt(m, ww, hh, t, lb), (ww, hh) => mauerAbwicklung(m, ww, hh, t, lb), 8 * t + 30);
   const kehleBlatt = (k, w, h, t, lb) => neuKombi(w, h, t, 0.6, lb.querschnitt, lb.abwicklung, (ww, hh) => kehleQuerschnitt(k, ww, hh, t, lb), (ww, hh) => kehleAbwicklung(k, ww, hh, t, lb), 8 * t + 30);
 
-  Ze.Neu = { kombi: neuKombi, NEU_BESCHR_DE, rinneAbwicklung, rinneAnsicht, rinneBlatt, mauerQuerschnitt, mauerAbwicklung, mauerBlatt, kehleQuerschnitt, kehleAbwicklung, kehleStuecke, kehleBlatt };
+  Ze.Neu = { NEU_BESCHR_DE, rinneAbwicklung, rinneAnsicht, rinneBlatt, mauerQuerschnitt, mauerAbwicklung, mauerBlatt, kehleQuerschnitt, kehleAbwicklung, kehleStuecke, kehleBlatt };
 })(typeof window !== 'undefined' ? window : globalThis);

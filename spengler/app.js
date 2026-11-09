@@ -64,7 +64,7 @@
     else if (name === 'bestaetigen') p = S.seiteBestaetigen(o);
     else if (name === 'annahmen') p = S.seiteAnnahmen(o);
     else if (name.startsWith('skizze_')) p = S.seiteSkizze(name, o);
-    else if (name === 'dachrinne' || name === 'mauerabdeckung' || name === 'kehle' || name === 'fallrohr') p = S.seiteNeu(name, o);
+    else if (name === 'dachrinne' || name === 'mauerabdeckung' || name === 'kehle') p = S.seiteNeu(name, o);
     else if (S.seiteWeitere) p = S.seiteWeitere(name, o);
     if (!p) p = S.seiteHome(o);
     seite = p; route = name;

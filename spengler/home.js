@@ -9,7 +9,6 @@
     { id: 'profil', name: 'ablauf_profil', info: 'ablauf_profil_info', gruppe: 'W', stand: 'B', route: 'profil' },
     { id: 'skizze_kamin', name: 'ablauf_sk_kamin', info: 'ablauf_sk_kamin_info', gruppe: 'H', stand: 'B', route: 'kamineinfassung' },
     { id: 'skizze_hals', name: 'ablauf_sk_hals', info: 'ablauf_sk_hals_info', gruppe: 'H', stand: 'B', route: 'schwanenhals' },
-    { id: 'fallrohr', name: 'ablauf_fallrohr', info: 'ablauf_fallrohr_info', gruppe: 'H', stand: 'B', route: 'fallrohr' },
     { id: 'skizze_dunst', name: 'ablauf_sk_dunst', info: 'ablauf_sk_dunst_info', gruppe: 'H', stand: 'B', route: 'dunstrohr' },
     { id: 'kamin', name: 'ablauf_kamin', info: 'ablauf_kamin_info', gruppe: 'W', stand: 'B', route: 'kamin-alt' },
     { id: 'schwanenhals', name: 'ablauf_schwanenhals', info: 'ablauf_schwanenhals_info', gruppe: 'W', stand: 'B', route: 'schwanenhals-alt' },
@@ -47,8 +46,6 @@
         s = '<path d="M18 6L46 52L50 94" ' + st(hell, 17) + '/><path d="M82 6L54 52L50 94" ' + st(hell, 17) + '/><path d="M18 6L46 52L50 94" ' + st(blau, 4.5) + '/><path d="M82 6L54 52L50 94" ' + st(blau, 4.5) + '/><circle cx="50" cy="54" r="3.5" ' + fl(orange) + '/>'; break;
       case 'reduktion':
         s = '<path d="M12 14L88 14L64 86L36 86Z" ' + fl(hell) + '/><path d="M12 14L88 14L64 86L36 86Z" ' + st(blau, 4.5) + '/><ellipse cx="50" cy="14" rx="38" ry="6" ' + st(blau, 3.5) + '/><ellipse cx="50" cy="86" rx="14" ry="5" ' + st(blau, 3.5) + '/><path d="M50 20L50 82" ' + st(orange, 2.5, ' stroke-dasharray="5 4"') + '/>'; break;
-      case 'fallrohr':
-        s = '<path d="M34 6L34 30L62 50L62 94" ' + st(hell, 20) + '/><path d="M34 6L34 30L62 50L62 94" ' + st(blau, 4.5) + '/><rect x="24" y="6" width="20" height="6" ' + fl(dunkel) + '/><rect x="52" y="66" width="20" height="6" ' + fl(orange) + '/><rect x="52" y="88" width="20" height="6" ' + fl(dunkel) + '/>'; break;
       case 'dachrinne':
         s = '<path d="M8 28L92 28A42 34 0 0 1 8 28Z" ' + fl(hell) + '/><path d="M8 28L92 28A42 34 0 0 1 8 28Z" ' + st(blau, 4.5) + '/><path d="M78 62L78 94" ' + st(blau, 9) + '/><path d="M78 62L78 94" ' + st(hell, 4) + '/>'; break;
       case 'mauerabdeckung':
@@ -82,9 +79,9 @@
         const cv = h('canvas', {}); const rahmen = h('div', { class: 'rahmen' }, cv);
         const tk = h('div', { class: 'tk' }, name, a.info ? h('div', { class: 'tinfo', text: T(a.info) }) : null);
         k.append(rahmen, tk); S.autosize(name, 16, 26);
-        const v = new (SZ().Ansicht3D)(cv); v.szene = szene; v.blattFarben = true; v.grundZoom = (S.opt && S.opt.kopf === 'alt') ? ({ skizze_hals: 1.22, fallrohr: 1.22, skizze_dunst: 1.35 }[a.id] || 0.95) : 0.92; v.interaktivAus = true;
-        const schwenk = a.id === 'skizze_hals' || a.id === 'fallrohr' || a.id === 'skizze_dunst';
-        const yaw0 = schwenk ? 0.5 : 0.6 + a.id.length * 0.9, pitch0 = a.id === 'skizze_hals' || a.id === 'fallrohr' ? 0.2 : a.id === 'skizze_dunst' ? 0.4 : 0.5;
+        const v = new (SZ().Ansicht3D)(cv); v.szene = szene; v.blattFarben = true; v.grundZoom = (S.opt && S.opt.kopf === 'alt') ? ({ skizze_hals: 1.22, skizze_dunst: 1.35 }[a.id] || 0.95) : 0.92; v.interaktivAus = true;
+        const schwenk = a.id === 'skizze_hals' || a.id === 'skizze_dunst';
+        const yaw0 = schwenk ? 0.5 : 0.6 + a.id.length * 0.9, pitch0 = a.id === 'skizze_hals' ? 0.2 : a.id === 'skizze_dunst' ? 0.4 : 0.5;
         const dauer = schwenk ? 14000 : 22000;
         v.phase = ms => { const w = (ms % dauer) / dauer * 2 * Math.PI; v.grundstellung(schwenk ? yaw0 + 0.62 * Math.sin(w) : yaw0 + w, pitch0); };
         v.phase(opt.t || 0); dreher.push(v);
