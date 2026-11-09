@@ -7,15 +7,15 @@
 
   const DEFS = () => ({
     fallrohr: [['h', 'Gesamthöhe (mm)', 'Total height (mm)', '6000'], ['s', 'Steckung (mm)', 'Insertion (mm)', '50']],
-    dachrinne: [['l', 'Traufe (mm)', 'Eaves (mm)', '10000'], ['w', 'Abwicklung (mm)', 'Girth (mm)', '330'], ['g', 'Gefälle (mm/m)', 'Fall (mm/m)', '5'],
-      ['h', 'Halterabstand (mm)', 'Bracket spacing (mm)', '700'], ['d', 'Dilatation (mm)', 'Exp. joint (mm)', '5000'], ['a', 'Ablaufrohre', 'Downpipes', '1'],
-      ['ea', 'Aussenecken', 'Outside corners', '0'], ['ei', 'Innenecken', 'Inside corners', '0'], ['v', 'Verschnitt (%)', 'Waste (%)', '5'], ['tb', 'Tafelbreite (mm)', 'Sheet width (mm)', '1000']],
-    mauerabdeckung: [['b', 'Mauerbreite (mm)', 'Wall width (mm)', '250'], ['l', 'Länge (mm)', 'Length (mm)', '4000'], ['g', 'Gefälle (°)', 'Slope (°)', '5'],
-      ['u', 'Tropfkante (mm)', 'Drip edge (mm)', '50'], ['s', 'Schenkel (mm)', 'Leg (mm)', '50'], ['t', 'Umschlag (mm)', 'Hem (mm)', '15'],
-      ['e', 'Ecken', 'Corners', '0'], ['p', 'Stücklänge (mm)', 'Piece length (mm)', '3000'], ['d', 'Dilatation (mm)', 'Exp. joint (mm)', '5000'],
+    dachrinne: [['l', 'Länge der Traufe (mm)', 'Length of the eaves (mm)', '10000'], ['w', 'Abwicklung (mm)', 'Girth (mm)', '330'], ['g', 'Gefälle (mm/m)', 'Fall (mm/m)', '5'],
+      ['h', 'Halterabstand (mm)', 'Bracket spacing (mm)', '700'], ['d', 'Dilatation alle (mm)', 'Expansion joint every (mm)', '5000'], ['a', 'Ablaufrohre (Anzahl)', 'Downpipes (number)', '1'],
+      ['ea', 'Aussenecken (Anzahl)', 'Outside corners (number)', '0'], ['ei', 'Innenecken (Anzahl)', 'Inside corners (number)', '0'], ['v', 'Verschnitt (%)', 'Waste (%)', '5'], ['tb', 'Tafelbreite (mm)', 'Sheet width (mm)', '1000']],
+    mauerabdeckung: [['b', 'Mauerbreite (mm)', 'Wall width (mm)', '250'], ['l', 'Länge (mm)', 'Length (mm)', '4000'], ['g', 'Gefälle (Grad)', 'Slope (degrees)', '5'],
+      ['u', 'Abstand Tropfkante zur Wand (mm)', 'Drip edge to wall (mm)', '50'], ['s', 'Senkrechter Schenkel (mm)', 'Vertical leg (mm)', '50'], ['t', 'Umschlag unten (mm)', 'Hem at the bottom (mm)', '15'],
+      ['e', 'Ecken (Anzahl)', 'Corners (number)', '0'], ['p', 'Stücklänge (mm)', 'Piece length (mm)', '3000'], ['d', 'Dilatation alle (mm)', 'Expansion joint every (mm)', '5000'],
       ['n', 'Haftenabstand (mm)', 'Clip spacing (mm)', '330'], ['v', 'Verschnitt (%)', 'Waste (%)', '5']],
-    kehle: [['l', 'Länge (mm)', 'Length (mm)', '4000'], ['w', 'Abwicklung (mm)', 'Girth (mm)', '670'], ['a', 'Aufkantung (mm)', 'Upstand (mm)', '15'],
-      ['m', 'Max. Stück (mm)', 'Max. piece (mm)', '3000'], ['u', 'Überlappung (mm)', 'Overlap (mm)', '100'], ['k', 'Kehlwinkel (°)', 'Valley angle (°)', '130'], ['v', 'Verschnitt (%)', 'Waste (%)', '5']]
+    kehle: [['l', 'Länge der Kehle (mm)', 'Valley length (mm)', '4000'], ['w', 'Abwicklung (mm)', 'Girth (mm)', '670'], ['a', 'Aufkantung je Seite (mm)', 'Upstand each side (mm)', '15'],
+      ['m', 'Höchste Stücklänge (mm)', 'Longest piece (mm)', '3000'], ['u', 'Überlappung (mm)', 'Overlap (mm)', '100'], ['k', 'Kehlwinkel im Blech (Grad)', 'Valley angle in the sheet (degrees)', '130'], ['v', 'Verschnitt (%)', 'Waste (%)', '5']]
   });
   const PRIMAER = { fallrohr: ['h', 's'], dachrinne: ['l', 'w', 'g'], mauerabdeckung: ['b', 'l', 'g'], kehle: ['l', 'w', 'a'] };
   const TITEL = { fallrohr: 'ablauf_fallrohr', dachrinne: 'ablauf_dachrinne', mauerabdeckung: 'ablauf_mauerabdeckung', kehle: 'ablauf_kehle' };
@@ -45,7 +45,7 @@
 
     const arten = art === 'kehle' ? [1, 2, 3] : [1, 2];
     const artenAlle = quer ? arten : [0].concat(arten);
-    const namen = artenAlle.map(a => a === 0 ? S.T('ss_uebersicht') : a === 1 ? L('Ansicht', 'View') : a === 2 ? L('Zuschnitt', 'Cutting') : L('Stücke', 'Pieces'));
+    const namen = artenAlle.map(a => a === 0 ? S.T('ss_uebersicht') : a === 1 ? (art === 'dachrinne' ? L('Ansicht', 'Side view') : art === 'fallrohr' ? L('Ansicht', 'View') : L('Querschnitt', 'Section')) : a === 2 ? (art === 'fallrohr' ? L('Zuschnitt', 'Cutting') : L('Abwicklung', 'Girth')) : L('Stücke', 'Pieces'));
     const felder = {};
     const zahl = k => { const v = S.parseNum(st.werte[k] == null ? '' : st.werte[k]); return v == null ? NaN : v; };
     const ganz = k => { const v = zahl(k); return isNaN(v) || v > 1000 ? -1 : Math.trunc(v); };
@@ -135,7 +135,8 @@
       const wk = norm.werkstoffe[st.mat];
       normBox.append(S.text(norm.D.hinweis, 13, false));
       normBox.lastChild.style.color = 'var(--text2)';
-      normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), chipZeile(norm.werkstoffe.map((w, i) => [w.name, i]), st.mat, 56, v => { if (v !== st.mat) { st.mat = v; baueNormBox(); aktualisiere(); } }));
+      if (art === 'fallrohr') normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), chipZeile(norm.werkstoffe.map((w, i) => [w.name, i]), st.mat, 56, v => { if (v !== st.mat) { st.mat = v; baueNormBox(); aktualisiere(); } }));
+      else normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), mt(S.waehler(norm.werkstoffe.map(w => w.name), st.mat, i => { st.mat = i; baueNormBox(); aktualisiere(); }), 4));
       if (art === 'fallrohr') normBox.append(statusZeile(wk.rohrDicke.s, L('Dicke ', 'Thickness ') + wk.rohrDicke.fuer(st.dn) + '. ' + wk.rohrDicke.q));
       else { const dicke = art === 'dachrinne' ? wk.rinne : art === 'mauerabdeckung' ? wk.mauer : wk.kehle;
         normBox.append(statusZeile(dicke.s, L('Dicke ', 'Thickness ') + nz(dicke.v, 2) + ' mm. ' + dicke.q)); }

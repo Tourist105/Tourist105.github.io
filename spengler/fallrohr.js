@@ -9,13 +9,11 @@
   const rad = d => d * Math.PI / 180;
   // Texte der Kachel und Hinweis auf die alten Rechner (wie Android strings.xml, strings_rohr.xml)
   if (root.TEXTE) {
-    const dz = { de: { home_rohr: 'Rohr', ablauf_fallrohr: 'Fallrohr', ablauf_fallrohr_info: 'Normteile wählen, nur die Rohrlänge rechnen, Materialliste' },
-      en: { home_rohr: 'Pipe', ablauf_fallrohr: 'Downpipe', ablauf_fallrohr_info: 'Choose standard parts, calculate only the pipe length, bill of materials' } };
-    const hin = { de: ' Fertig gekaufte Teile: siehe Fallrohr.', en: ' Bought ready-made parts: see Downpipe.' };
+    const dz = { de: { ablauf_fallrohr: 'Fallrohr', ablauf_fallrohr_info: 'Normteile wählen, nur die Rohrlänge rechnen, Materialliste' },
+      en: { ablauf_fallrohr: 'Downpipe', ablauf_fallrohr_info: 'Choose standard parts, calculate only the pipe length, bill of materials' } };
     for (const l in dz) {
       const t = root.TEXTE[l]; if (!t) continue;
       for (const k in dz[l]) t[k] = dz[l][k];
-      for (const k of ['schwanenhals', 'rohrbogen', 'reduktion', 'hosenrohr']) { const key = 'ablauf_' + k + '_info'; if (t[key] && t[key].indexOf(hin[l]) < 0) t[key] += hin[l]; }
     }
   }
   const aufrunden = x => Math.ceil(x - 1e-9);

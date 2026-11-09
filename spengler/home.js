@@ -8,14 +8,14 @@
   S.ABLAEUFE = [
     { id: 'profil', name: 'ablauf_profil', info: 'ablauf_profil_info', gruppe: 'W', stand: 'B', route: 'profil' },
     { id: 'skizze_kamin', name: 'ablauf_sk_kamin', info: 'ablauf_sk_kamin_info', gruppe: 'H', stand: 'B', route: 'kamineinfassung' },
-    { id: 'skizze_hals', name: 'ablauf_sk_hals', info: 'ablauf_sk_hals_info', gruppe: 'R', stand: 'B', route: 'schwanenhals' },
-    { id: 'fallrohr', name: 'ablauf_fallrohr', info: 'ablauf_fallrohr_info', gruppe: 'R', stand: 'B', route: 'fallrohr' },
+    { id: 'skizze_hals', name: 'ablauf_sk_hals', info: 'ablauf_sk_hals_info', gruppe: 'H', stand: 'B', route: 'schwanenhals' },
+    { id: 'fallrohr', name: 'ablauf_fallrohr', info: 'ablauf_fallrohr_info', gruppe: 'H', stand: 'B', route: 'fallrohr' },
     { id: 'skizze_dunst', name: 'ablauf_sk_dunst', info: 'ablauf_sk_dunst_info', gruppe: 'H', stand: 'B', route: 'dunstrohr' },
     { id: 'kamin', name: 'ablauf_kamin', info: 'ablauf_kamin_info', gruppe: 'W', stand: 'B', route: 'kamin-alt' },
     { id: 'schwanenhals', name: 'ablauf_schwanenhals', info: 'ablauf_schwanenhals_info', gruppe: 'W', stand: 'B', route: 'schwanenhals-alt' },
-    { id: 'rohrbogen', name: 'ablauf_rohrbogen', info: 'ablauf_rohrbogen_info', gruppe: 'R', stand: 'B', route: 'rohrbogen' },
-    { id: 'hosenrohr', name: 'ablauf_hosenrohr', info: 'ablauf_hosenrohr_info', gruppe: 'R', stand: 'B', route: 'hosenrohr' },
-    { id: 'reduktion', name: 'ablauf_reduktion', info: 'ablauf_reduktion_info', gruppe: 'R', stand: 'B', route: 'reduktion' },
+    { id: 'rohrbogen', name: 'ablauf_rohrbogen', info: 'ablauf_rohrbogen_info', gruppe: 'W', stand: 'B', route: 'rohrbogen' },
+    { id: 'hosenrohr', name: 'ablauf_hosenrohr', info: 'ablauf_hosenrohr_info', gruppe: 'W', stand: 'B', route: 'hosenrohr' },
+    { id: 'reduktion', name: 'ablauf_reduktion', info: 'ablauf_reduktion_info', gruppe: 'W', stand: 'B', route: 'reduktion' },
     { id: 'dachrinne', name: 'ablauf_dachrinne', info: 'ablauf_dachrinne_info', gruppe: 'N', stand: 'B', route: 'dachrinne' },
     { id: 'mauerabdeckung', name: 'ablauf_mauerabdeckung', info: 'ablauf_mauerabdeckung_info', gruppe: 'N', stand: 'B', route: 'mauerabdeckung' },
     { id: 'kehle', name: 'ablauf_kehle', info: 'ablauf_kehle_info', gruppe: 'N', stand: 'B', route: 'kehle' }
@@ -70,7 +70,7 @@
     inh.append(titel, mt(S.bestKarte(), 6), mt(S.warnband(T('warn_home'), 14), 6));
     function mt(e, px) { e.style.marginTop = px + 'px'; return e; }
 
-    const haupt = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'H'), neu = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'N'), weitere = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'W'), ROHR_IDS = ['fallrohr', 'skizze_hals', 'rohrbogen', 'hosenrohr', 'reduktion'], rohr = ROHR_IDS.map(id => S.ABLAEUFE.find(a => a.id === id && a.stand === 'B')).filter(Boolean), folgt = S.ABLAEUFE.filter(a => a.stand !== 'B');
+    const haupt = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'H'), neu = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'N'), weitere = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'W'), folgt = S.ABLAEUFE.filter(a => a.stand !== 'B');
     const oeffne = a => { S.haptik(10); S.gehe(a.route); };
 
     function kachel(a, gross, klein, schlank) {
@@ -82,9 +82,9 @@
         const cv = h('canvas', {}); const rahmen = h('div', { class: 'rahmen' }, cv);
         const tk = h('div', { class: 'tk' }, name, a.info ? h('div', { class: 'tinfo', text: T(a.info) }) : null);
         k.append(rahmen, tk); S.autosize(name, 16, 26);
-        const v = new (SZ().Ansicht3D)(cv); v.szene = szene; v.blattFarben = true; v.grundZoom = (S.opt && S.opt.kopf === 'alt') ? ({ skizze_hals: 1.22, fallrohr: 1.22, skizze_dunst: 1.35 }[a.id] || 0.95) : 0.92; v.interaktivAus = true;
-        const schwenk = a.id === 'skizze_hals' || a.id === 'fallrohr' || a.id === 'skizze_dunst';
-        const yaw0 = schwenk ? 0.5 : 0.6 + a.id.length * 0.9, pitch0 = a.id === 'skizze_hals' || a.id === 'fallrohr' ? 0.2 : a.id === 'skizze_dunst' ? 0.4 : 0.5;
+        const v = new (SZ().Ansicht3D)(cv); v.szene = szene; v.blattFarben = true; v.grundZoom = (S.opt && S.opt.kopf === 'alt') ? ({ skizze_hals: 1.22, skizze_dunst: 1.35 }[a.id] || 0.95) : 0.92; v.interaktivAus = true;
+        const schwenk = a.id === 'skizze_hals' || a.id === 'skizze_dunst';
+        const yaw0 = schwenk ? 0.5 : 0.6 + a.id.length * 0.9, pitch0 = a.id === 'skizze_hals' ? 0.2 : a.id === 'skizze_dunst' ? 0.4 : 0.5;
         const dauer = schwenk ? 14000 : 22000;
         v.phase = ms => { const w = (ms % dauer) / dauer * 2 * Math.PI; v.grundstellung(schwenk ? yaw0 + 0.62 * Math.sin(w) : yaw0 + w, pitch0); };
         v.phase(opt.t || 0); dreher.push(v);
@@ -111,15 +111,6 @@
     }
 
     for (const a of haupt) inh.append(mt(kachel(a, true), 10));
-    if (rohr.length) {
-      // Rohr-Gruppe: Fallrohr (Planer), Schwanenhals, Rohrbogen, Hosenrohr, Reduktion in Zeilen zu 3 und 2 (wie Android)
-      inh.append(mt(h('div', { style: { fontSize: '15px', fontWeight: 700, letterSpacing: '.045em', color: 'var(--text2)' }, text: T('home_rohr') }), 16));
-      for (let i = 0; i < rohr.length; i += 3) {
-        const gr = rohr.slice(i, i + 3), rr = h('div', { style: { display: 'flex', marginTop: '8px' } });
-        gr.forEach((a, j) => { const kk = kachel(a, false, false, true); kk.style.flex = '1 1 0'; kk.style.minWidth = 0; kk.style.width = 'auto'; if (j) kk.style.marginLeft = '8px'; rr.append(kk); });
-        inh.append(rr);
-      }
-    }
     if (neu.length) {
       // Dachrinne, Mauerabdeckung, Kehle (seit 09.11.): drei schlanke Kacheln in einer Reihe, Werte sind Annahmen (wie Android HomeActivity)
       const rn = h('div', { style: { display: 'flex', marginTop: '6px' } });
