@@ -1,7 +1,7 @@
 {
   "version":1,
   "empfaenger":"nils.roethlisberger@gmx.ch",
-  "minuten":7,
+  "minuten":6,
   "gruppen":["Kamin","Dunstrohr","Schwanenhals und Rohr","Material","Rinne","Mauerabdeckung","Kehle","Normteile"],
   "punkte":[
     {"id":"kamin_teilung","gruppe":"Kamin","frage":"Teilst du die Kamineinfassung in vier Bleche?","vorgabe":"Vier Bleche: Brust, Nacken und zwei Seiten","quelle":"Aus deiner Skizze. Bei Ziegel wird die Seite in Schichtstücke geteilt. Eine Teilung in der Mitte habe ich nirgends belegt gefunden.","zahlFeld":false,"einheit":""},
@@ -45,12 +45,6 @@
     {"id":"normteile_rohrlaenge","gruppe":"Normteile","frage":"In welcher Länge kaufst du das Fallrohr?","vorgabe":"2 m","quelle":"RHEINZINK und Hornbach CH liefern 2,0 m, Debrunner 1 bis 5 m. Die App rechnet mit 2 m, das ist eine Annahme.","zahlFeld":true,"einheit":"m"},
     {"id":"normteile_rinnenlaenge","gruppe":"Normteile","frage":"In welcher Länge kaufst du die Zinkrinne 330: 3, 4, 5 oder 6 m? Oder kantest du sie aus Band?","vorgabe":"5 m","quelle":"Debrunner führt 4, 5 und 6 m (Filteroptionen der Artikelseite), RHEINZINK 3 m. Die App rechnet mit 5 m, das ist eine Annahme.","zahlFeld":true,"einheit":"m"},
     {"id":"normteile_schellen","gruppe":"Normteile","frage":"Wie weit setzt du die Rohrschellen auseinander?","vorgabe":"Höchstens 2 m, mindestens 10 cm von der Gebäudekante","quelle":"Nur Montageanleitungen von Kunststoff-Systemen (PRECIT, Protektor). Für Zink ist das eine Annahme.","zahlFeld":true,"einheit":"m"},
-    {"id":"normteile_versatz","gruppe":"Normteile","frage":"Legst du zwei Bögen ineinandergesteckt hin und misst den Achsversatz, Rohrmitte zu Rohrmitte?","vorgabe":"Richtwert der Händler: Bogen 72 Grad Nenn 100 gibt 220 mm","quelle":"Händlerseiten (hausunddach.de), kein Hersteller nennt einen Radius. Dein Messwert prüft die Tabelle in der App.","zahlFeld":true,"einheit":"mm"},
-    {"id":"normteile_fall_abzweig","gruppe":"Normteile","frage":"Wie hoch ist ein Abzweiger (Hosenrohr) 72 Grad, Nenn 100, vom oberen Anschluss bis zum unteren Ende?","vorgabe":"248 mm (Zambelli, Nenn 80)","quelle":"Zambelli-Datenblatt Nenn 80/80, Mass a. Ob a die Bauhöhe ist und wie es bei Nenn 100 aussieht, ist offen. Die App nimmt 248 für 72 Grad und 290 für 60 Grad (RHEINZINK, Deutung unsicher).","zahlFeld":true,"einheit":"mm"},
-    {"id":"normteile_fall_reduktion","gruppe":"Normteile","frage":"Wie lang ist eine Reduktion, zum Beispiel von Nenn 100 auf 80?","vorgabe":"50 mm (Muffenlänge des grösseren Durchmessers)","quelle":"Für Reduktionen habe ich kein Herstellermass gefunden. Die App nimmt die Muffenlänge als Platzhalter.","zahlFeld":true,"einheit":"mm"},
-    {"id":"normteile_fall_muffe","gruppe":"Normteile","frage":"Wie lang ist eine Rohrmuffe (Verbinder) Nenn 100?","vorgabe":"50 mm (Muffenlänge der Bögen)","quelle":"Für Rohrmuffen habe ich kein Herstellermass gefunden. Die App nimmt die Muffenlänge der Bögen.","zahlFeld":true,"einheit":"mm"},
-    {"id":"normteile_fall_endstueck","gruppe":"Normteile","frage":"Was setzt du unten am Fallrohr ein (Sockelrohr, Auslaufbogen, Schmutzfang) und wie hoch ist es?","vorgabe":"Nichts, Höhe 0 mm","quelle":"PREFA kennt ein Sockelrohr 1,6 mm, 2950 mm (Alu). Was du bei Zink nimmst, weiss ich nicht.","zahlFeld":true,"einheit":"mm"},
-    {"id":"normteile_fall_stange","gruppe":"Normteile","frage":"Wie viel Fallrohr bestellst du: ganze 2-m-Stücke, jeder Zuschnitt einzeln, oder setzt du Reste zusammen?","vorgabe":"2 m, jeder Zuschnitt einzeln gezählt (also eher zu viel)","quelle":"Die App zählt vorsichtig. Wenn du Reste verwendest, bestellst du weniger.","zahlFeld":false,"einheit":""},
-    {"id":"normteile_fall_steckung_oben","gruppe":"Normteile","frage":"Steckt das Fallrohr oben 50 mm in den Rinnenstutzen, und rechnest du die Steckung zum Zuschnitt dazu?","vorgabe":"Ja, 50 mm oben und an jedem Normteil, unten am freien Ende nicht","quelle":"Die 5 cm stehen auf deiner Skizze. Wo sie genau gelten, ist meine Annahme.","zahlFeld":true,"einheit":"mm"}
+    {"id":"normteile_versatz","gruppe":"Normteile","frage":"Legst du zwei Bögen ineinandergesteckt hin und misst den Achsversatz, Rohrmitte zu Rohrmitte?","vorgabe":"Richtwert der Händler: Bogen 72 Grad Nenn 100 gibt 220 mm","quelle":"Händlerseiten (hausunddach.de), kein Hersteller nennt einen Radius. Dein Messwert prüft die Tabelle in der App.","zahlFeld":true,"einheit":"mm"}
   ]
 }

@@ -372,7 +372,7 @@
     };
     const dunst = () => _d || (_d = Skizzen3D.dunstrohr(100, 300, 30, 400, 400, 100, 15).szene);
     const hals = () => _h || (_h = Skizzen3D.schwanenhals(400, 72, 60, 50).szene);
-    const fuer = id => id === 'skizze_kamin' ? kamin() : id === 'skizze_hals' ? hals() : id === 'skizze_dunst' ? dunst() : null;
+    const fuer = id => id === 'skizze_kamin' ? kamin() : id === 'skizze_hals' || id === 'fallrohr' ? hals() : id === 'skizze_dunst' ? dunst() : null;
     return { kamin, dunst, hals, fuer };
   })();
 

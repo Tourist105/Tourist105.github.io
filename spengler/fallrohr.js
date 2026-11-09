@@ -9,8 +9,8 @@
   const rad = d => d * Math.PI / 180;
   // Texte der Kachel und Hinweis auf die alten Rechner (wie Android strings.xml, strings_rohr.xml)
   if (root.TEXTE) {
-    const dz = { de: { home_rohr: 'Rohr', ablauf_fallrohr: 'Fallrohr', ablauf_fallrohr_info: 'Normteile wählen, nur die Rohrlänge rechnen, Materialliste' },
-      en: { home_rohr: 'Pipe', ablauf_fallrohr: 'Downpipe', ablauf_fallrohr_info: 'Choose standard parts, calculate only the pipe length, bill of materials' } };
+    const dz = { de: { ablauf_fallrohr: 'Fallrohr', ablauf_fallrohr_info: 'Normteile wählen, nur die Rohrlänge rechnen, Materialliste' },
+      en: { ablauf_fallrohr: 'Downpipe', ablauf_fallrohr_info: 'Choose standard parts, calculate only the pipe length, bill of materials' } };
     const hin = { de: ' Fertig gekaufte Teile: siehe Fallrohr.', en: ' Bought ready-made parts: see Downpipe.' };
     for (const l in dz) {
       const t = root.TEXTE[l]; if (!t) continue;
@@ -314,7 +314,7 @@
   function zuschnitt(f, w, h, t0, lb) {
     const sc = f.schnitte, t = schrift(t0, h - 16, sc.length), z = new Ze.Zeichnung(w, h, t);
     if (!sc.length) { z.text(w / 2, h / 2, lb.leer, t, false, 0, 'GRAU'); z.fertig(); return z; }
-    const top = w < 220 ? 44 : 8, rh = Math.min(2.6 * t + 6, Math.max(1.25 * t + 2, (h - top - 8) / sc.length));
+    const top = 8, rh = Math.min(2.6 * t + 6, Math.max(1.25 * t + 2, (h - top - 8) / sc.length));
     const nm = s => lb.name(s.versatz ? 'versatz' : 'rohr') + ' ' + (s.index + 1);
     const labelW = Math.max(...sc.map(s => Ze.textBreite(nm(s), t, false))) + 8, valW = Math.max(...sc.map(s => Ze.textBreite(mm(s.zuschnitt), t, true))) + 6;
     const bx = 8 + labelW, bmax = max(10, w - bx - valW - 10), m = Math.max(...sc.map(s => s.zuschnitt));
