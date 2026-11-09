@@ -15,7 +15,7 @@
     { id: 'rohrbogen', name: 'ablauf_rohrbogen', info: 'ablauf_rohrbogen_info', gruppe: 'W', stand: 'B', route: 'rohrbogen' },
     { id: 'hosenrohr', name: 'ablauf_hosenrohr', info: 'ablauf_hosenrohr_info', gruppe: 'W', stand: 'B', route: 'hosenrohr' },
     { id: 'reduktion', name: 'ablauf_reduktion', info: 'ablauf_reduktion_info', gruppe: 'W', stand: 'B', route: 'reduktion' },
-    { id: 'fallrohr', name: 'ablauf_fallrohr', info: 'ablauf_fallrohr_info', gruppe: 'N', stand: 'B', route: 'fallrohr' },
+    { id: 'fallrohr', name: 'ablauf_fallrohr', info: 'ablauf_fallrohr_info', gruppe: 'H', stand: 'B', route: 'fallrohr' },
     { id: 'dachrinne', name: 'ablauf_dachrinne', info: 'ablauf_dachrinne_info', gruppe: 'N', stand: 'B', route: 'dachrinne' },
     { id: 'mauerabdeckung', name: 'ablauf_mauerabdeckung', info: 'ablauf_mauerabdeckung_info', gruppe: 'N', stand: 'B', route: 'mauerabdeckung' },
     { id: 'kehle', name: 'ablauf_kehle', info: 'ablauf_kehle_info', gruppe: 'N', stand: 'B', route: 'kehle' }
