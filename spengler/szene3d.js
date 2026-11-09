@@ -488,6 +488,44 @@
       if (n > 1 || pl < L) masse.push(M('p', [0, yB, zB], [min(pl, L), yB, zB], [0, b * 0.18, hw * 0.1], min(pl, L)));
       return { szene: festeSzene(f, null), masse };
     }
+
+    // Kehle: V-foermiges Kehlblech zwischen zwei Dachflaechen, Laenge, Kehlwinkel, Aufkantung, Stuecke mit Ueberlappung
+    function kehle(k) {
+      const e = k.e, L = e.laenge, f = [], masse = [];
+      const sp0 = k.spannweite, kq = max(1, min(4, L / (5 * sp0))), sp = sp0 * kq, td = k.tiefe * kq, a = e.aufkantung * kq, dick = max(2, sp * 0.012);
+      const nw = k.schenkelNeigung * PI / 180;
+      const P = [[-sp / 2, td + a], [-sp / 2, td], [0, 0], [sp / 2, td], [sp / 2, td + a]];
+      const nrm = (p1, p2) => { const dy = p2[0] - p1[0], dz = p2[1] - p1[1], l = Math.hypot(dy, dz) || 1; return [-dz / l, dy / l]; };
+      const versch = (Q, dist) => Q.map((q, i) => {
+        const n1 = i > 0 ? nrm(Q[i - 1], q) : null, n2 = i < Q.length - 1 ? nrm(q, Q[i + 1]) : null;
+        const nx = (n1 ? n1[0] : 0) + (n2 ? n2[0] : 0), nz2 = (n1 ? n1[1] : 0) + (n2 ? n2[1] : 0), l = Math.hypot(nx, nz2) || 1;
+        return [q[0] + nx / l * dist, q[1] + nz2 / l * dist];
+      });
+      const Pin = versch(P, -dick), at = (Q, x, dz) => Q.map(q => [x, q[0], q[1] + (dz || 0)]);
+      // Dachflaechen links und rechts (unter dem Blech), ueber das Blech hinaus verlaengert
+      const ex = sp * 0.5, rz = -dick * 1.6, roof = rgb(184, 108, 86), roof2 = rgb(170, 96, 76);
+      const R = [[-sp / 2 - ex * cos(nw), td + ex * sin(nw) + rz], [0, rz], [sp / 2 + ex * cos(nw), td + ex * sin(nw) + rz]];
+      band(at(R, -0), at(R, L), 'KEHLE', 90, roof, -1, f, true);
+      const lens = k.stueckLaengen(), pitch = e.maxStueck - e.ueberlappung;
+      lens.forEach((len, i) => {
+        const x0 = i * pitch, x1 = min(L, x0 + len), lift = (i % 2) * dick * 1.8, farbe = i % 2 === 0 ? rgb(150, 175, 205) : rgb(190, 208, 228);
+        band(at(P, x0, lift), at(P, x1, lift), 'BOGEN_ENDE', i, farbe, 0, f, true);
+        band(at(Pin, x0, lift), at(Pin, x1, lift), 'BOGEN_ENDE', i, hex('#8FA6C2'), 0, f, true);
+        band(at(P, x0, lift), at(Pin, x0, lift), 'BOGEN_ENDE', i, farbe, 0, f, true);
+        band(at(P, x1, lift), at(Pin, x1, lift), 'BOGEN_ENDE', i, farbe, 0, f, true);
+        if (i > 0) { const ov = e.ueberlappung, lp = [-sp / 2, td + a * 0.6]; const xa = x0, xb = min(L, x0 + ov); band(at(P, xa, lift), at(P, xb, lift), 'BOGEN_MITTE', 50 + i, SF.UMSCHLAG, 1, f, true); }
+      });
+      const xe = L, hoch = td + a;
+      masse.push(M('l', [0, sp / 2 + ex * 0.2, td + a], [L, sp / 2 + ex * 0.2, td + a], [0, ex * 0.25, 0], L));
+      masse.push(M('w', [xe, -sp / 4, td / 2], null, [0, 0, 0], e.abwicklung, 'Abw. ', '', false));
+      if (e.aufkantung > 0) masse.push(M('a', [xe, sp / 2, td], [xe, sp / 2, td + a], [0, sp * 0.12, 0], e.aufkantung));
+      masse.push(M('k', [xe, 0, -dick * 3 - td * 0.15], null, [0, 0, 0], e.kehlwinkel, '', '°', true));
+      if (lens.length > 1) {
+        masse.push(M('m', [0, -sp / 2 - ex * 0.2, hoch], [min(e.maxStueck, L), -sp / 2 - ex * 0.2, hoch], [0, -ex * 0.25, 0], e.maxStueck));
+        masse.push(M('u', [pitch, -sp / 2 - ex * 0.2, hoch], [pitch + e.ueberlappung, -sp / 2 - ex * 0.2, hoch], [0, -ex * 0.25, ex * 0.3], e.ueberlappung));
+      }
+      return { szene: festeSzene(f, null), masse };
+    }
     // Dachrinne: halbrunde Rinne, Laenge und Abwicklung echt, Querschnitt und Gefaelle fuer die Lesbarkeit ueberhoeht
     function dachrinne(rn) {
       const e = rn.e, L = e.laenge, abw = e.abwicklung, f = [], masse = [];
@@ -519,7 +557,7 @@
       if (rn.halter > 1) masse.push(M('h', [0, rd * 1.2, zAt(0)], [min(e.halterAbstand, L), rd * 1.2, zAt(min(e.halterAbstand, L))], [0, 0, rd * 0.5], e.halterAbstand));
       return { szene: festeSzene(f, null), masse };
     }
-    return { schwanenhals, dunstrohr, fallrohr, dachrinne, mauer };
+    return { schwanenhals, dunstrohr, fallrohr, dachrinne, mauer, kehle };
   })();
 
   function festeSzene(liste, kamin) { return { kamin, flaechen: () => liste }; }

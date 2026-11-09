@@ -21,7 +21,7 @@
   const TITEL = { fallrohr: 'ablauf_fallrohr', dachrinne: 'ablauf_dachrinne', mauerabdeckung: 'ablauf_mauerabdeckung', kehle: 'ablauf_kehle' };
   const CHIPS = { dachrinne: 'rinne', mauerabdeckung: 'mauer', kehle: 'kehle' };
   const FALL_CHIPS = [{ feld: 'h', einheit: 'mm', werte: [3000, 4000, 5000, 6000, 8000], vorgabe: 6000 }, { feld: 's', einheit: 'mm', werte: [30, 40, 50], vorgabe: 50 }];
-  const HAT3D = ['fallrohr', 'dachrinne', 'mauerabdeckung'];
+  const HAT3D = ['fallrohr', 'dachrinne', 'mauerabdeckung', 'kehle'];
   const FARBE = { beleg: '#105E32', annahme: '#965000', unsicher: '#B00020' };
 
   S.seiteNeu = function (art, opt) {
@@ -80,7 +80,7 @@
     let d3 = null, cv3 = null, kipp3 = null, kipp2 = null;
     if (hat3d) {
       cv3 = h('canvas', { 'aria-label': S.T('d3_beschreibung') }); karte.append(cv3);
-      d3 = new root.Szene3D.Ansicht3D(cv3); d3.leerText = S.T('d3_leer'); d3.fuellend = true; d3.grundZoom = art === "fallrohr" ? 0.78 : 1.0; d3.grundstellung(art === 'mauerabdeckung' ? 0.95 : 0.6, 0.35);
+      d3 = new root.Szene3D.Ansicht3D(cv3); d3.leerText = S.T('d3_leer'); d3.fuellend = true; d3.grundZoom = art === "fallrohr" ? 0.78 : 1.0; d3.grundstellung(art === 'mauerabdeckung' || art === 'kehle' ? 0.95 : 0.6, 0.35);
       d3.beiMass3d = k => fokusiere(k);
     }
     const kippGross = h('button', { class: 'kippgross', 'aria-label': S.T('ss_tipp'), onclick: () => vollbild() }, S.iconVollbild());
@@ -394,7 +394,7 @@
     function baue3d() {
       if (!d3) return;
       let sz = null;
-      try { if (art === 'fallrohr') sz = root.Szene3D.Skizzen3D.fallrohr(FR.Fallrohr(fallEin())); else if (art === 'mauerabdeckung') sz = root.Szene3D.Skizzen3D.mauer(K.MauerSkizze(mauerEin())); else if (art === 'dachrinne') sz = root.Szene3D.Skizzen3D.dachrinne(K.RinneSkizze(rinneEin())); } catch (e) { sz = null; }
+      try { if (art === 'fallrohr') sz = root.Szene3D.Skizzen3D.fallrohr(FR.Fallrohr(fallEin())); else if (art === 'kehle') sz = root.Szene3D.Skizzen3D.kehle(K.KehleSkizze(kehleEin())); else if (art === 'mauerabdeckung') sz = root.Szene3D.Skizzen3D.mauer(K.MauerSkizze(mauerEin())); else if (art === 'dachrinne') sz = root.Szene3D.Skizzen3D.dachrinne(K.RinneSkizze(rinneEin())); } catch (e) { sz = null; }
       d3.szene = sz ? sz.szene : null; d3.masse3d = sz ? sz.masse : []; d3.zeichnen();
     }
     function baueMaterial(ml) {
