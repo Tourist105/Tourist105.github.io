@@ -479,8 +479,11 @@
   const zipName = () => 'Spengler_Kommentare_' + stempel(jetzt()) + '.zip';
 
   /** Sendet die Kommentare [rs]. Muss direkt aus einem Tipp aufgerufen werden (Teilen-Menue braucht die Geste). [ui] hat ok(text), info(text), box (fuer die Ausweich-Wege). */
+  /** Nach einem Neustart ohne IndexedDB gibt es nur den Text: Sprachdatei und Fotos ohne Daten nicht mitsenden. */
+  const lebend = r => (r.audio && !r.audio.blob) || r.fotos.some(f => !f.blob) ? Object.assign({}, r, { audio: r.audio && r.audio.blob ? r.audio : null, fotos: r.fotos.filter(f => f.blob) }) : r;
   S.kmSenden = async function (rs, ui) {
     if (!rs.length) return 'leer';
+    rs = rs.map(lebend);
     // Dateien sind schon im Speicher: bis zu 9 Dateien je Teilen-Menue (Chrome erlaubt 10), grosse Mengen in Paketen
     let paketRs = [], n = 0;
     for (const r of rs) { const d = (r.audio ? 1 : 0) + r.fotos.length; if (paketRs.length && n + d > 8) break; paketRs.push(r); n += d; }
