@@ -435,7 +435,43 @@
       return { szene: festeSzene(f, null), masse };
     }
     const rad2 = g => g * PI / 180;
-    return { schwanenhals, dunstrohr, fallrohr };
+
+    // Offene Profile (Halbkreis usw.) laengs eines Pfades: je zwei benachbarte Profile ergeben ein Band aus Vierecken
+    function band(p0, p1, art, inst, farbe, ordnung, aus) {
+      for (let k = 0; k < p0.length - 1; k++) aus.push(WF([p0[k], p0[k + 1], p1[k + 1], p1[k]], inst, art, false, null, true, farbe, ordnung, null));
+    }
+    // Dachrinne: halbrunde Rinne, Laenge und Abwicklung echt, Querschnitt und Gefaelle fuer die Lesbarkeit ueberhoeht
+    function dachrinne(rn) {
+      const e = rn.e, L = e.laenge, abw = e.abwicklung, f = [], masse = [];
+      const rReal = abw * 0.92 / PI, rd = max(rReal, L / 30), dick = max(1.5, rd * 0.05), hu = rn.hoehenunterschied;
+      const dz = hu > 0 ? max(hu, L * 0.05) : 0, mitte = e.ablaufMitte;
+      const zAt = x => mitte ? -dz * (1 - abs(x - L / 2) / (L / 2)) : -dz * (x / L);
+      const N = 40, M2 = 18;
+      const prof = (x, rr) => { const o = []; for (let j = 0; j <= M2; j++) { const th = PI * j / M2; o.push([x, rr * cos(th), zAt(x) - rr * sin(th)]); } return o; };
+      const aus = [], inn = []; for (let i = 0; i <= N; i++) { const x = L * i / N; aus.push(prof(x, rd)); inn.push(prof(x, rd - dick)); }
+      for (let i = 0; i < N; i++) { band(aus[i], aus[i + 1], 'BOGEN_ENDE', 0, SF.AUFKANT, 0, f); band(inn[i], inn[i + 1], 'ROHR', 0, hex('#9FBFE0'), 0, f); }
+      for (const [a, b] of [[aus[0], inn[0]], [aus[N], inn[N]]]) band(a, b, 'BOGEN_ENDE', 0, SF.AUFKANT, 0, f);
+      for (let i = 0; i < N; i++) for (const k of [0, M2]) f.push(WF([aus[i][k], aus[i + 1][k], inn[i + 1][k], inn[i][k]], 0, 'BOGEN_ENDE', false, null, false, SF.AUFKANT, 0, null));
+      // Halter als Buegel unter der Rinne
+      const bw = max(rd * 0.14, 6), zb = SF.UMSCHLAG;
+      for (let i = 0; i < rn.halter; i++) {
+        const x = rn.halter === 1 ? L / 2 : min(i * e.halterAbstand, L), xa = max(0, x - bw / 2), xb = min(L, x + bw / 2);
+        const pa = prof(xa, rd * 1.015), pb = prof(xb, rd * 1.015), qa = prof(xa, rd * 1.1), qb = prof(xb, rd * 1.1);
+        band(pa, pb, 'BOGEN_MITTE', 1, zb, 1, f); band(qa, qb, 'BOGEN_MITTE', 1, zb, 1, f); band(pa, qa, 'BOGEN_MITTE', 1, zb, 1, f); band(pb, qb, 'BOGEN_MITTE', 1, zb, 1, f);
+      }
+      // Ablaufstutzen am tiefsten Punkt (Ende oder Mitte)
+      const xs = mitte ? L / 2 : L, rs = rd * 0.3, zs = zAt(xs) - rd + dick, lg = max(rd * 1.6, 60);
+      const ex = [1, 0, 0], ey = [0, 1, 0];
+      mantel([ring([xs, 0, zs], ex, ey, rs), ring([xs, 0, zs - lg], ex, ey, rs)], 'ROHR', 2, SF.BLECH, 0, f);
+      // Masse
+      const zmin = zAt(xs) - rd - lg;
+      masse.push(M('l', [0, 0, zmin - rd * 0.2], [L, 0, zmin - rd * 0.2], [0, -rd * 0.4, 0], L));
+      masse.push(M('w', [0, 0, zAt(0) - rd], null, [0, -rd * 0.2, -rd * 0.25], abw, 'Abw. ', '', false));
+      masse.push(M('g', [L * (mitte ? 0.25 : 0.5), 0, zAt(L * (mitte ? 0.25 : 0.5)) + rd * 0.35], null, [0, 0, 0], e.gefaelle, '', ' mm/m', true));
+      if (rn.halter > 1) masse.push(M('h', [0, rd * 1.2, zAt(0)], [min(e.halterAbstand, L), rd * 1.2, zAt(min(e.halterAbstand, L))], [0, 0, rd * 0.5], e.halterAbstand));
+      return { szene: festeSzene(f, null), masse };
+    }
+    return { schwanenhals, dunstrohr, fallrohr, dachrinne };
   })();
 
   function festeSzene(liste, kamin) { return { kamin, flaechen: () => liste }; }
