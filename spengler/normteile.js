@@ -118,6 +118,6 @@
   }
 
   const zeile = z => nz(z.menge, 2) + ' ' + z.einheit + '  ' + z.teil + '  (' + z.detail + ')';
-  root.Normteile = { D, nz, statusText, werkstoffe, werkstoff, durchmesser, dnVon, winkel, winkelVon, rinneAbwicklung, rinneStueck, teil, regelZahl, radiusFaktor, versatz, hals, rinne, mauer, kehle, zeile, schlechter };
+  root.Normteile = { D, nz, statusText, werkstoffe, werkstoff, durchmesser, dnVon, winkel, winkelVon, rinneAbwicklung, rinneStueck, teil, regelZahl, radiusFaktor, versatz, versatzQuelle, hals, rinne, mauer, kehle, zeile, schlechter };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Normteile;
 })(typeof window !== 'undefined' ? window : globalThis);
