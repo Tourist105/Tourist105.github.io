@@ -135,8 +135,8 @@
       const wk = norm.werkstoffe[st.mat];
       normBox.append(S.text(norm.D.hinweis, 13, false));
       normBox.lastChild.style.color = 'var(--text2)';
-      if (art === 'fallrohr') normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), chipZeile(norm.werkstoffe.map((w, i) => [w.name, i]), st.mat, 56, v => { if (v !== st.mat) { st.mat = v; baueNormBox(); aktualisiere(); } }));
-      else normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), mt(S.waehler(norm.werkstoffe.map(w => w.name), st.mat, i => { st.mat = i; baueNormBox(); aktualisiere(); }), 4));
+      // Werkstoff als Chips (wenige feste Werte, kein Dropdown)
+      normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), chipZeile(norm.werkstoffe.map((w, i) => [w.name, i]), st.mat, 56, v => { if (v !== st.mat) { st.mat = v; baueNormBox(); aktualisiere(); } }));
       if (art === 'fallrohr') normBox.append(statusZeile(wk.rohrDicke.s, L('Dicke ', 'Thickness ') + wk.rohrDicke.fuer(st.dn) + '. ' + wk.rohrDicke.q));
       else { const dicke = art === 'dachrinne' ? wk.rinne : art === 'mauerabdeckung' ? wk.mauer : wk.kehle;
         normBox.append(statusZeile(dicke.s, L('Dicke ', 'Thickness ') + nz(dicke.v, 2) + ' mm. ' + dicke.q)); }
