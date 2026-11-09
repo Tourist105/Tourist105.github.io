@@ -215,44 +215,43 @@
     return { zeilen, stueck: stk, m2, m2Verschnitt: m2v, kg: m2v * e.dicke * e.werkstoff.dichte, tafeln: tafeln > 0 ? Math.ceil(tafeln * fa) : 0, zuGross };
   }
 
-  // ================================================================ NeueTeile.kt
+  // ================================================================ NeueTeile.kt + VorgabenNeueTeile.kt (Stand 09.11.2026, 1:1 zu Kotlin)
+  // Vorgaben, Chips, Werkstoffe und Annahmen-Listen kommen aus neueteile_daten.js (erzeugt vom Kotlin-Test NormteileTest.exportFuersWeb, nicht von Hand).
+  const ND = root.NEUETEILE_DATEN || (typeof require !== 'undefined' ? require('./neueteile_daten.js') : null);
+  const V = ND.vorgaben;
   function meldeVerschnitt(o, v) { if (!isFinite(v) || v < 0 || v > 0.5) o.push({ fehler: 'VERSCHNITT_BEREICH', feld: 'v' }); }
   const NEU_MAX = 100000;
-  const A = (id, text, wert, beleg, quelle) => ({ id, text, wert, beleg, quelle });
+  const nzahl = v => v === Math.round(v) ? String(Math.round(v)) : v.toFixed(1);
+  const neuAnn = key => () => ND.annahmen[key].map(a => Object.assign({}, a));
+  const NEU_WERKSTOFFE = ND.werkstoffe;
 
-  const RINNE_VORGABE = { laenge: 10000, abwicklung: 330, gefaelle: 3, halterAbstand: 500, dilatationAbstand: 15000, verschnitt: 0.05, ablaeufe: 1, aussenEcken: 0, innenEcken: 0 };
+  const RINNE_VORGABE = { laenge: 10000, abwicklung: V.RINNE_ABWICKLUNG, gefaelle: V.RINNE_GEFAELLE, halterAbstand: V.RINNE_HALTER, dilatationAbstand: V.RINNE_DILATATION, tafelBreite: V.TAFEL_BREITE,
+    ablaufMitte: false, verschnitt: 0.05, ablaeufe: 1, aussenEcken: 0, innenEcken: 0 };
   function RinneSkizze(e) {
     e = Object.assign({}, RINNE_VORGABE, e); const s = { e };
     s.laengeM = e.laenge / 1000; s.blechNettoM2 = e.laenge * e.abwicklung / 1e6; s.blechM2 = s.blechNettoM2 * (1 + e.verschnitt);
-    s.halter = aufrunden(e.laenge / e.halterAbstand) + 1; s.hoehenunterschied = s.laengeM * e.gefaelle;
-    s.dilatationen = Math.max(0, aufrunden(e.laenge / e.dilatationAbstand) - 1); s.streifenProBahn = Math.floor(2000 / e.abwicklung + 1e-9);
+    s.halter = aufrunden(e.laenge / e.halterAbstand) + 1; s.wirksameLaengeM = e.ablaufMitte ? s.laengeM / 2 : s.laengeM; s.hoehenunterschied = s.wirksameLaengeM * e.gefaelle;
+    s.dilatationen = Math.max(0, aufrunden(e.laenge / e.dilatationAbstand) - 1); s.streifenProBahn = Math.floor(e.tafelBreite / e.abwicklung + 1e-9);
+    s.ablaeufe = e.ablaeufe; s.aussenEcken = e.aussenEcken; s.innenEcken = e.innenEcken;
     s.stueckliste = [['Rinnenhalter', s.halter], ['Rinnenwinkel aussen', e.aussenEcken], ['Rinnenwinkel innen', e.innenEcken], ['Rinnenstutzen (Ablauf)', e.ablaeufe], ['Dilatation', s.dilatationen]].filter(x => x[1] > 0);
     s.hinweise = () => { const o = [];
-      if (!RinneSkizze.ABWICKLUNGEN.some(x => Math.abs(x - e.abwicklung) < 1e-9)) o.push({ id: 'abw_unueblich', feld: 'w', text: 'Abwicklung ist keine der üblichen 250 / 330 / 400 mm.' });
-      if (e.gefaelle < 2 || e.gefaelle > 3) o.push({ id: 'gefaelle_bereich', feld: 'g', text: 'Gefälle ausserhalb 2 bis 3 mm/m (Quelle Hornbach CH, RHEINZINK).' });
-      if (e.halterAbstand < 400 || e.halterAbstand > 800) o.push({ id: 'halter_bereich', feld: 'h', text: 'Halterabstand ausserhalb 50 bis 80 cm (Quellen streuen von 40 bis 80 cm).' });
-      if (e.dilatationAbstand > 15000) o.push({ id: 'dil_ueber15', feld: 'd', text: 'Mehr als 15 m zwischen Dilatationen ist bei Zink und Kupfer nicht mehr durch die Quelle (GRÖMO) gedeckt.' });
+      if (!RinneSkizze.ABWICKLUNGEN.some(x => Math.abs(x - e.abwicklung) < 1e-9)) o.push({ id: 'abw_unueblich', feld: 'w', text: 'Abwicklung ist keine der üblichen 250 / 280 / 330 / 400 mm.' });
+      if (e.gefaelle < 3 || e.gefaelle > 5) o.push({ id: 'gefaelle_bereich', feld: 'g', text: 'Gefälle ausserhalb 3 bis 5 mm/m. Empfehlung 5 mm/m (Entwurf prSIA 232/1), ohne Gefälle nur mit Berechnung, Gegengefälle nicht zulässig.' });
+      if (e.halterAbstand < 500 || e.halterAbstand > 900) o.push({ id: 'halter_bereich', feld: 'h', text: 'Halterabstand ausserhalb 50 bis 90 cm (RHEINZINK 50 bis 80, VMZINC 70 bis 90). Bei Schnee 50 bis 60 cm.' });
+      if (e.dilatationAbstand > 10000) o.push({ id: 'dil_ueber10', feld: 'd', text: 'Mehr als 10 m ist auch mit frei beweglichen Enden nicht gedeckt (Zink: 5 m mit Dehnelement, 10 m freie Enden, prSIA 232/1 Entwurf). Deutsche Hersteller erlauben bis 15 m.' });
       return o; };
     s.annahmen = RinneSkizze.annahmenListe;
     return s;
   }
-  RinneSkizze.ABWICKLUNGEN = [250, 330, 400];
-  RinneSkizze.pruefe = (e) => { e = Object.assign({}, RINNE_VORGABE, e); const o = []; pos(o, e.laenge, 'l', NEU_MAX); pos(o, e.abwicklung, 'w', 2000); pos(o, e.halterAbstand, 'h', NEU_MAX); pos(o, e.dilatationAbstand, 'd', NEU_MAX); nichtNeg(o, e.gefaelle, 'g', 100); meldeVerschnitt(o, e.verschnitt);
-    if (e.ablaeufe < 0 || e.ablaeufe > 100) o.push({ fehler: 'NEGATIV', feld: 'a' }); if (e.aussenEcken < 0 || e.aussenEcken > 100) o.push({ fehler: 'NEGATIV', feld: 'ea' }); if (e.innenEcken < 0 || e.innenEcken > 100) o.push({ fehler: 'NEGATIV', feld: 'ei' }); return o; };
-  RinneSkizze.annahmenListe = () => [
-    A('r_abw', 'Abwicklung der Rinne', '250 / 330 / 400 mm, Vorgabe 330', 'QUELLE', 'PREFA-Musterdevis CRB, NPK 351.211 ff. (Schweiz rechnet 330, nicht 333)'),
-    A('r_gefaelle', 'Gefälle', '3 mm/m (2 bis 3)', 'QUELLE', 'Hornbach CH (PRECIT-Anleitung), RHEINZINK Drehhalter bis 3 mm/m'),
-    A('r_halter', 'Halterabstand', '500 mm (50 bis 80 cm)', 'ANNAHME', 'Quellen streuen 40 bis 80 cm, Wert 50 ist die enge Seite'),
-    A('r_dil', 'Dilatation höchstens alle', '15 m (Zink/Kupfer, Abwicklung unter 500)', 'QUELLE', 'GRÖMO Verlegehinweise Dilatation, S. 1 (Deutschland, nicht Schweiz)'),
-    A('r_verschnitt', 'Verschnitt', '5 %', 'ANNAHME', ''),
-    A('r_streifen', 'Streifen je 2-m-Bahn', '2000 / Abwicklung abgerundet', 'QUELLE', 'Kastenrinnen-Ausschreibung (Staffelung 250 / 333 / 400 / 500)'),
-    A('r_hoehe', 'Höhenunterschied', 'Länge in m x Gefälle', 'HERLEITUNG', 'Ablauf an einem Ende, ganze Länge in eine Richtung'),
-    A('r_halter_formel', 'Anzahl Halter', 'aufrunden(Länge / Abstand) + 1', 'HERLEITUNG', 'eigene Rechnung, Rand-Halter 10 cm vom Ende (Hornbach CH) nicht mitgerechnet'),
-    A('r_groesse', 'Rinnengrösse nach Dachfläche/Regenmenge', 'nicht gerechnet', 'ANNAHME', 'keine belastbare Schweizer Tabelle gefunden'),
-    A('r_querschnitt', 'Querschnitt der Rinne (Breite, Tiefe)', 'nicht gezeichnet', 'ANNAHME', 'kein Herstellermass je Abwicklung gefunden'),
-    A('r_dicke', 'Material und Dicke', 'nicht gerechnet', 'ANNAHME', 'Dicke 0,7 mm laut PREFA 351.200.520 (Alu), Gewicht ist hier kein Thema')];
+  RinneSkizze.ABWICKLUNGEN = [250, 280, 330, 333, 400];
+  RinneSkizze.pruefe = (e) => { e = Object.assign({}, RINNE_VORGABE, e); const o = []; pos(o, e.laenge, 'l', NEU_MAX); pos(o, e.abwicklung, 'w', 2000); pos(o, e.halterAbstand, 'h', NEU_MAX); pos(o, e.dilatationAbstand, 'd', NEU_MAX);
+    nichtNeg(o, e.gefaelle, 'g', 100); meldeVerschnitt(o, e.verschnitt);
+    if (e.ablaeufe < 0 || e.ablaeufe > 100) o.push({ fehler: 'NEGATIV', feld: 'a' }); if (e.aussenEcken < 0 || e.aussenEcken > 100) o.push({ fehler: 'NEGATIV', feld: 'ea' }); if (e.innenEcken < 0 || e.innenEcken > 100) o.push({ fehler: 'NEGATIV', feld: 'ei' });
+    return o; };
+  RinneSkizze.annahmenListe = neuAnn('rinne');
 
-  const MAUER_VORGABE = { mauerBreite: 250, laenge: 4000, ueberstand: 30, schenkel: 50, abkantung: 15, gefaelle: 3, ecken: 0, stueckLaenge: 3000, dilatationAbstand: 8000, verschnitt: 0.05, einhaengestreifen: true };
+  const MAUER_VORGABE = { mauerBreite: 250, laenge: 4000, ueberstand: V.MAUER_UEBERSTAND, schenkel: V.MAUER_SCHENKEL, abkantung: V.MAUER_UMSCHLAG, gefaelle: V.MAUER_GEFAELLE, ecken: 0, stueckLaenge: V.MAUER_STUECK,
+    dilatationAbstand: V.MAUER_DILATATION, verschnitt: 0.05, einhaengestreifen: false, haftenAbstand: V.MAUER_HAFTEN };
   function MauerSkizze(e) {
     e = Object.assign({}, MAUER_VORGABE, e); const s = { e };
     s.seitenabwicklung = e.ueberstand + e.schenkel + e.abkantung; s.abwicklung = e.mauerBreite + 2 * s.seitenabwicklung;
@@ -261,37 +260,27 @@
     s.blechNettoM2 = e.laenge * s.abwicklung / 1e6; s.blechM2 = s.blechNettoM2 * (1 + e.verschnitt);
     s.stuecke = aufrunden(e.laenge / e.stueckLaenge); s.dilatationen = Math.max(0, aufrunden(e.laenge / e.dilatationAbstand) - 1);
     s.streifenLaenge = e.einhaengestreifen ? 2 * e.laenge : 0;
-    const zahl = v => v === Math.round(v) ? String(Math.round(v)) : v.toFixed(1);
-    s.stueckliste = [['Abdeckung, Abwicklung ' + zahl(s.abwicklung), s.stuecke], ['Gehrung / Ecke', e.ecken], ['Dilatation', s.dilatationen]].filter(x => x[1] > 0);
+    s.haften = (e.einhaengestreifen || e.haftenAbstand <= 0) ? 0 : aufrunden(e.laenge / e.haftenAbstand) + 1;
+    s.stossverbinder = Math.max(0, s.stuecke - 1);
+    s.stueckliste = [['Abdeckung, Abwicklung ' + nzahl(s.abwicklung), s.stuecke], ['Stossverbinder (Steckschieber / Stossblech)', s.stossverbinder], ['Haften (Stahl 1,0 mm)', s.haften], ['Gehrung / Ecke', e.ecken], ['Dilatation', s.dilatationen]].filter(x => x[1] > 0);
     s.hinweise = () => { const o = [];
-      if (e.ueberstand < 20) o.push({ id: 'ueberstand_min', feld: 'u', text: 'Tropfkante weniger als 20 mm von der Wand (Mindestmass laut KLM-Anleitung, Hersteller D).' });
-      if (e.schenkel < 50) o.push({ id: 'schenkel_min', feld: 's', text: 'Senkrechter Schenkel unter 50 mm (Mindestmass laut KLM und RHEINZINK).' });
+      if (e.ueberstand < 30) o.push({ id: 'ueberstand_min', feld: 'u', text: 'Tropfkante weniger als 30 mm von der Wand (Mindestmass Merkblatt Gebäudehülle Schweiz, Empfehlung 50).' });
+      if (e.schenkel < 50) o.push({ id: 'schenkel_min', feld: 's', text: 'Senkrechter Schenkel unter 50 mm (Mindestmass, windexponiert 100 mm: Gebäudehülle Schweiz, RHEINZINK, KLM).' });
       if (e.abkantung > e.ueberstand) o.push({ id: 'abkantung_wand', feld: 't', text: 'Die Abkantung ist länger als der Abstand zur Wand: sie würde an der Mauer anstehen.' });
       if (e.gefaelle < 3) o.push({ id: 'gefaelle_min', feld: 'g', text: 'Gefälle unter 3 Grad (Mindestmass laut RHEINZINK).' });
-      if (e.dilatationAbstand > 8000) o.push({ id: 'dil_ueber8', feld: 'd', text: 'Mehr als 8 m zwischen Dilatationen ist nicht durch die Quelle (RHEINZINK) gedeckt.' });
+      if (e.dilatationAbstand > 5000) o.push({ id: 'dil_ueber5', feld: 'd', text: 'Mehr als 5 m zwischen Dilatationen: Schweizer Wert für Zink ist 5 m (Merkblatt Gebäudehülle), RHEINZINK D erlaubt 8 m.' });
       if (s.abwicklung > 500) o.push({ id: 'abw_ueber500', feld: 'w', text: 'Abwicklung über 500 mm: der Devis-Standard ist 500, bis 5x abgekantet.' });
       if (s.abwicklung >= 800) o.push({ id: 'abw_800', feld: 'w', text: 'Ab 800 mm Abwicklung nennt RHEINZINK Stehfalz statt einer Tafel.' });
       return o; };
     s.annahmen = MauerSkizze.annahmenListe;
     return s;
   }
-  MauerSkizze.pruefe = (e) => { e = Object.assign({}, MAUER_VORGABE, e); const o = []; pos(o, e.mauerBreite, 'b', NEU_MAX); pos(o, e.laenge, 'l', NEU_MAX); pos(o, e.ueberstand, 'u', 1000); pos(o, e.schenkel, 's', 1000); nichtNeg(o, e.abkantung, 't', 1000); pos(o, e.stueckLaenge, 'p', NEU_MAX); pos(o, e.dilatationAbstand, 'd', NEU_MAX); meldeVerschnitt(o, e.verschnitt);
+  MauerSkizze.pruefe = (e) => { e = Object.assign({}, MAUER_VORGABE, e); const o = []; pos(o, e.mauerBreite, 'b', NEU_MAX); pos(o, e.laenge, 'l', NEU_MAX); pos(o, e.ueberstand, 'u', 1000); pos(o, e.schenkel, 's', 1000);
+    nichtNeg(o, e.abkantung, 't', 1000); pos(o, e.stueckLaenge, 'p', NEU_MAX); pos(o, e.dilatationAbstand, 'd', NEU_MAX); meldeVerschnitt(o, e.verschnitt);
     if (!isFinite(e.gefaelle) || e.gefaelle < 0 || e.gefaelle >= 45) o.push({ fehler: 'WINKEL_BEREICH', feld: 'g' }); if (e.ecken < 0 || e.ecken > 100) o.push({ fehler: 'NEGATIV', feld: 'e' }); return o; };
-  MauerSkizze.annahmenListe = () => [
-    A('m_gefaelle', 'Gefälle', 'mindestens 3 Grad', 'QUELLE', 'RHEINZINK Abdeckungen und Anschlüsse (Webseite), Mindestmass'),
-    A('m_tropf', 'Tropfkante von der Wand', 'mindestens 20 mm, Vorgabe 30', 'QUELLE', 'KLM-Montageanleitung (Hersteller D, nur über Suchzusammenfassung gelesen). Vorgabe 30 ist ANNAHME (hausjournal 30 bis 50, schwache Quelle)'),
-    A('m_schenkel', 'Senkrechter Schenkel', 'mindestens 50 mm', 'QUELLE', 'KLM-Montageanleitung, RHEINZINK Webseite (ab 50 mm Stabilisierung nötig)'),
-    A('m_abkant', 'Abkantung unten (Tropfnase)', '15 mm', 'ANNAHME', ''),
-    A('m_dil', 'Dilatation höchstens alle', '8 m (Ecke / Festpunkt 4 m)', 'QUELLE', 'RHEINZINK Webseite; GRÖMO nennt für Band 10 m, die Quellen weichen ab'),
-    A('m_devis', 'Devis-Standard', 'Abwicklung 500, bis 5x abgekantet, beidseitig eingehängt', 'QUELLE', 'PREFA-Musterdevis CRB, NPK 351.575.114'),
-    A('m_streifen', 'Einhängestreifen', 'Abwicklung 125, 2 x Länge', 'QUELLE', 'PREFA CH 351.575.310 (Stahlblech 0,87, auf Holz). Zwei Seiten sind ANNAHME'),
-    A('m_abw', 'Abwicklung', 'Mauerbreite + 2 x (Abstand + Schenkel + Abkantung)', 'HERLEITUNG', 'eigene Geometrie, keine Quelle'),
-    A('m_gefaelle_abw', 'Gefälle in der Abwicklung', 'vernachlässigt (0,4 mm bei 250 mm / 3 Grad)', 'ANNAHME', ''),
-    A('m_verschnitt', 'Verschnitt', '5 %', 'ANNAHME', ''),
-    A('m_stueck', 'Stücklänge', '3000 mm', 'ANNAHME', 'Stossmass (Überlappung, Stossfalz) nicht belegt, darum nur Stückzahl, keine Überlappung gerechnet'),
-    A('m_unterbau', 'Unterkonstruktion', 'nicht gerechnet', 'ANNAHME', 'RHEINZINK: Vollholz 24 mm oder OSB mind. 25 mm, hier nur Hinweis')];
+  MauerSkizze.annahmenListe = neuAnn('mauer');
 
-  const KEHLE_VORGABE = { laenge: 4000, abwicklung: 670, aufkantung: 20, maxStueck: 3000, ueberlappung: 100, kehlwinkel: 130, verschnitt: 0.05 };
+  const KEHLE_VORGABE = { laenge: 4000, abwicklung: V.KEHLE_ABWICKLUNG, aufkantung: V.KEHLE_AUFKANTUNG, maxStueck: V.KEHLE_STUECK, ueberlappung: V.KEHLE_UEBERLAPPUNG, kehlwinkel: 130, verschnitt: 0.05 };
   function KehleSkizze(e) {
     e = Object.assign({}, KEHLE_VORGABE, e); const s = { e };
     s.schenkel = (e.abwicklung - 2 * e.aufkantung) / 2;
@@ -300,34 +289,27 @@
     s.blechM2 = s.blechLaenge * e.abwicklung * (1 + e.verschnitt) / 1e6;
     s.schenkelNeigung = (180 - e.kehlwinkel) / 2; s.spannweite = 2 * s.schenkel * cos(rad(s.schenkelNeigung)); s.tiefe = s.schenkel * sin(rad(s.schenkelNeigung));
     s.stueckLaengen = () => { const r = []; for (let i = 0; i < s.stuecke; i++) r.push(Math.min(e.maxStueck, e.laenge - i * (e.maxStueck - e.ueberlappung))); return r; };
-    const zahl = v => v === Math.round(v) ? String(Math.round(v)) : v.toFixed(1);
-    s.stueckliste = [['Kehlblech, Abwicklung ' + zahl(e.abwicklung), s.stuecke]];
+    s.stueckliste = [['Kehlblech, Abwicklung ' + nzahl(e.abwicklung), s.stuecke]];
     s.hinweise = () => { const o = [];
-      if (e.abwicklung < 500 || e.abwicklung > 708) o.push({ id: 'abw_bereich', feld: 'w', text: 'Abwicklung ausserhalb 500 bis 708 mm (sbz-monteur 1998, Devis 670 / 708).' });
-      if (e.maxStueck > 3000) o.push({ id: 'stueck_3m', feld: 'm', text: 'Einzelstücke über 3 m sind nicht durch die Quelle (sbz-monteur 6/1998) gedeckt.' });
-      if (e.ueberlappung < 100) o.push({ id: 'ueberlappung_100', feld: 'u', text: 'Überlappung unter 100 mm: der Wert stammt von einem Drittanbieter (Benders), nicht aus der Schweiz.' });
-      if (e.aufkantung < 15) o.push({ id: 'aufkantung_klein', feld: 'a', text: 'Aufkantung unter 15 mm: SAREI nennt 15 (Abwicklung 333) und 20 (400).' });
+      if (e.abwicklung < 400 || e.abwicklung > 708) o.push({ id: 'abw_bereich', feld: 'w', text: 'Abwicklung ausserhalb 400 bis 708 mm (400 nur Metalldach mit Einfachfalz ab 25 Grad, RHEINZINK CH; Devis 500 / 670 / 708).' });
+      if (e.maxStueck > 3000) o.push({ id: 'stueck_3m', feld: 'm', text: 'Einzelstücke über 3 m sind nicht durch die Quelle gedeckt (gefalzte Kehle bis 3 m: RHEINZINK CH; PREFA 3000).' });
+      if (e.ueberlappung < 100) o.push({ id: 'ueberlappung_100', feld: 'u', text: 'Überlappung unter 100 mm: Braas und ddh.de nennen mindestens 100 mm (ab 22 Grad Kehlneigung), 150 mm darunter. Beide Quellen aus Deutschland.' });
+      if (e.aufkantung < 15) o.push({ id: 'aufkantung_klein', feld: 'a', text: 'Aufkantung unter 15 mm: Debrunner Normfigur 107 zeigt 15, SAREI 15 (Abwicklung 333) und 20 (400).' });
       return o; };
     s.annahmen = KehleSkizze.annahmenListe;
     return s;
   }
-  KehleSkizze.ABWICKLUNGEN = [500, 670, 708];
-  KehleSkizze.pruefe = (e) => { e = Object.assign({}, KEHLE_VORGABE, e); const o = []; pos(o, e.laenge, 'l', NEU_MAX); pos(o, e.abwicklung, 'w', 3000); nichtNeg(o, e.aufkantung, 'a', 1000); pos(o, e.maxStueck, 'm', NEU_MAX); nichtNeg(o, e.ueberlappung, 'u', NEU_MAX); meldeVerschnitt(o, e.verschnitt);
+  KehleSkizze.ABWICKLUNGEN = [400, 500, 670, 708];
+  KehleSkizze.pruefe = (e) => { e = Object.assign({}, KEHLE_VORGABE, e); const o = []; pos(o, e.laenge, 'l', NEU_MAX); pos(o, e.abwicklung, 'w', 3000); nichtNeg(o, e.aufkantung, 'a', 1000); pos(o, e.maxStueck, 'm', NEU_MAX);
+    nichtNeg(o, e.ueberlappung, 'u', NEU_MAX); meldeVerschnitt(o, e.verschnitt);
     if (!isFinite(e.kehlwinkel) || e.kehlwinkel <= 60 || e.kehlwinkel >= 180) o.push({ fehler: 'WINKEL_BEREICH', feld: 'k' });
     if (!o.length) { if (e.abwicklung - 2 * e.aufkantung <= 0) o.push({ fehler: 'KEHLE_AUFKANTUNG_ZU_GROSS', feld: 'a' }); if (e.maxStueck <= e.ueberlappung) o.push({ fehler: 'STUECK_KUERZER_ALS_UEBERLAPPUNG', feld: 'm' }); }
     return o; };
-  KehleSkizze.annahmenListe = () => [
-    A('k_abw', 'Abwicklung', '500 bis 708 mm, Vorgabe 670', 'QUELLE', 'sbz-monteur 6/1998 (PREFA) S. 19; Schweizer Devis NPK 351.543.115 (670) und .118 (708 Sicherheitskehle, 8 Abkantungen)'),
-    A('k_stueck', 'Einzelstücke höchstens', '3000 mm', 'QUELLE', 'sbz-monteur 6/1998 S. 19; Devis 708: max. 3000'),
-    A('k_aufkant', 'Aufkantung / Wasserfalz je Seite', '20 mm', 'ANNAHME', 'SAREI-Produkt: 15 mm (Abwicklung 333), 20 mm (400). Ein Produkt, nicht allgemein'),
-    A('k_schenkel', 'Schenkel je Seite', '(Abwicklung - 2 x Aufkantung) / 2', 'HERLEITUNG', 'SAREI 333: 149 x 2 + 15 x 2 = 328, Falz und Rundung (5 mm) hier nicht gerechnet'),
-    A('k_ueberlapp', 'Überlappung der Stücke', '100 mm', 'QUELLE', 'Benders Kehlblech-Datenblatt, mindestens 100 je nach Neigung. Drittanbieter (Schweden/Deutschland), nicht Schweiz'),
-    A('k_winkel', 'Kehlwinkel im Blech', '130 Grad (nur Zeichnung)', 'QUELLE', 'SAREI-Kehlblech 333 und 400. Ein Produkt, der wirkliche Winkel hängt von Dachneigung und Grundriss ab'),
-    A('k_verschnitt', 'Verschnitt', '5 %', 'ANNAHME', ''),
-    A('k_neigung', 'Abwicklung nach Dachneigung', 'nicht gerechnet', 'ANNAHME', 'keine Tabelle gefunden, Forenwerte widersprechen sich'),
-    A('k_geometrie', 'Räumliche Kehlgeometrie', 'nicht gerechnet', 'ANNAHME', 'Winkel im Blech ist ein Eingabewert, nicht aus der Dachneigung berechnet'),
-    A('k_aufkant_richtung', 'Aufkantung in der Zeichnung', 'senkrecht', 'ANNAHME', 'Richtung der Aufkantung ist nicht belegt'),
-    A('k_unterlage', 'Unterlage', 'Bitumenbahn unter dem Kehlblech', 'QUELLE', 'sbz-monteur 6/1998, nur Hinweis, nicht gerechnet')];
+  KehleSkizze.annahmenListe = neuAnn('kehle');
+  /** Ueberlappung nach Kehlneigung (Braas Tab. 3, ddh.de): ab 22 Grad 100, ab 15 Grad 150, darunter null (loeten). */
+  const kehleUeberlappung = n => n >= 22 ? 100 : n >= 15 ? 150 : null;
+  const kehlneigung = (dach, grundriss) => Math.atan(tan(rad(dach)) * sin(rad(grundriss == null ? 90 : grundriss) / 2)) * 180 / PI;
+  const kehleMindestbreite = ueb => 2 * (ueb + 40 + 15);
 
   // ================================================================ Hersteller-Versatztabelle (zwei Boegen direkt, Achsmass in mm)
   // HBW "Ausladung der Fallrohrboegen" (praxis_haendler-boegen.md, rohr.md): 72 Grad 150/190/230, 85 Grad 210/260/310 fuer Rohr 60/80/100.
@@ -338,6 +320,6 @@
   const radiusAnnahme = d => 1.7 * d;
 
   root.Kern = { KaminSkizze, SchwanenhalsSkizze, DunstrohrSkizze, Zylinderstueck, Kegelstumpf, kegelstumpf, Bogen, pruefeBogen, RohrSchwanenhals, Hosenrohr, pruefeHose, pruefeKegel, RohrRechnung,
-    WERKSTOFFE, ARTEN, teileListe, rechnenKamin, ueberlappVorschlag, aufVorneSeitlichVorschlag, UEBERLAPP_STANDARD, RinneSkizze, MauerSkizze, KehleSkizze, VERSATZ_TABELLE, versatzTabelle, radiusAnnahme, flaecheVon };
+    WERKSTOFFE, ARTEN, teileListe, rechnenKamin, ueberlappVorschlag, aufVorneSeitlichVorschlag, UEBERLAPP_STANDARD, RinneSkizze, MauerSkizze, KehleSkizze, NEU_WERKSTOFFE, kehleUeberlappung, kehlneigung, kehleMindestbreite, NEU_DATEN: ND, VERSATZ_TABELLE, versatzTabelle, radiusAnnahme, flaecheVon };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Kern;
 })(typeof window !== 'undefined' ? window : globalThis);

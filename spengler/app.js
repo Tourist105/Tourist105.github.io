@@ -1,5 +1,5 @@
 /* Spengler-Web: Start, Routing (Hash + History API), Overlay-Knoepfe (Zurueck, Sprache, Info).
- * Adressen:  #start | #kamineinfassung | #schwanenhals | #dunstrohr | #annahmen | #bestaetigen | #profil | #kamin-alt | #schwanenhals-alt | #rohrbogen | #hosenrohr | #reduktion
+ * Adressen:  #start | #dachrinne | #mauerabdeckung | #kehle | #kamineinfassung | #schwanenhals | #dunstrohr | #annahmen | #bestaetigen | #profil | #kamin-alt | #schwanenhals-alt | #rohrbogen | #hosenrohr | #reduktion
  *   Ansicht:  #schwanenhals/uebersicht|aufriss|zuschnitt|3d|2d   #kamineinfassung/grundriss   #dunstrohr/stutzen
  *   Zustand:  ?k=500&t=400 (Feldwerte) &mehr=1 &fokus=r &kb=1 (Tastatur) &si=oben,rechts,unten,links (Systemleisten in px, nur Test) &t=5000 (Startmenue-Zeit) &frei=1 &scroll=px &kopf=alt
  *   Dialog:   +info | +sprache | +pdf | +vollbild | +rueck:stimmt_nicht | +kommentar | +kommentare
@@ -64,6 +64,7 @@
     else if (name === 'bestaetigen') p = S.seiteBestaetigen(o);
     else if (name === 'annahmen') p = S.seiteAnnahmen(o);
     else if (name.startsWith('skizze_')) p = S.seiteSkizze(name, o);
+    else if (name === 'dachrinne' || name === 'mauerabdeckung' || name === 'kehle') p = S.seiteNeu(name, o);
     else if (S.seiteWeitere) p = S.seiteWeitere(name, o);
     if (!p) p = S.seiteHome(o);
     seite = p; route = name;

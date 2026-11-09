@@ -1,7 +1,8 @@
 /* Spengler-Web: Eingabeseiten Kamineinfassung, Schwanenhals, Dunstrohr. Port von SkizzenActivity.kt (Aufbau, Zustaende, Rechnung ueber kern.js). */
 (function (root) {
   'use strict';
-  const S = root.S, Ze = root.Ze, K = root.Kern, h = S.h, T = S.T, fmtTrim = Ze.fmtTrim, fmtM2 = S.fmtM2;
+  const S = root.S, Ze = root.Ze, K = root.Kern, h = S.h, T = S.T, fmtTrim = Ze.fmtTrim, fmtM2 = S.fmtM2, NT = root.Normteile, nz = NT.nz;
+  const FARBE = { beleg: '#105E32', annahme: '#965000', unsicher: '#B00020' };
 
   const DEFS = {
     skizze_kamin: [['k', 'ss_f_k', '500'], ['t', 'ss_f_t', '400'], ['h', 'ss_f_h', '100'], ['sl', 'ss_f_sl', '100'], ['sr', 'ss_f_sr', '100'], ['ah', 'ss_f_ah', '200'], ['av', 'ss_f_av', '150'], ['u', 'ss_f_u', '15']],
@@ -59,7 +60,7 @@
     opt = opt || {};
     const defs = DEFS[art], prim = PRIMAER[art], ist = art;
     const quer = S.vp.quer;
-    const st = { werte: {}, winkelWahl: 0, mat: 0, latten: '', deckung: '', notiz: '', mehr: false, ansicht: 0, ist3d: false };
+    const st = { werte: {}, winkelWahl: 0, mat: 0, latten: '', deckung: '', notiz: '', mehr: false, ansicht: 0, ist3d: false, nmat: 0, ndn: 100 };
     const pref = k => S.lies(art + '.' + k), setp = (k, v) => S.schreibe(art + '.' + k, v);
     for (const [k, , v] of defs) st.werte[k] = pref(k) != null ? pref(k) : v;
     st.werte.w = pref('w') != null ? pref('w') : '72';
@@ -67,10 +68,11 @@
     st.mat = Math.min(6, Math.max(0, +pref('mat') || 0));
     st.latten = pref('latten') || ''; st.deckung = pref('deckung') || ''; st.notiz = pref('notiz') || '';
     st.mehr = pref('mehr') === 'true';
-    if (opt.werte) for (const k in opt.werte) { if (k === 'wahl') st.winkelWahl = Math.min(2, Math.max(0, +opt.werte[k])); else if (k in st.werte) st.werte[k] = opt.werte[k]; }
+    st.nmat = Math.min(NT.werkstoffe.length - 1, Math.max(0, +pref('nmat') || 0)); st.ndn = +pref('ndn') || 100;
+    if (opt.werte) for (const k in opt.werte) { if (k === 'wahl') st.winkelWahl = Math.min(2, Math.max(0, +opt.werte[k])); else if (k === 'nmat') st.nmat = Math.min(NT.werkstoffe.length - 1, Math.max(0, +opt.werte[k])); else if (k === 'ndn') st.ndn = +opt.werte[k]; else if (k in st.werte) st.werte[k] = opt.werte[k]; }
     if (opt.mehr != null) st.mehr = opt.mehr;
     if (opt.latten != null) st.latten = opt.latten; if (opt.deckung != null) st.deckung = opt.deckung; if (opt.notiz != null) st.notiz = opt.notiz;
-    const speichere = () => { for (const k in st.werte) setp(k, st.werte[k]); setp('wahl', st.winkelWahl); setp('mat', st.mat); setp('latten', st.latten); setp('deckung', st.deckung); setp('notiz', st.notiz); setp('mehr', st.mehr); };
+    const speichere = () => { for (const k in st.werte) setp(k, st.werte[k]); setp('wahl', st.winkelWahl); setp('mat', st.mat); setp('latten', st.latten); setp('deckung', st.deckung); setp('notiz', st.notiz); setp('mehr', st.mehr); setp('nmat', st.nmat); setp('ndn', st.ndn); };
 
     const arten = art === 'skizze_dunst' ? [1, 2, 3] : [1, 2];
     const artenAlle = quer ? arten : [0].concat(arten);
@@ -78,7 +80,7 @@
     const hat3d = art === 'skizze_hals';
 
     // -------------------------------------------------------- Elemente
-    const felder = {}; let winkelFeld = null;
+    const felder = {}; let winkelFeld = null, winkelSeg = null;
     const zahl = k => { const v = S.parseNum(st.werte[k] == null ? '' : st.werte[k]); return v == null ? NaN : v; };
     const bogenGrad = () => st.winkelWahl === 0 ? 72 : st.winkelWahl === 1 ? 85 : zahl('w');
 
@@ -107,6 +109,7 @@
     if (quer) primBox.style.cssText = 'padding:0;margin:0';
     if (art === 'skizze_hals') {
       const seg = S.segment(['72°', '85°', T('ss_winkel_eigen')], st.winkelWahl, i => { st.winkelWahl = i; winkelFeld.style.display = i === 2 ? '' : 'none'; if (i === 2) winkelFeld.input.focus(); aktualisiere(); });
+      winkelSeg = seg;
       primBox.append(h('div', { class: 'bt', text: T('ss_bogen_titel') }), h('div', { style: { marginTop: '2px' } }, seg));
       winkelFeld = feldBauen(['w', 'ss_f_w', '72']); winkelFeld.style.display = st.winkelWahl === 2 ? '' : 'none'; winkelFeld.style.marginTop = '4px';
       primBox.append(winkelFeld);
@@ -160,7 +163,38 @@
       const matSp = S.waehler(S.TA('werkstoffe'), st.mat, i => { st.mat = i; aktualisiere(); });
       inh.append(h('div', { style: { marginTop: '10px' } }, S.karte(S.text(T('ss_fragen_titel'), 18, true), h('div', { style: { fontSize: '14px', color: 'var(--text2)' }, text: T('ss_fragen_info') }), lat, dec, S.text(T('l_material'), 16, true), matSp)));
     }
+    const L = (de, en) => S.sprache() === 'en' ? en : de;
+    const normBox = h('div', {}), materialBox = h('div', {});
+    const statusZeile = (sx, q, gr) => h('div', { style: { fontSize: (gr || 12.5) + 'px', color: FARBE[sx], marginTop: '2px' }, text: NT.statusText(sx) + ': ' + q });
+    const mtop = (e, px) => { e.style.marginTop = px + 'px'; return e; };
+    const chipZeile = (liste, an, zeig, wahl, minB) => { const z = h('div', { style: { display: 'flex', overflowX: 'auto', marginTop: '4px' } }); for (const x of liste) z.append(h('button', { class: 'chip' + (an(x) ? ' an' : ''), text: zeig(x), style: { marginRight: '6px', minWidth: (minB || 64) + 'px', flex: '0 0 auto' }, onclick: () => wahl(x) })); return z; };
+    function baueHalsNorm() {
+      normBox.innerHTML = ''; const wk = NT.werkstoffe[st.nmat];
+      const hint = S.text(NT.D.hinweis, 13, false); hint.style.color = 'var(--text2)'; normBox.append(hint);
+      normBox.append(mtop(S.text(L('Werkstoff', 'Material'), 14, true), 10), mtop(S.waehler(NT.werkstoffe.map(w => w.name), st.nmat, i => { st.nmat = i; baueHalsNorm(); aktualisiere(); }), 4));
+      normBox.append(statusZeile(wk.bogenDicke.s, L('Dicke Bogen ', 'Bend thickness ') + wk.bogenDicke.fuer(st.ndn) + '. ' + wk.bogenDicke.q));
+      normBox.append(mtop(S.text(L('Rohr (Nennweite)', 'Pipe (nominal size)'), 14, true), 12), chipZeile(NT.durchmesser, d => st.ndn === d.dn, d => String(d.dn), d => { st.ndn = d.dn; baueHalsNorm(); aktualisiere(); }));
+      const dd = NT.dnVon(st.ndn); if (dd) normBox.append(statusZeile(dd.s, 'Nenn ' + dd.dn + ': ' + dd.q));
+      normBox.append(mtop(S.text(L('Bogenwinkel (Normteile)', 'Bend angle (standard parts)'), 14, true), 12), chipZeile(NT.winkel, w => Math.abs(bogenGrad() - w.grad) < 1e-9, w => w.grad + '°', w => setzeBogenwinkel(w.grad)));
+      const nw = NT.winkelVon(bogenGrad());
+      normBox.append(nw ? statusZeile(nw.s, nw.grad + '°: ' + nw.q) : statusZeile('unsicher', L('Kein Normwinkel im Katalog: ein solcher Bogen ist kein Fertigteil, Alex prüft.', 'Not a standard angle in the catalogue: such a bend is not a ready-made part, Alex to check.')));
+    }
+    function setzeBogenwinkel(grad) {
+      if (grad === 72) { st.winkelWahl = 0; winkelSeg.setze(0); } else if (grad === 85) { st.winkelWahl = 1; winkelSeg.setze(1); }
+      else { st.winkelWahl = 2; st.werte.w = String(grad); winkelFeld.input.value = st.werte.w; winkelSeg.setze(2); }
+      winkelFeld.style.display = st.winkelWahl === 2 ? '' : 'none'; baueHalsNorm(); aktualisiere();
+    }
+    function baueHalsMaterial(ml) {
+      materialBox.innerHTML = '';
+      ml.zeilen.forEach((z, i) => materialBox.append(mtop(S.text(nz(z.menge, 2) + ' ' + z.einheit + '   ' + z.teil, 15.5, true), i === 0 ? 0 : 12), mtop(S.text(z.detail, 14, false), 1), statusZeile(z.status, z.quelle)));
+      materialBox.append(mtop(S.text(L('Summen', 'Totals'), 15, true), 16));
+      for (const [l, w] of ml.summen) materialBox.append(mtop(S.text(l + ': ' + w, 14.5, false), 3));
+      for (const [sx, tx] of ml.hinweise) materialBox.append(mtop(statusZeile(sx, tx, 13.5), 8));
+      baueHalsNorm();
+    }
+    if (art === 'skizze_hals') baueHalsNorm();
     inh.append(h('div', { style: { marginTop: '10px' } }, S.karte(S.text(T('ss_ergebnis'), 18, true), detail)),
+      ...(art === 'skizze_hals' ? [h('div', { style: { marginTop: '10px' } }, S.karte(S.text(L('Normteile wählen', 'Choose standard parts'), 18, true), mtop(normBox, 8))) , h('div', { style: { marginTop: '10px' } }, S.karte(S.text(L('Materialliste', 'Bill of materials'), 18, true), mtop(materialBox, 8))) ] : []),
       h('div', { style: { marginTop: '10px' } }, S.karte(S.text(T('ss_annahmen_titel'), 18, true), S.text(T(ANN[art]), 15))),
       h('div', { style: { marginTop: '10px' } }, S.karte(S.feld(T('ss_notiz'), st.notiz, { text: true, ende: true, onChange: v => { st.notiz = v; } }))),
       h('div', { style: { marginTop: '12px' } }, S.rmKarte(art, T(TITEL[art]), () => snapshot())),
@@ -221,7 +255,7 @@
     const blattTexte = (label, gross, zeilen, legende, zuschnitt, stutzen) => ({ titel: T(TITEL[art]), datum: datum(), kunde: T('ss_kunde'), ergebnisLabel: label, gross, zeilen, annahmenTitel: T('ss_annahmen_titel'), annahmen: T(ANN[art]), legende,
       aufrissTitel: T('ss_aufriss'), grundrissTitel: T('ss_grundriss'), zuschnittTitel: zuschnitt || '', stutzenTitel: stutzen || '', faltlinie: T('ss_leg_falz'), fuss: T('ss_fuss') });
 
-    let gueltig = false, grossText = '', zeilen = [], seiteBauer = null, angezeigt = NaN, ergLabel = '', zaehlStopp = null;
+    let gueltig = false, grossText = '', zeilen = [], seiteBauer = null, weitereSeiten = null, angezeigt = NaN, ergLabel = '', zaehlStopp = null;
     function zaehleHoch(ziel, text) {
       const von = isNaN(angezeigt) ? ziel : angezeigt;
       if (zaehlStopp) zaehlStopp();
@@ -238,12 +272,13 @@
       if (art === 'skizze_hals' && st.winkelWahl !== 2 && winkelFeld) winkelFeld.fehler(null);
       if (meld.length) {
         gueltig = false; leisteLabel.textContent = T('ss_leiste_leer'); leisteWert.textContent = '-'; angezeigt = NaN;
-        detail.textContent = fehlerText(meld[0]); seiteBauer = null; grossText = ''; zeilen = [];
+        detail.textContent = fehlerText(meld[0]); seiteBauer = null; weitereSeiten = null; grossText = ''; zeilen = []; if (art === 'skizze_hals') materialBox.innerHTML = '';
         cv2.style.opacity = .4; if (cv3) cv3.style.opacity = .4; teilenKnopf.disabled = true; teilenKnopf.style.opacity = .5; return;
       }
       cv2.style.opacity = 1; if (cv3) cv3.style.opacity = 1; teilenKnopf.disabled = false; teilenKnopf.style.opacity = 1; gueltig = true;
       const lb = beschr(), breitSchirm = 420, Bl = root.Blatt;
       const teilTxt = (t, name, key) => T(key, name, fmtTrim(t.breite, 1), fmtTrim(t.tiefe, 1), fmtTrim(t.kerbeBreite, 1), fmtTrim(t.kerbeTiefe, 1), fmtM2(t.gesamtM2));
+      weitereSeiten = null;
       if (art === 'skizze_kamin') {
         const k = K.KaminSkizze(zahl('k'), zahl('t'), zahl('sl'), zahl('sr'), zahl('ah'), zahl('av'), zahl('h'), zahl('u'));
         view.bauer = (a, w, hh, t) => a === 0 ? Ze.kaminBlatt(k, w, hh, t, lb, w >= breitSchirm) : a === 1 ? Ze.kaminAufriss(k, w, hh, t, lb, w >= breitSchirm) : Ze.kaminGrundriss(k, w, hh, t, lb);
@@ -262,6 +297,10 @@
         grossText = T('ss_hals_gross', fmtTrim(hs.rohrZuschnitt, 1));
         zeilen = [T('ss_hals_detail', fmtTrim(hs.luecke, 1), fmtTrim(hs.steckung, 1), fmtTrim(hs.neigungZurWaagrechten, 1), fmtTrim(hs.hoehe, 1))];
         ergLabel = T('ss_ergebnis_hals'); zaehleHoch(hs.rohrZuschnitt, v => fmtTrim(v, 1) + ' mm');
+        const ml = NT.hals(hs, { dn: st.ndn, werkstoff: NT.werkstoffe[st.nmat].id, rinneStueck: 5000, rohrStueck: 2000 });
+        baueHalsMaterial(ml);
+        weitereSeiten = () => { const tx = blattTexte(ergLabel, fmtTrim(hs.rohrZuschnitt, 1) + ' mm', zeilen, []); tx.titel = T('ablauf_sk_hals') + ': ' + L('Materialliste', 'Bill of materials');
+          return root.Blatt.neu.material(ml, [], tx, { summen: L('Summen', 'Totals'), hinweise: L('Hinweise', 'Notes'), annahmen: T('ss_annahmen_titel'), status: sx => NT.statusText(sx), beleg: () => NT.statusText('beleg') }); };
         seiteBauer = () => { const z = zeilen.slice(); if (st.notiz.trim()) z.push(st.notiz);
           return Bl.hals(hs, blattTexte(ergLabel, fmtTrim(hs.rohrZuschnitt, 1) + ' mm', z, [['AUFKANT', T('ss_leg_bogen')], ['BLECH', T('ss_leg_rohr')], ['UMSCHLAG', T('ss_leg_steckung')]], T('ss_zuschnitt')), lb); };
       } else {
@@ -285,7 +324,7 @@
 
     // -------------------------------------------------------- Blatt, PDF
     const zeitName = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes()); };
-    async function blattDatei() { if (!seiteBauer) return null; const z = seiteBauer(); const blob = await root.Blatt.alsPng(z, 2); return { blob, name: art + '_' + zeitName() + '.png' }; }
+    async function blattDatei() { if (!seiteBauer) return null; const z = seiteBauer(); const blob = weitereSeiten ? await root.Blatt.alsPngSeiten([z].concat(weitereSeiten()), 2) : await root.Blatt.alsPng(z, 2); return { blob, name: art + '_' + zeitName() + '.png' }; }
     async function blattTeilen() {
       let d; try { d = await blattDatei(); } catch (e) { d = null; }
       if (!d) { status.textContent = T(gueltig ? 'status_pdf_fehler' : 'status_leer'); return; }

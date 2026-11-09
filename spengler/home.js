@@ -15,9 +15,9 @@
     { id: 'rohrbogen', name: 'ablauf_rohrbogen', info: 'ablauf_rohrbogen_info', gruppe: 'W', stand: 'B', route: 'rohrbogen' },
     { id: 'hosenrohr', name: 'ablauf_hosenrohr', info: 'ablauf_hosenrohr_info', gruppe: 'W', stand: 'B', route: 'hosenrohr' },
     { id: 'reduktion', name: 'ablauf_reduktion', info: 'ablauf_reduktion_info', gruppe: 'W', stand: 'B', route: 'reduktion' },
-    { id: 'dachrinne', name: 'ablauf_dachrinne', gruppe: 'H', stand: 'F' },
-    { id: 'mauerabdeckung', name: 'ablauf_mauerabdeckung', gruppe: 'H', stand: 'F' },
-    { id: 'kehle', name: 'ablauf_kehle', gruppe: 'H', stand: 'F' }
+    { id: 'dachrinne', name: 'ablauf_dachrinne', info: 'ablauf_dachrinne_info', gruppe: 'N', stand: 'B', route: 'dachrinne' },
+    { id: 'mauerabdeckung', name: 'ablauf_mauerabdeckung', info: 'ablauf_mauerabdeckung_info', gruppe: 'N', stand: 'B', route: 'mauerabdeckung' },
+    { id: 'kehle', name: 'ablauf_kehle', info: 'ablauf_kehle_info', gruppe: 'N', stand: 'B', route: 'kehle' }
   ];
 
   // ---------------------------------------------------------------- Symbole (SymbolView), 100 x 100
@@ -67,10 +67,10 @@
     inh.append(titel, mt(S.bestKarte(), 6), mt(S.warnband(T('warn_home'), 14), 6));
     function mt(e, px) { e.style.marginTop = px + 'px'; return e; }
 
-    const haupt = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'H'), weitere = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'W'), folgt = S.ABLAEUFE.filter(a => a.stand !== 'B');
+    const haupt = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'H'), neu = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'N'), weitere = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'W'), folgt = S.ABLAEUFE.filter(a => a.stand !== 'B');
     const oeffne = a => { S.haptik(10); S.gehe(a.route); };
 
-    function kachel(a, gross, klein) {
+    function kachel(a, gross, klein, schlank) {
       const bereit = a.stand === 'B';
       const name = h('div', { class: 'tname', text: T(a.name) });
       const k = h('button', { class: 'kachel ' + (gross ? 'gross' : klein ? 'folgt' : 'klein'), 'aria-label': T(a.name) });
@@ -95,7 +95,8 @@
         S.nachLayout(gr); window.addEventListener('resize', gr);
       } else {
         k.append(h('div', { class: 'sym' }, symbol(a.id, bereit)), name);
-        if (klein) { k.append(h('div', { class: 'fl', text: T('status_folgt') })); S.autosize(name, 10, 15); }
+        if (schlank) { S.autosize(name, 10, 15); name.style.whiteSpace = 'nowrap'; }
+        else if (klein) { k.append(h('div', { class: 'fl', text: T('status_folgt') })); S.autosize(name, 10, 15); }
         else name.style.overflow = 'visible';
       }
       if (bereit) {
@@ -107,6 +108,12 @@
     }
 
     for (const a of haupt) inh.append(mt(kachel(a, true), 10));
+    if (neu.length) {
+      // Dachrinne, Mauerabdeckung, Kehle (seit 09.11.): drei schlanke Kacheln in einer Reihe, Werte sind Annahmen (wie Android HomeActivity)
+      const rn = h('div', { style: { display: 'flex', marginTop: '6px' } });
+      neu.forEach((a, i) => { const kk = kachel(a, false, false, true); kk.style.flex = '1 1 0'; kk.style.minWidth = 0; kk.style.width = 'auto'; if (i) kk.style.marginLeft = '8px'; rn.append(kk); });
+      inh.append(mt(h('div', { style: { fontSize: '15px', fontWeight: 700, color: 'var(--text2)' }, text: T('home_neu') }), 6), rn, mt(h('div', { style: { fontSize: '13px', color: 'var(--text2)' }, text: T('home_neu_info') }), 4));
+    }
     if (S.kmMenueZeile) inh.append(mt(S.kmMenueZeile(), 12));
 
     const status = h('div', { style: { fontSize: '15px' } });

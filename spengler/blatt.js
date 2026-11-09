@@ -102,5 +102,13 @@
     Ze.malen(ctx, zeichnung, faktor, 0, 0, null, 1);
     return new Promise(res => c.toBlob(b => res(b), 'image/png'));
   }
-  root.Blatt = { B, H, kamin, hals, dunst, alsPng, umbrechen };
+  /** Mehrere A4-Seiten untereinander in einem PNG (Web hat kein PDF, ein Bild laesst sich teilen und drucken). */
+  function alsPngSeiten(seiten, faktor) {
+    faktor = faktor || 2;
+    const c = document.createElement('canvas'); c.width = B * faktor; c.height = H * faktor * seiten.length;
+    const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+    seiten.forEach((z, i) => { Ze.malen(ctx, z, faktor, 0, H * faktor * i, null, 1); if (i > 0) { ctx.fillStyle = '#9AA4B2'; ctx.fillRect(0, H * faktor * i - 1, c.width, 2); } });
+    return new Promise(res => c.toBlob(b => res(b), 'image/png'));
+  }
+  root.Blatt = { B, H, R, INH, kamin, hals, dunst, alsPng, alsPngSeiten, umbrechen, absatz, kopf, abschnitt, kasten, legende, legendeZeile, annahmen, fuss };
 })(window);
