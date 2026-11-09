@@ -99,6 +99,9 @@
 
   // ---------------------------------------------------------------- Viewport (100dvh-Falle, Tastatur, Insets)
   S.vp = { w: 0, h: 0, voll: 0, tastatur: false, quer: false, ime: 0 };
+  /** Hochformat-Handy (Breite < Hoehe und < 700 px): Zeichnungs-Karte hoechstens 38 % der Fensterhoehe, Kopf scrollt mit der Seite weg. */
+  S.kopfScrollt = () => !S.vp.quer && S.vp.w < S.vp.voll && S.vp.w < 700;
+  S.karteHoch = () => Math.round(S.vp.voll * 0.38);
   S.opt = {};   // Optionen aus der URL (Testfaelle)
   S.messe = () => {
     const vv = window.visualViewport, app = document.getElementById('app');

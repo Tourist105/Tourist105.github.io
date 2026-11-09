@@ -251,7 +251,8 @@
       mt(S.warnband(L('Die Werte sind Gesprächsgrundlage, noch keine geprüften Masse. Wo "Annahme, Alex prüft" steht, bestimmt Alex.', 'These values are a basis for discussion, not checked dimensions. Where it says "Assumption, Alex to check", Alex decides.'), 14), 12));
     const scroll = h('div', { class: 'skscroll' }, inh);
     const el = h('div', { class: 'sk' + (quer ? ' quer' : '') });
-    if (quer) el.append(kopf, h('div', { class: 'skrechts' }, scroll, leiste)); else el.append(kopf, scroll, leiste);
+    const hoch = !quer && S.kopfScrollt();
+    if (quer) el.append(kopf, h('div', { class: 'skrechts' }, scroll, leiste)); else if (hoch) { scroll.prepend(kopf); el.append(scroll, leiste); } else el.append(kopf, scroll, leiste);
 
     const zeigeChips = () => chips.forEach((b, i) => b.classList.toggle('an', i === st.ansicht));
     function waehleAnsicht(i) { if (i === st.ansicht) return; st.ansicht = i; view.ansicht = i; zeigeChips(); view.baue(false); S.haptik(8); }
@@ -412,7 +413,7 @@
         const wunsch = vp.voll * (vp.tastatur ? 0.52 : art === 'fallrohr' ? 0.5 : 0.80);
         const frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
         let kh = wunsch; if (frei > 0) kh = Math.min(wunsch, Math.max(300, frei - 96));
-        kopf.style.height = kh + 'px';
+        if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karte.style.height = S.karteHoch() + 'px'; } else kopf.style.height = kh + 'px';
         const klein = vp.tastatur || kh < 420;
         titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
       }

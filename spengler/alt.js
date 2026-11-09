@@ -46,7 +46,9 @@
     const knopf = h('button', { class: 'teilen', text: leisteKnopfText, onclick: () => beiLeiste && beiLeiste() });
     const leiste = h('div', { class: 'leiste alt' }, h('div', { class: 'lt' }, lt, ld), knopf);
     if (quer) ld.style.display = 'none';
-    const el = h('div', { class: 'sk alt' }, kopf, scroll, leiste);
+    const hoch = !quer && S.kopfScrollt();
+    const el = h('div', { class: 'sk alt' }, scroll, leiste);
+    if (hoch) scroll.prepend(kopf); else el.prepend(kopf);
     const tag = (text, cls) => { const e = h('div', { class: 'kopftag ' + cls, text }); karte.append(e); return e; };
     const r = { el, inh, kopf, karte, scroll, leiste, lt, ld, knopf, tag, onGroesse: null };
     r.layout = () => {
@@ -54,7 +56,8 @@
       leiste.style.display = vp.tastatur ? 'none' : '';
       const insBot = S.inset('bottom');
       el.style.paddingBottom = (vp.tastatur ? Math.max(vp.ime, 0) : insBot) + 'px';
-      kopf.style.height = (quer ? 150 : vp.tastatur ? 210 : 270) + 'px';
+      const hoeheKopf = quer ? 150 : vp.tastatur ? 210 : 270;
+      kopf.style.height = (hoch ? Math.min(hoeheKopf, S.karteHoch()) : hoeheKopf) + 'px';
       if (r.onGroesse) r.onGroesse(karte.clientWidth, karte.clientHeight);
       S.autosizeAlle(el);
     };

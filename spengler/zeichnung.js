@@ -353,9 +353,7 @@
     z.poly([xs1, yh0 + hh, xs1, yh0 + hh - kt, xs2, yh0 + hh - kt, xs2, yh0 + hh], 'FALZ');
     z.poly([xs1, yv0, xs1, yv0 + kt, xs2, yv0 + kt, xs2, yv0], 'FALZ');
     const ausH = (th - k.kerbeTiefe) * s / 2;
-    z.beweglich(x0 + bw / 2, yh0 + ausH, lb.hinten, 0, 1, x0 + bw / 2, yh0 + ausH, t * 1.05, true, 'BLAU', null, 0, false, true);
     const ausV = (tv - k.kerbeTiefe) * s / 2;
-    z.beweglich(x0 + bw / 2, yv0 + kt + ausV, lb.vorne, 0, -1, x0 + bw / 2, yv0 + kt + ausV, t * 1.05, true, 'BLAU', null, 0, false, true);
     z.rechteck(xs1, yh0 + hh - kt, xs2, yv0 + kt, 'KEINE', 'MITTEL');
     if (textBreite(lb.kamin, t, false) + 4 <= xs2 - xs1 && t + 6 <= (yv0 + kt) - (yh0 + hh - kt)) z.text((xs1 + xs2) / 2, (yh0 + hh + yv0) / 2, lb.kamin, t, false, 0, 'GRAU');
     const yt = yh0 - uh;
@@ -370,6 +368,9 @@
       z.mass(x0, yh0 - uh, x0, yh0, -1, 0, 8, mm(u), 'u', 1, 'AKZENT');
       z.mass(x0, yv0 + hv, x0, yv0 + hv + uh, -1, 0, 8, mm(u), 'u', 1, 'AKZENT');
     }
+    // Teilbeschriftung erst nach den Massen: optional, faellt bei Kollision weg statt ueber 100/500/700 zu liegen
+    z.beweglich(x0 + bw / 2, yh0 + ausH, lb.hinten, 0, 1, x0 + bw / 2, yh0 + ausH, t * 1.05, true, 'BLAU', null, 0, false, true);
+    z.beweglich(x0 + bw / 2, yv0 + kt + ausV, lb.vorne, 0, -1, x0 + bw / 2, yv0 + kt + ausV, t * 1.05, true, 'BLAU', null, 0, false, true);
     z.fertig();
     return z;
   }

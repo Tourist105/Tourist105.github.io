@@ -202,7 +202,8 @@
       h('div', { style: { marginTop: '12px' } }, S.warnband(T('ss_warn'), 14)));
     const scroll = h('div', { class: 'skscroll' }, inh);
     const el = h('div', { class: 'sk' + (quer ? ' quer' : '') });
-    if (quer) el.append(kopf, h('div', { class: 'skrechts' }, scroll, leiste)); else el.append(kopf, scroll, leiste);
+    const hoch = !quer && S.kopfScrollt();
+    if (quer) el.append(kopf, h('div', { class: 'skrechts' }, scroll, leiste)); else if (hoch) { scroll.prepend(kopf); el.append(scroll, leiste); } else el.append(kopf, scroll, leiste);
 
     // -------------------------------------------------------- Modus, Ansicht, Fokus
     const zeigeChips = () => chips.forEach((b, i) => b.classList.toggle('an', !st.ist3d && i === st.ansicht));
@@ -352,7 +353,7 @@
         const frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
         let kh = wunsch;
         if (frei > 0 && S.opt.kopf !== 'alt') { kh = Math.min(wunsch, Math.max(300, frei - 96)); }   // wie Android Ui.kt kopfAnpassen: 96 dp der naechsten Karte lugen hervor
-        kopf.style.height = kh + 'px';
+        if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karte.style.height = S.karteHoch() + 'px'; } else kopf.style.height = kh + 'px';
         const klein = vp.tastatur || kh < 420;   // wie Android TeilKopf: Kopf unter 420 dp oder Tastatur = Titel und Reiter weg
         titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
       }

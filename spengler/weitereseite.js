@@ -31,7 +31,8 @@
     S.autosize(leisteWert, 16, 26);
     const inh = h('div', { class: 'skinhalt' }), scroll = h('div', { class: 'skscroll' }, inh);
     const el = h('div', { class: 'sk' + (quer ? ' quer' : '') });
-    if (quer) el.append(kopf, h('div', { class: 'skrechts' }, scroll, leiste)); else el.append(kopf, scroll, leiste);
+    const hoch = !quer && S.kopfScrollt();
+    if (quer) el.append(kopf, h('div', { class: 'skrechts' }, scroll, leiste)); else if (hoch) { scroll.prepend(kopf); el.append(scroll, leiste); } else el.append(kopf, scroll, leiste);
     Object.assign(R, { el, kopf, karte, cv2, cv3, view, chips, inh, scroll, leiste, leisteLabel, leisteWert, teilenKnopf, kippGross, primBox, titel, reiter });
 
     R.zeigeChips = () => chips.forEach((b, i) => b.classList.toggle('an', i === R.tab));
@@ -75,7 +76,7 @@
         const wunsch = vp.voll * (vp.tastatur ? 0.52 : anteil);
         const frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
         let kh = wunsch; if (frei > 0) kh = Math.min(wunsch, Math.max(300, frei - 96));
-        kopf.style.height = kh + 'px';
+        if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karte.style.height = S.karteHoch() + 'px'; } else kopf.style.height = kh + 'px';
         const klein = vp.tastatur || kh < 420;
         titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
       }

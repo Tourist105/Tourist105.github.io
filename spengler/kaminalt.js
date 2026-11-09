@@ -574,7 +574,8 @@
       mt(S.knopf(T('btn_teilen'), false, () => teilen()), 8), mt(leeren, 8), mt(status, 6));
     const scroll = h('div', { class: 'skscroll' }, inh);
     const el = h('div', { class: 'sk' + (quer ? ' quer' : '') });
-    if (quer) el.append(kopf, h('div', { class: 'skrechts' }, scroll, leiste)); else el.append(kopf, scroll, leiste);
+    const hoch = !quer && S.kopfScrollt();
+    if (quer) el.append(kopf, h('div', { class: 'skrechts' }, scroll, leiste)); else if (hoch) { scroll.prepend(kopf); el.append(scroll, leiste); } else el.append(kopf, scroll, leiste);
 
     function einheitWechseln(neu) {
       const alt = st.einheit; st.einheit = neu;
@@ -769,7 +770,7 @@
         const wunsch = vp.voll * (vp.tastatur ? 0.52 : 0.80), frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
         let kh = wunsch;
         if (frei > 0 && S.opt.kopf !== 'alt') { kh = Math.min(wunsch, Math.max(300, frei - 96)); }
-        kopf.style.height = kh + 'px';
+        if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karte.style.height = S.karteHoch() + 'px'; } else kopf.style.height = kh + 'px';
         const klein = vp.tastatur || kh < 420; titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
       }
       view.groesse(karte.clientWidth, karte.clientHeight); live.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1);
