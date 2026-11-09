@@ -8,14 +8,14 @@
   S.ABLAEUFE = [
     { id: 'profil', name: 'ablauf_profil', info: 'ablauf_profil_info', gruppe: 'W', stand: 'B', route: 'profil' },
     { id: 'skizze_kamin', name: 'ablauf_sk_kamin', info: 'ablauf_sk_kamin_info', gruppe: 'H', stand: 'B', route: 'kamineinfassung' },
-    { id: 'skizze_hals', name: 'ablauf_sk_hals', info: 'ablauf_sk_hals_info', gruppe: 'H', stand: 'B', route: 'schwanenhals' },
-    { id: 'fallrohr', name: 'ablauf_fallrohr', info: 'ablauf_fallrohr_info', gruppe: 'H', stand: 'B', route: 'fallrohr' },
+    { id: 'skizze_hals', name: 'ablauf_sk_hals', info: 'ablauf_sk_hals_info', gruppe: 'R', stand: 'B', route: 'schwanenhals' },
+    { id: 'fallrohr', name: 'ablauf_fallrohr', info: 'ablauf_fallrohr_info', gruppe: 'R', stand: 'B', route: 'fallrohr' },
     { id: 'skizze_dunst', name: 'ablauf_sk_dunst', info: 'ablauf_sk_dunst_info', gruppe: 'H', stand: 'B', route: 'dunstrohr' },
     { id: 'kamin', name: 'ablauf_kamin', info: 'ablauf_kamin_info', gruppe: 'W', stand: 'B', route: 'kamin-alt' },
     { id: 'schwanenhals', name: 'ablauf_schwanenhals', info: 'ablauf_schwanenhals_info', gruppe: 'W', stand: 'B', route: 'schwanenhals-alt' },
-    { id: 'rohrbogen', name: 'ablauf_rohrbogen', info: 'ablauf_rohrbogen_info', gruppe: 'W', stand: 'B', route: 'rohrbogen' },
-    { id: 'hosenrohr', name: 'ablauf_hosenrohr', info: 'ablauf_hosenrohr_info', gruppe: 'W', stand: 'B', route: 'hosenrohr' },
-    { id: 'reduktion', name: 'ablauf_reduktion', info: 'ablauf_reduktion_info', gruppe: 'W', stand: 'B', route: 'reduktion' },
+    { id: 'rohrbogen', name: 'ablauf_rohrbogen', info: 'ablauf_rohrbogen_info', gruppe: 'R', stand: 'B', route: 'rohrbogen' },
+    { id: 'hosenrohr', name: 'ablauf_hosenrohr', info: 'ablauf_hosenrohr_info', gruppe: 'R', stand: 'B', route: 'hosenrohr' },
+    { id: 'reduktion', name: 'ablauf_reduktion', info: 'ablauf_reduktion_info', gruppe: 'R', stand: 'B', route: 'reduktion' },
     { id: 'dachrinne', name: 'ablauf_dachrinne', info: 'ablauf_dachrinne_info', gruppe: 'N', stand: 'B', route: 'dachrinne' },
     { id: 'mauerabdeckung', name: 'ablauf_mauerabdeckung', info: 'ablauf_mauerabdeckung_info', gruppe: 'N', stand: 'B', route: 'mauerabdeckung' },
     { id: 'kehle', name: 'ablauf_kehle', info: 'ablauf_kehle_info', gruppe: 'N', stand: 'B', route: 'kehle' }
@@ -48,7 +48,7 @@
       case 'reduktion':
         s = '<path d="M12 14L88 14L64 86L36 86Z" ' + fl(hell) + '/><path d="M12 14L88 14L64 86L36 86Z" ' + st(blau, 4.5) + '/><ellipse cx="50" cy="14" rx="38" ry="6" ' + st(blau, 3.5) + '/><ellipse cx="50" cy="86" rx="14" ry="5" ' + st(blau, 3.5) + '/><path d="M50 20L50 82" ' + st(orange, 2.5, ' stroke-dasharray="5 4"') + '/>'; break;
       case 'fallrohr':
-        s = '<path d="M34 6L34 30L62 50L62 94" ' + st(hell, 20) + '/><path d="M34 6L34 30L62 50L62 94" ' + st(blau, 4.5) + '/><rect x="24" y="6" width="20" height="6" ' + fl(dunkel) + '/><rect x="52" y="66" width="20" height="6" ' + fl(orange) + '/><rect x="52" y="88" width="20" height="6" ' + fl(dunkel) + '/>'; break;
+        s = '<path d="M38 4L38 44M38 74L38 96" ' + st(hell, 20) + '/><path d="M38 4L38 44M38 74L38 96" ' + st(blau, 4.5) + '/><path d="M28 40L48 40L46 52L30 52Z" ' + fl(blau) + '/><path d="M28 52L48 52L45 74L31 74Z" ' + fl(orange) + '/><path d="M38 20L70 36L70 52" ' + st(hell, 14) + '/><path d="M38 20L70 36L70 52" ' + st(blau, 3.5) + '/><rect x="26" y="8" width="24" height="5" ' + fl(dunkel) + '/><rect x="26" y="86" width="24" height="5" ' + fl(dunkel) + '/><path d="M62 52L78 52" ' + st(dunkel, 4) + '/>'; break;
       case 'dachrinne':
         s = '<path d="M8 28L92 28A42 34 0 0 1 8 28Z" ' + fl(hell) + '/><path d="M8 28L92 28A42 34 0 0 1 8 28Z" ' + st(blau, 4.5) + '/><path d="M78 62L78 94" ' + st(blau, 9) + '/><path d="M78 62L78 94" ' + st(hell, 4) + '/>'; break;
       case 'mauerabdeckung':
@@ -70,7 +70,7 @@
     inh.append(titel, mt(S.bestKarte(), 6), mt(S.warnband(T('warn_home'), 14), 6));
     function mt(e, px) { e.style.marginTop = px + 'px'; return e; }
 
-    const haupt = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'H'), neu = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'N'), weitere = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'W'), folgt = S.ABLAEUFE.filter(a => a.stand !== 'B');
+    const haupt = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'H'), neu = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'N'), weitere = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'W'), ROHR_IDS = ['fallrohr', 'skizze_hals', 'rohrbogen', 'hosenrohr', 'reduktion'], rohr = ROHR_IDS.map(id => S.ABLAEUFE.find(a => a.id === id && a.stand === 'B')).filter(Boolean), folgt = S.ABLAEUFE.filter(a => a.stand !== 'B');
     const oeffne = a => { S.haptik(10); S.gehe(a.route); };
 
     function kachel(a, gross, klein, schlank) {
@@ -111,6 +111,15 @@
     }
 
     for (const a of haupt) inh.append(mt(kachel(a, true), 10));
+    if (rohr.length) {
+      // Rohr-Gruppe: Fallrohr (Planer), Schwanenhals, Rohrbogen, Hosenrohr, Reduktion in Zeilen zu 3 und 2 (wie Android)
+      inh.append(mt(h('div', { style: { fontSize: '15px', fontWeight: 700, letterSpacing: '.045em', color: 'var(--text2)' }, text: T('home_rohr') }), 16));
+      for (let i = 0; i < rohr.length; i += 3) {
+        const gr = rohr.slice(i, i + 3), rr = h('div', { style: { display: 'flex', marginTop: '8px' } });
+        gr.forEach((a, j) => { const kk = kachel(a, false, false, true); kk.style.flex = '1 1 0'; kk.style.minWidth = 0; kk.style.width = 'auto'; if (j) kk.style.marginLeft = '8px'; rr.append(kk); });
+        inh.append(rr);
+      }
+    }
     if (neu.length) {
       // Dachrinne, Mauerabdeckung, Kehle (seit 09.11.): drei schlanke Kacheln in einer Reihe, Werte sind Annahmen (wie Android HomeActivity)
       const rn = h('div', { style: { display: 'flex', marginTop: '6px' } });
