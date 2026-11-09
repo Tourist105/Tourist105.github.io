@@ -349,7 +349,93 @@
       m.push(M('n', pl(xb - 0.02 * b, unterKante + 0.1 * t, dick), null, [0, 0, 0], n, '', '°', true));
       return { szene: festeSzene(f, null), masse: m };
     }
-    return { schwanenhals, dunstrohr };
+
+    // Fallrohr: Rohrstrang von oben nach unten aus den echten Bauteilen (Fallrohr.zeilen). Durchmesser wird fuer die Lesbarkeit hoechstens
+    // auf das 1,1-fache des Bogenradius ueberhoeht, alle Laengen, Winkel und Achsmasse sind echt.
+    function fallrohr(fr) {
+      const FRm = root.Fallrohr, f = [], masse = [], zeilen = fr.zeilen, steck = fr.e.steckung, nb = 16;
+      const rbog = dn => FRm.radius(dn), dn0 = fr.e.dn;
+      const sc = max(1, min(fr.e.hoehe / 60 / (dn0 / 2), 1.1 * rbog(dn0) / (dn0 / 2)));
+      const tr = dn => sc * dn / 2;
+      const seite = [0, 1, 0];
+      const dir = (phi, sx) => [sx * sin(phi), 0, -cos(phi)];
+      const lage = (p, phi, sx, rad) => ring(p, seite, cross(dir(phi, sx), seite), rad);
+      const zyl = (p, q, phi, sx, r1, r2, art, inst, farbe) => { mantel([lage(p, phi, sx, r1), lage(q, phi, sx, r2)], art, inst, farbe, 0, f); };
+      const kragen = (p, q, phi, sx, r, inst) => { zyl(p, q, phi, sx, r, r, 'BOGEN_MITTE', inst, SF.UMSCHLAG); for (const e of [p, q]) scheibe(lage(e, phi, sx, r), lage(e, phi, sx, r * 0.9), 'BOGEN_MITTE', inst, SF.UMSCHLAG, 0, false, f); };
+      let p = [0, 0, 0], sx = 1, ersteRing = null, letzteRing = null, letztePhi = 0;
+      const nichtSchelle = (i, d) => { let j = i + d; while (j >= 0 && j < zeilen.length && zeilen[j].teil.typ === 'schelle') j += d; return j >= 0 && j < zeilen.length ? zeilen[j] : null; };
+      const merke = (pt, phi, sx2, rad) => { const r = lage(pt, phi, sx2, rad); if (!ersteRing) ersteRing = r; letzteRing = r; letztePhi = phi; };
+      zeilen.forEach((z, i) => {
+        const tp = z.teil.typ, r = tr(z.dn), len2 = max(0, z.sichtbar), key = 'p' + i, top = p[2];
+        if (!ersteRing) merke(p, 0, sx, r);
+        switch (tp) {
+          case 'rohr': {
+            if (len2 <= 0) break;
+            const q = add(p, [0, 0, -len2]);
+            zyl(p, q, 0, sx, r, r, 'ROHR', i, SF.BLECH);
+            const o = nichtSchelle(i, -1), u = nichtSchelle(i, 1), sm = max(0, min(steck, len2 * 0.4)), kr = r * 1.12;
+            if (sm > 0.5 && (o == null || o.teil.typ !== 'rohr')) kragen(p, add(p, [0, 0, -sm]), 0, sx, kr, i);
+            if (sm > 0.5 && u != null && u.teil.typ !== 'rohr') kragen(add(q, [0, 0, sm]), q, 0, sx, kr, i);
+            if (len2 > r * 3) masse.push(M(key, [sx > 0 ? r * 1.15 : -r * 1.15, 0, p[2]], [sx > 0 ? r * 1.15 : -r * 1.15, 0, q[2]], [sx * r * 1.6, 0, 0], len2));
+            p = q; merke(p, 0, sx, r); break;
+          }
+          case 'versatz': {
+            const sk = z.sk, b = rad2(z.teil.w), lc = sk.luecke, rb = rbog(z.dn), d = dir(b, sx), x0 = p[0];
+            const b1 = ph => add(p, [sx * rb * (1 - cos(ph)), 0, -rb * sin(ph)]);
+            const q0 = b1(b), q1 = add(q0, mul(d, lc));
+            const b2 = ph => add(q1, [sx * rb * (cos(ph) - cos(b)), 0, -rb * (sin(b) - sin(ph))]);
+            const o1 = []; for (let j = 0; j <= nb; j++) { const ph = b * j / nb; o1.push(lage(b1(ph), ph, sx, r)); }
+            mantel(o1, 'BOGEN_ENDE', i, SF.AUFKANT, 0, f);
+            const u1 = []; for (let j = 0; j <= nb; j++) { const ph = b * (1 - j / nb); u1.push(lage(b2(ph), ph, sx, r)); }
+            mantel(u1, 'BOGEN_ENDE', i, SF.AUFKANT, 0, f);
+            const sm = max(0, min(steck, lc * 0.4)), tm = r * 1.12, gerade = (v, bis, rad, art, farbe) => zyl(add(q0, mul(d, v)), add(q0, mul(d, bis)), b, sx, rad, rad, art, i, farbe);
+            if (sm > 0.5) { kragen(q0, add(q0, mul(d, sm)), b, sx, tm, i); gerade(sm, lc - sm, r, 'ROHR', SF.BLECH); kragen(add(q0, mul(d, lc - sm)), q1, b, sx, tm, i); }
+            else gerade(0, lc, r, 'ROHR', SF.BLECH);
+            masse.push(M(key, [x0, 0, top + 0], [x0 + sx * z.teil.m, 0, top], [0, 0, 1.2 * r], z.teil.m));
+            p = b2(0); merke(p, 0, sx, r); sx = -sx; break;
+          }
+          case 'bogen': {
+            const b = rad2(z.teil.w), rb = rbog(z.dn), b1 = ph => add(p, [sx * rb * (1 - cos(ph)), 0, -rb * sin(ph)]), o1 = [];
+            for (let j = 0; j <= nb; j++) { const ph = b * j / nb; o1.push(lage(b1(ph), ph, sx, r)); }
+            mantel(o1, 'BOGEN_ENDE', i, SF.AUFKANT, 0, f);
+            p = b1(b); merke(p, b, sx, r);
+            masse.push(M(key, add(p, [sx * r * 1.4, 0, r * 1.3]), null, [0, 0, 0], z.teil.w, '', '°', true)); break;
+          }
+          case 'abzweig': {
+            const q = add(p, [0, 0, -max(len2, r * 2)]); zyl(p, q, 0, sx, r, r, 'BOGEN_ENDE', i, SF.AUFKANT);
+            const w = rad2(z.teil.w), a0 = add(p, [0, 0, -(p[2] - q[2]) * 0.25]), sl = max(len2 * 0.9, r * 3), d2 = dir(w, -sx);
+            zyl(a0, add(a0, mul(d2, sl)), w, -sx, r * 0.85, r * 0.85, 'BOGEN_ENDE', i, SF.AUFKANT);
+            p = q; merke(p, 0, sx, r); break;
+          }
+          case 'reduktion': {
+            const l2 = max(len2, r * 0.8), q = add(p, [0, 0, -l2]), r2 = tr(z.dnNach);
+            zyl(p, q, 0, sx, r, r2, 'KEGEL', i, rgb(226, 128, 20));
+            p = q; merke(p, 0, sx, r2); break;
+          }
+          case 'muffe': {
+            const l2 = max(len2, r * 0.8), q = add(p, [0, 0, -l2]); kragen(p, q, 0, sx, r * 1.2, i); p = q; merke(p, 0, sx, r); break;
+          }
+          case 'schelle': {
+            const hh = max(fr.e.hoehe * 0.006, r * 0.5); zyl(add(p, [0, 0, hh / 2]), add(p, [0, 0, -hh / 2]), 0, sx, r * 1.35, r * 1.35, 'BEIN', i, hex('#1F3354')); break;
+          }
+          default: {
+            const l2 = max(len2, r * 0.8), q = add(p, [0, 0, -l2]); zyl(p, q, 0, sx, r * 1.05, r * 1.05, 'BEIN', i, hex('#3A5478')); p = q; merke(p, 0, sx, r * 1.05);
+          }
+        }
+      });
+      if (ersteRing) deckel(ersteRing, [0, 0, 1], 0, f);
+      if (letzteRing) deckel(letzteRing, [0, 0, -1], zeilen.length, f);
+      // nach oben verschieben: tiefster Punkt auf 0
+      let zmin = Infinity; for (const fl of f) for (const q of fl.punkte) zmin = min(zmin, q[2]);
+      const h = -zmin, sh = q => [q[0], q[1], q[2] + h];
+      for (const fl of f) fl.punkte = fl.punkte.map(sh);
+      for (const m of masse) { m.a = sh(m.a); if (m.b) m.b = sh(m.b); }
+      let xmin = Infinity; for (const fl of f) for (const q of fl.punkte) xmin = min(xmin, q[0]);
+      masse.unshift(M('h', [xmin - tr(dn0) * 1.5, 0, h], [xmin - tr(dn0) * 1.5, 0, 0], [-tr(dn0) * 1.2, 0, 0], fr.e.hoehe));
+      return { szene: festeSzene(f, null), masse };
+    }
+    const rad2 = g => g * PI / 180;
+    return { schwanenhals, dunstrohr, fallrohr };
   })();
 
   function festeSzene(liste, kamin) { return { kamin, flaechen: () => liste }; }

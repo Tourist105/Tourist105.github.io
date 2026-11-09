@@ -21,6 +21,7 @@
   const TITEL = { fallrohr: 'ablauf_fallrohr', dachrinne: 'ablauf_dachrinne', mauerabdeckung: 'ablauf_mauerabdeckung', kehle: 'ablauf_kehle' };
   const CHIPS = { dachrinne: 'rinne', mauerabdeckung: 'mauer', kehle: 'kehle' };
   const FALL_CHIPS = [{ feld: 'h', einheit: 'mm', werte: [3000, 4000, 5000, 6000, 8000], vorgabe: 6000 }, { feld: 's', einheit: 'mm', werte: [30, 40, 50], vorgabe: 50 }];
+  const HAT3D = ['fallrohr'];
   const FARBE = { beleg: '#105E32', annahme: '#965000', unsicher: '#B00020' };
 
   S.seiteNeu = function (art, opt) {
@@ -75,8 +76,20 @@
     // Kopf
     const karte = h('div', { class: 'skkarte' }), cv2 = h('canvas', { 'aria-label': S.T('ss_live') }); karte.append(cv2);
     const view = new S.SkizzenAnsicht(cv2); view.arten = artenAlle;
+    const hat3d = HAT3D.includes(art) && !!root.Szene3D;
+    let d3 = null, cv3 = null, kipp3 = null, kipp2 = null;
+    if (hat3d) {
+      cv3 = h('canvas', { 'aria-label': S.T('d3_beschreibung') }); karte.append(cv3);
+      d3 = new root.Szene3D.Ansicht3D(cv3); d3.leerText = S.T('d3_leer'); d3.fuellend = true; d3.grundZoom = art === "fallrohr" ? 0.78 : 1.1; d3.grundstellung(0.6, 0.35);
+      d3.beiMass3d = k => fokusiere(k);
+    }
     const kippGross = h('button', { class: 'kippgross', 'aria-label': S.T('ss_tipp'), onclick: () => vollbild() }, S.iconVollbild());
     if (!quer) karte.append(kippGross);
+    if (hat3d) {
+      kipp3 = h('button', { text: '3D', 'aria-label': '3D', onclick: () => setzeModus(true, true) });
+      kipp2 = h('button', { text: '2D', 'aria-label': '2D', onclick: () => setzeModus(false, true) });
+      karte.append(h('div', { class: 'kipp' }, kipp3, kipp2));
+    }
     const chips = namen.map((n, i) => h('button', { class: 'chip', text: n, onclick: () => waehleAnsicht(i) }));
     const pdfKnopf = h('button', { class: 'pdfknopf', text: S.T('ss_ansehen'), onclick: () => pdfErstellen() });
     const reiter = h('div', { class: 'reiterzeile' }, chips, pdfKnopf);
@@ -254,12 +267,21 @@
     const hoch = !quer && S.kopfScrollt();
     if (quer) el.append(kopf, h('div', { class: 'skrechts' }, scroll, leiste)); else if (hoch) { scroll.prepend(kopf); el.append(scroll, leiste); } else el.append(kopf, scroll, leiste);
 
-    const zeigeChips = () => chips.forEach((b, i) => b.classList.toggle('an', i === st.ansicht));
-    function waehleAnsicht(i) { if (i === st.ansicht) return; st.ansicht = i; view.ansicht = i; zeigeChips(); view.baue(false); S.haptik(8); }
+    const zeigeChips = () => chips.forEach((b, i) => b.classList.toggle('an', !st.ist3d && i === st.ansicht));
+    function setzeModus(an3, merken) {
+      if (!d3) return; st.ist3d = an3;
+      cv3.style.display = an3 ? '' : 'none'; cv2.style.visibility = an3 ? 'hidden' : 'visible';
+      kippGross.style.display = an3 || quer ? 'none' : '';
+      kipp3.classList.toggle('an', an3); kipp2.classList.toggle('an', !an3);
+      zeigeChips(); if (an3) d3.zeichnen(); if (merken) setp('m3d', an3);
+    }
+    function waehleAnsicht(i) {
+      if (st.ist3d) { setzeModus(false, true); st.ansicht = i; view.ansicht = i; zeigeChips(); view.baue(false); return; }
+      if (i === st.ansicht) return; st.ansicht = i; view.ansicht = i; zeigeChips(); view.baue(false); S.haptik(8); }
     function fokus(key, an) {
-      if (!an) { if (view.aktiv === key) view.aktiv = null; return; }
-      view.aktiv = key;
-      if (view.w > 0) {
+      if (!an) { if (view.aktiv === key) view.aktiv = null; if (d3 && d3.leuchteKey === key) { d3.leuchteKey = null; d3.zeichnen(); } return; }
+      view.aktiv = key; if (d3) { d3.leuchteKey = key; d3.zeichnen(); }
+      if (!st.ist3d && view.w > 0) {
         const z = view.zeichnungFuer(st.ansicht);
         if (!(z && z.elems.some(e => e.key === key))) for (let i = 0; i < namen.length; i++) if (i !== st.ansicht) { const q = view.zeichnungFuer(i); if (q && q.elems.some(e => e.key === key)) { waehleAnsicht(i); break; } }
       }
@@ -312,9 +334,9 @@
       if (meld.length) {
         gueltig = false; leisteLabel.textContent = S.T('ss_leiste_leer'); leisteWert.textContent = '-'; angezeigt = NaN;
         detail.textContent = fehlerText(meld[0]); seiteBauer = null; grossText = ''; zeilen = []; materialBox.innerHTML = '';
-        cv2.style.opacity = .4; teilenKnopf.disabled = true; teilenKnopf.style.opacity = .5; return;
+        cv2.style.opacity = .4; if (cv3) cv3.style.opacity = .4; teilenKnopf.disabled = true; teilenKnopf.style.opacity = .5; return;
       }
-      cv2.style.opacity = 1; teilenKnopf.disabled = false; teilenKnopf.style.opacity = 1; gueltig = true;
+      cv2.style.opacity = 1; if (cv3) cv3.style.opacity = 1; teilenKnopf.disabled = false; teilenKnopf.style.opacity = 1; gueltig = true;
       const lb = beschr(); let ml, hinw = [], basis;
       if (art === 'fallrohr') {
         const f = FR.Fallrohr(fallEin()), fb = frBeschr();
@@ -365,9 +387,15 @@
         const tx = blattTexte(ergLabel, grossText, zeilen, []); tx.titel = S.T(TITEL[art]) + ': ' + L('Materialliste', 'Bill of materials');
         return basis().concat(Bl.neu.material(ml, annahmenListe(), tx, matTexte()));
       };
-      leisteLabel.textContent = ergLabel; view.baue(true); detail.textContent = zeilen.join('\n');
+      leisteLabel.textContent = ergLabel; view.baue(true); baue3d(); detail.textContent = zeilen.join('\n');
       for (const x of hinw) hinweisBox.append(mt(S.warnband(x, 14), 6));
       baueMaterial(ml);
+    }
+    function baue3d() {
+      if (!d3) return;
+      let sz = null;
+      try { if (art === 'fallrohr') sz = root.Szene3D.Skizzen3D.fallrohr(FR.Fallrohr(fallEin())); } catch (e) { sz = null; }
+      d3.szene = sz ? sz.szene : null; d3.masse3d = sz ? sz.masse : []; d3.zeichnen();
     }
     function baueMaterial(ml) {
       materialBox.innerHTML = '';
@@ -418,19 +446,21 @@
         titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
       }
       view.groesse(karte.clientWidth, karte.clientHeight);
+      if (d3) d3.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1);
       S.autosizeAlle(el);
     }
-    const ro = new ResizeObserver(() => view.groesse(karte.clientWidth, karte.clientHeight)); ro.observe(karte);
+    const ro = new ResizeObserver(() => { view.groesse(karte.clientWidth, karte.clientHeight); if (d3) d3.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1); }); ro.observe(karte);
 
     setzeMehr(st.mehr);
     if (art === 'fallrohr') { mehrKnopf.style.display = 'none'; mehrBox.style.display = 'none'; }
     const nr = { uebersicht: 0, aufriss: 1, querschnitt: 1, ansicht: 1, grundriss: 2, abwicklung: 2, zuschnitt: 2, stuecke: 3 }[opt.ansicht];
     if (nr != null) { const idx = artenAlle.indexOf(nr); st.ansicht = idx >= 0 ? idx : 0; }
     view.ansicht = st.ansicht; zeigeChips();
+    if (d3) { const w3 = opt.ansicht === '3d' ? true : opt.ansicht != null && opt.ansicht !== '' ? false : (pref('m3d') != null ? pref('m3d') === 'true' : true); setzeModus(w3, false); }
     return {
       el, art,
       nachEinbau() { layout(); aktualisiere(); if (opt.fokus) setTimeout(() => { const f = felder[opt.fokus]; if (f) { if (!st.mehr && !prim.includes(opt.fokus)) setzeMehr(true); f.input.focus(); layout(); } }, 50); if (opt.scroll) scroll.scrollTop = +opt.scroll; },
-      kontext() { return { ansicht: namen[st.ansicht], eingaben: snapshot().replace(/\n/g, ' | '), teilName: S.T(TITEL[art]) }; },
+      kontext() { return { ansicht: st.ist3d ? '3D' : namen[st.ansicht], eingaben: snapshot().replace(/\n/g, ' | '), teilName: S.T(TITEL[art]) }; },
       layout, speichere, zerstoere() { speichere(); ro.disconnect(); if (zaehlStopp) zaehlStopp(); },
       overlay: { zurueck: true }
     };
