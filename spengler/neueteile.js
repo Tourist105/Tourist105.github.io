@@ -7,15 +7,15 @@
 
   const DEFS = () => ({
     fallrohr: [['h', 'Gesamthöhe (mm)', 'Total height (mm)', '6000'], ['s', 'Steckung (mm)', 'Insertion (mm)', '50']],
-    dachrinne: [['l', 'Länge der Traufe (mm)', 'Length of the eaves (mm)', '10000'], ['w', 'Abwicklung (mm)', 'Girth (mm)', '330'], ['g', 'Gefälle (mm/m)', 'Fall (mm/m)', '5'],
-      ['h', 'Halterabstand (mm)', 'Bracket spacing (mm)', '700'], ['d', 'Dilatation alle (mm)', 'Expansion joint every (mm)', '5000'], ['a', 'Ablaufrohre (Anzahl)', 'Downpipes (number)', '1'],
-      ['ea', 'Aussenecken (Anzahl)', 'Outside corners (number)', '0'], ['ei', 'Innenecken (Anzahl)', 'Inside corners (number)', '0'], ['v', 'Verschnitt (%)', 'Waste (%)', '5'], ['tb', 'Tafelbreite (mm)', 'Sheet width (mm)', '1000']],
-    mauerabdeckung: [['b', 'Mauerbreite (mm)', 'Wall width (mm)', '250'], ['l', 'Länge (mm)', 'Length (mm)', '4000'], ['g', 'Gefälle (Grad)', 'Slope (degrees)', '5'],
-      ['u', 'Abstand Tropfkante zur Wand (mm)', 'Drip edge to wall (mm)', '50'], ['s', 'Senkrechter Schenkel (mm)', 'Vertical leg (mm)', '50'], ['t', 'Umschlag unten (mm)', 'Hem at the bottom (mm)', '15'],
-      ['e', 'Ecken (Anzahl)', 'Corners (number)', '0'], ['p', 'Stücklänge (mm)', 'Piece length (mm)', '3000'], ['d', 'Dilatation alle (mm)', 'Expansion joint every (mm)', '5000'],
+    dachrinne: [['l', 'Traufe (mm)', 'Eaves (mm)', '10000'], ['w', 'Abwicklung (mm)', 'Girth (mm)', '330'], ['g', 'Gefälle (mm/m)', 'Fall (mm/m)', '5'],
+      ['h', 'Halterabstand (mm)', 'Bracket spacing (mm)', '700'], ['d', 'Dilatation (mm)', 'Exp. joint (mm)', '5000'], ['a', 'Ablaufrohre', 'Downpipes', '1'],
+      ['ea', 'Aussenecken', 'Outside corners', '0'], ['ei', 'Innenecken', 'Inside corners', '0'], ['v', 'Verschnitt (%)', 'Waste (%)', '5'], ['tb', 'Tafelbreite (mm)', 'Sheet width (mm)', '1000']],
+    mauerabdeckung: [['b', 'Mauerbreite (mm)', 'Wall width (mm)', '250'], ['l', 'Länge (mm)', 'Length (mm)', '4000'], ['g', 'Gefälle (°)', 'Slope (°)', '5'],
+      ['u', 'Tropfkante (mm)', 'Drip edge (mm)', '50'], ['s', 'Schenkel (mm)', 'Leg (mm)', '50'], ['t', 'Umschlag (mm)', 'Hem (mm)', '15'],
+      ['e', 'Ecken', 'Corners', '0'], ['p', 'Stücklänge (mm)', 'Piece length (mm)', '3000'], ['d', 'Dilatation (mm)', 'Exp. joint (mm)', '5000'],
       ['n', 'Haftenabstand (mm)', 'Clip spacing (mm)', '330'], ['v', 'Verschnitt (%)', 'Waste (%)', '5']],
-    kehle: [['l', 'Länge der Kehle (mm)', 'Valley length (mm)', '4000'], ['w', 'Abwicklung (mm)', 'Girth (mm)', '670'], ['a', 'Aufkantung je Seite (mm)', 'Upstand each side (mm)', '15'],
-      ['m', 'Höchste Stücklänge (mm)', 'Longest piece (mm)', '3000'], ['u', 'Überlappung (mm)', 'Overlap (mm)', '100'], ['k', 'Kehlwinkel im Blech (Grad)', 'Valley angle in the sheet (degrees)', '130'], ['v', 'Verschnitt (%)', 'Waste (%)', '5']]
+    kehle: [['l', 'Länge (mm)', 'Length (mm)', '4000'], ['w', 'Abwicklung (mm)', 'Girth (mm)', '670'], ['a', 'Aufkantung (mm)', 'Upstand (mm)', '15'],
+      ['m', 'Max. Stück (mm)', 'Max. piece (mm)', '3000'], ['u', 'Überlappung (mm)', 'Overlap (mm)', '100'], ['k', 'Kehlwinkel (°)', 'Valley angle (°)', '130'], ['v', 'Verschnitt (%)', 'Waste (%)', '5']]
   });
   const PRIMAER = { fallrohr: ['h', 's'], dachrinne: ['l', 'w', 'g'], mauerabdeckung: ['b', 'l', 'g'], kehle: ['l', 'w', 'a'] };
   const TITEL = { fallrohr: 'ablauf_fallrohr', dachrinne: 'ablauf_dachrinne', mauerabdeckung: 'ablauf_mauerabdeckung', kehle: 'ablauf_kehle' };
@@ -45,7 +45,7 @@
 
     const arten = art === 'kehle' ? [1, 2, 3] : [1, 2];
     const artenAlle = quer ? arten : [0].concat(arten);
-    const namen = artenAlle.map(a => a === 0 ? S.T('ss_uebersicht') : a === 1 ? (art === 'dachrinne' || art === 'fallrohr' ? L('Ansicht', 'Side view') : L('Querschnitt', 'Section')) : a === 2 ? (art === 'fallrohr' ? L('Zuschnitt', 'Cutting') : L('Abwicklung', 'Girth')) : L('Stücke', 'Pieces'));
+    const namen = artenAlle.map(a => a === 0 ? S.T('ss_uebersicht') : a === 1 ? L('Ansicht', 'View') : a === 2 ? L('Zuschnitt', 'Cutting') : L('Stücke', 'Pieces'));
     const felder = {};
     const zahl = k => { const v = S.parseNum(st.werte[k] == null ? '' : st.werte[k]); return v == null ? NaN : v; };
     const ganz = k => { const v = zahl(k); return isNaN(v) || v > 1000 ? -1 : Math.trunc(v); };
@@ -118,9 +118,15 @@
 
     // Eine Reihe grosser Chips [Text, Wert]
     const chipZeile = (werte, aktuell, hoehe, f) => {
-      const z = h('div', { style: { display: 'flex', overflowX: 'auto', marginTop: '4px' } });
-      for (const [txt, w] of werte) z.append(h('button', { class: 'chip' + (Math.abs(aktuell - w) < 1e-9 ? ' an' : ''), text: txt, style: { marginRight: '6px', minWidth: '64px', flex: '0 0 auto', minHeight: hoehe + 'px' }, onclick: () => f(w) }));
-      return z;
+      // Zeilen mit gleich breiten Chips, nichts scrollt oder wird abgeschnitten: lange Namen zu zweit, kurze bis zu fuenft
+      const pro = werte.some(([t]) => String(t).length > 6) ? 2 : 5, box = h('div', { style: { marginTop: '4px' } });
+      for (let i = 0; i < werte.length; i += pro) {
+        const r = h('div', { style: { display: 'flex', marginTop: i ? '6px' : '0' } });
+        werte.slice(i, i + pro).forEach(([txt, w], j) => r.append(h('button', { class: 'chip' + (Math.abs(aktuell - w) < 1e-9 ? ' an' : ''), text: txt, style: { flex: '1 1 0', minWidth: '0', minHeight: hoehe + 'px', marginLeft: j ? '6px' : '0', padding: '0 4px' }, onclick: () => f(w) })));
+        for (let k = werte.slice(i, i + pro).length; k < pro; k++) r.append(h('div', { style: { flex: '1 1 0', marginLeft: '6px' } }));
+        box.append(r);
+      }
+      return box;
     };
 
     // Normteile waehlen
@@ -166,13 +172,31 @@
     const neuesTeil = tp => tp === 'versatz' ? FR.FT(tp, 72, 250) : tp === 'bogen' ? FR.FT(tp, 40) : tp === 'abzweig' ? FR.FT(tp, 72)
       : tp === 'reduktion' ? FR.FT(tp, Math.max(60, ...norm.durchmesser.filter(d => d.dn < dnVor(st.teile.length)).map(d => d.dn))) : FR.FT(tp);
     const knopf = (txt, an, cd, f) => h('button', { class: 'chip', text: txt, 'aria-label': cd, disabled: !an, style: { width: '44px', height: '44px', minWidth: '0', padding: '0', marginLeft: '4px', opacity: an ? 1 : .35 }, onclick: f });
+    // Kleines Symbol je Bauteil (40 x 40), gleiche Formen wie die Startkacheln und die Ansicht
+    const teilSymbol = tp => {
+      const hell = '#CDDFF5', blau = '#0B5CAB', dunkel = '#083A6E', orange = '#E28014';
+      const rohr = d => '<path d="' + d + '" fill="none" stroke="' + hell + '" stroke-width="13" stroke-linejoin="round"/><path d="' + d + '" fill="none" stroke="' + blau + '" stroke-width="2.5" stroke-linejoin="round"/>';
+      let g = '';
+      switch (tp) {
+        case 'rohr': g = rohr('M20 3L20 37'); break;
+        case 'versatz': g = rohr('M14 3L14 10L26 28L26 37'); break;
+        case 'bogen': g = rohr('M14 3L14 16Q14 28 28 28L37 28'); break;
+        case 'abzweig': g = rohr('M20 3L20 37') + rohr('M20 14L33 34'); break;
+        case 'reduktion': g = '<path d="M9 6L31 6L26 34L14 34Z" fill="' + orange + '" stroke="' + dunkel + '" stroke-width="2"/>'; break;
+        case 'muffe': g = rohr('M20 3L20 37') + '<rect x="10" y="15" width="20" height="10" rx="2" fill="' + blau + '"/>'; break;
+        case 'schelle': g = rohr('M20 3L20 37') + '<rect x="8" y="17" width="24" height="6" rx="2" fill="' + orange + '"/>'; break;
+        default: g = rohr('M20 3L20 30') + '<rect x="11" y="30" width="18" height="7" rx="2" fill="' + dunkel + '"/>';
+      }
+      return '<svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true">' + g + '</svg>';
+    };
     function baueTeileBox() {
       teileBox.innerHTML = '';
       for (const k of Object.keys(felder)) if (/^p\d/.test(k)) delete felder[k];
       if (!st.teile.length) { const e = S.text(L('Noch kein Bauteil. Unten eines hinzufügen.', 'No part yet. Add one below.'), 14, false); e.style.color = 'var(--text2)'; teileBox.append(e); }
       st.teile.forEach((p, i) => {
         const k = h('div', { style: { border: '1px solid var(--linie)', borderRadius: '14px', padding: '8px 12px 10px', marginTop: i ? '10px' : '0' } });
-        const kopfZ = h('div', { style: { display: 'flex', alignItems: 'center' } }, h('div', { style: { flex: '1' } }, S.text((i + 1) + '. ' + typName(p.typ), 16, true)),
+        const sym = h('div', { style: { width: '40px', height: '40px', marginRight: '10px', flex: '0 0 auto' } }); sym.innerHTML = teilSymbol(p.typ);
+        const kopfZ = h('div', { style: { display: 'flex', alignItems: 'center' } }, sym, h('div', { style: { flex: '1' } }, S.text((i + 1) + '. ' + kurzName(p.typ), 16, true)),
           knopf('↑', i > 0, L('nach oben', 'move up'), () => { const x = st.teile[i]; st.teile[i] = st.teile[i - 1]; st.teile[i - 1] = x; teileGeaendert(); }),
           knopf('↓', i < st.teile.length - 1, L('nach unten', 'move down'), () => { const x = st.teile[i]; st.teile[i] = st.teile[i + 1]; st.teile[i + 1] = x; teileGeaendert(); }),
           knopf('✕', true, L('Bauteil entfernen', 'Remove part'), () => { st.teile.splice(i, 1); teileGeaendert(); }));
@@ -384,7 +408,7 @@
       const insTop = S.inset('top'), insBot = S.inset('bottom');
       el.style.paddingBottom = (vp.tastatur ? Math.max(vp.ime, 0) : insBot) + 'px';
       if (!quer) {
-        const wunsch = vp.voll * (vp.tastatur ? 0.52 : art === 'fallrohr' ? 0.62 : 0.80);
+        const wunsch = vp.voll * (vp.tastatur ? 0.52 : art === 'fallrohr' ? 0.5 : 0.80);
         const frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
         let kh = wunsch; if (frei > 0) kh = Math.min(wunsch, Math.max(300, frei - 96));
         kopf.style.height = kh + 'px';
