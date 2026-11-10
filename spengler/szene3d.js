@@ -580,8 +580,13 @@
     };
     const dunst = () => _d || (_d = Skizzen3D.dunstrohr(100, 300, 30, 400, 400, 100, 15).szene);
     const hals = () => _h || (_h = Skizzen3D.schwanenhals(400, 72, 60, 50).szene);
-    const fuer = id => id === 'skizze_kamin' ? kamin() : id === 'skizze_hals' ? hals() : id === 'skizze_dunst' ? dunst() : null;
-    return { kamin, dunst, hals, fuer };
+    let _f;
+    // Kachel Fallrohr (Nils 10.11.): Standardstrang mit Versatz, kuerzer als im Planer, damit er in der Kachel gross wirkt
+    const fall = () => { if (_f) return _f; const FR = root.Fallrohr; if (!FR) return null;
+      try { _f = Skizzen3D.fallrohr(FR.Fallrohr({ hoehe: 1800, steckung: 50, dn: 100, teile: FR.STANDARD() })).szene; } catch (e) { _f = null; }
+      return _f; };
+    const fuer = id => id === 'skizze_kamin' ? kamin() : id === 'skizze_hals' ? hals() : id === 'skizze_dunst' ? dunst() : id === 'fallrohr' ? fall() : null;
+    return { kamin, dunst, hals, fall, fuer };
   })();
 
   // ================================================================ Ansicht3D.kt (Zeichnen + Gesten)

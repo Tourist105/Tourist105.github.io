@@ -83,7 +83,7 @@
         const tk = h('div', { class: 'tk' }, name, a.info ? h('div', { class: 'tinfo', text: T(a.info) }) : null);
         k.append(rahmen, tk); S.autosize(name, 16, 26);
         const v = new (SZ().Ansicht3D)(cv); v.szene = szene; v.blattFarben = true; v.grundZoom = (S.opt && S.opt.kopf === 'alt') ? ({ skizze_hals: 1.22, skizze_dunst: 1.35 }[a.id] || 0.95) : 0.92; v.interaktivAus = true;
-        const schwenk = a.id === 'skizze_hals' || a.id === 'skizze_dunst';
+        const schwenk = a.id === 'skizze_hals' || a.id === 'skizze_dunst' || a.id === 'fallrohr';
         const yaw0 = schwenk ? 0.5 : 0.6 + a.id.length * 0.9, pitch0 = a.id === 'skizze_hals' ? 0.2 : a.id === 'skizze_dunst' ? 0.4 : 0.5;
         const dauer = schwenk ? 14000 : 22000;
         v.phase = ms => { const w = (ms % dauer) / dauer * 2 * Math.PI; v.grundstellung(schwenk ? yaw0 + 0.62 * Math.sin(w) : yaw0 + w, pitch0); };
