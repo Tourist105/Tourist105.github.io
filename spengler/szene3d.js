@@ -585,8 +585,18 @@
     const fall = () => { if (_f) return _f; const FR = root.Fallrohr; if (!FR) return null;
       try { _f = Skizzen3D.fallrohr(FR.Fallrohr({ hoehe: 1800, steckung: 50, dn: 100, teile: FR.STANDARD() })).szene; } catch (e) { _f = null; }
       return _f; };
-    const fuer = id => id === 'skizze_kamin' ? kamin() : id === 'skizze_hals' ? hals() : id === 'skizze_dunst' ? dunst() : id === 'fallrohr' ? fall() : null;
-    return { kamin, dunst, hals, fall, fuer };
+    // Kacheln Dachrinne, Mauerabdeckung, Kehle (Nils 10.11.): Modelle aus den Standardwerten der Seiten (neueteile.js DEFS), Laengen kuerzer fuer die Kachel
+    const _n = {};
+    const neu = id => { if (id in _n) return _n[id]; const K = root.Kern; let sz = null;
+      try {
+        if (id === 'dachrinne') sz = Skizzen3D.dachrinne(K.RinneSkizze({ laenge: 1200, abwicklung: 330, gefaelle: 5, halterAbstand: 700, dilatationAbstand: 5000, tafelBreite: 1000, ablaufMitte: false, verschnitt: 0.05, ablaeufe: 1, aussenEcken: 0, innenEcken: 0 }));
+        else if (id === 'mauerabdeckung') sz = Skizzen3D.mauer(K.MauerSkizze({ mauerBreite: 250, laenge: 1500, ueberstand: 50, schenkel: 50, abkantung: 15, gefaelle: 5, ecken: 0, stueckLaenge: 3000, dilatationAbstand: 5000, verschnitt: 0.05, einhaengestreifen: false, haftenAbstand: 330 }));
+        else if (id === 'kehle') sz = Skizzen3D.kehle(K.KehleSkizze({ laenge: 2000, abwicklung: 670, aufkantung: 15, maxStueck: 3000, ueberlappung: 100, kehlwinkel: 130, verschnitt: 0.05 }));
+      } catch (e) { sz = null; }
+      return (_n[id] = sz && sz.szene ? sz.szene : sz); };
+    const fuer = id => id === 'skizze_kamin' ? kamin() : id === 'skizze_hals' ? hals() : id === 'skizze_dunst' ? dunst() : id === 'fallrohr' ? fall()
+      : (id === 'dachrinne' || id === 'mauerabdeckung' || id === 'kehle') ? neu(id) : null;
+    return { kamin, dunst, hals, fall, neu, fuer };
   })();
 
   // ================================================================ Ansicht3D.kt (Zeichnen + Gesten)
