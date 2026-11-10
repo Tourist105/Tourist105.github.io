@@ -594,8 +594,22 @@
         else if (id === 'kehle') sz = Skizzen3D.kehle(K.KehleSkizze({ laenge: 2000, abwicklung: 670, aufkantung: 15, maxStueck: 3000, ueberlappung: 100, kehlwinkel: 130, verschnitt: 0.05 }));
       } catch (e) { sz = null; }
       return (_n[id] = sz && sz.szene ? sz.szene : sz); };
+    // Kacheln Rohrbogen, Hosenrohr, Reduktion (Rohr-Seiten) und Profil (Nils 10.11.): Modell aus den Beispielwerten der Seite
+    const _r = {};
+    const rohr = (id, art) => { if (id in _r) return _r[id]; let m = null; try { m = root.RohrMenueModell ? root.RohrMenueModell(art) : null; } catch (e) { m = null; } return (_r[id] = m); };
+    // Profil: Querschnitt der Vorlage (Winkel 100/120/15 mm, 90 und 45 Grad) als Blech ueber die Laenge 1000 mm gezogen
+    let _p;
+    const profil = () => { if (_p !== undefined) return _p; _p = null; const P = root.S && root.S.Profil; if (!P) return null;
+      try {
+        const L = 1000, pk = P.punkte({ schenkel: [100, 120, 15], knicke: [{ oeffnung: 90, links: false }, { oeffnung: 45, links: true }] }), l = [];
+        for (let i = 0; i + 1 < pk.length; i++) { const [x0, y0] = pk[i], [x1, y1] = pk[i + 1]; l.push(rechteck([x0, y0, 0], [x1, y1, 0], [x1, y1, L], [x0, y0, L], 0, 'PROFIL', true)); }
+        if (l.length) _p = festeSzene(l, null);
+      } catch (e) { _p = null; }
+      return _p; };
     const fuer = id => id === 'skizze_kamin' ? kamin() : id === 'skizze_hals' ? hals() : id === 'skizze_dunst' ? dunst() : id === 'fallrohr' ? fall()
-      : (id === 'dachrinne' || id === 'mauerabdeckung' || id === 'kehle') ? neu(id) : null;
+      : (id === 'dachrinne' || id === 'mauerabdeckung' || id === 'kehle') ? neu(id)
+      : id === 'rohrbogen' ? rohr(id, 'rohrbogen') : id === 'hosenrohr' ? rohr(id, 'hosenrohr') : id === 'reduktion' ? rohr(id, 'reduktion')
+      : id === 'profil' ? profil() : null;
     return { kamin, dunst, hals, fall, neu, fuer };
   })();
 

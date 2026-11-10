@@ -535,4 +535,18 @@
       layout() { R.layout(); d3Groesse(); }, speichere, zerstoere() { speichere(); R.ro.disconnect(); clearTimeout(liveTimer); }
     };
   };
+  // Startseiten-Kachel (Nils 10.11.): Modell der Seite mit den Beispielwerten (FELDER, Einheit mm), ohne Seite. Gleiche Rechnung wie aufbauen(). null bei Fehler.
+  root.RohrMenueModell = function (art) {
+    const defs = FELDER[art]; if (!defs) return null;
+    const cm = {}, zahl = {};
+    for (const f of defs) { const n = S.parseNum(f[3]); if (f[2] === 'L') cm[f[0]] = S.Einheit.zuCm(1, n); else zahl[f[0]] = n; }
+    const c = k => cm[k] || 0, z = c('z');
+    try {
+      if (art === 'rohrbogen') { const n = Math.trunc(zahl.n), f = K.pruefeBogen(c('d'), c('r'), zahl.w, n); if (f) return null; return RohrGeo.modell.bogen(K.Bogen(c('d'), c('r'), zahl.w, n, z)); }
+      if (art === 'schwanenhals-alt') { const s = K.RohrSchwanenhals(c('d'), c('a'), zahl.g, c('r'), Math.trunc(zahl.n), z); if (s.fehler()) return null; return RohrGeo.modell.schwanenhals(s); }
+      if (art === 'hosenrohr') { const hr = K.Hosenrohr(c('d'), zahl.w, c('l'), z); if (hr.fehler()) return null; return RohrGeo.modell.hosenrohr(hr); }
+      if (art === 'reduktion') { if (K.pruefeKegel(c('d1'), c('d2'), c('h'))) return null; return RohrGeo.modell.reduktion(K.kegelstumpf(c('d1'), c('d2'), c('h'), z)); }
+    } catch (e) { return null; }
+    return null;
+  };
 })(window);
