@@ -81,7 +81,7 @@
       if (szene) {
         const cv = h('canvas', {}); const rahmen = h('div', { class: 'rahmen' }, cv);
         const tk = h('div', { class: 'tk' }, name, a.info ? h('div', { class: 'tinfo', text: T(a.info) }) : null);
-        k.append(rahmen, tk); S.autosize(name, 16, 26);
+        k.append(rahmen, tk); S.autosize(name, 14, 26);
         const v = new (SZ().Ansicht3D)(cv); v.szene = szene; v.blattFarben = true; v.grundZoom = (S.opt && S.opt.kopf === 'alt') ? ({ skizze_hals: 1.22, skizze_dunst: 1.35 }[a.id] || 0.95) : 0.92; v.interaktivAus = true;
         const schwenk = a.id === 'skizze_hals' || a.id === 'skizze_dunst' || a.id === 'fallrohr';
         const yaw0 = schwenk ? 0.5 : 0.6 + a.id.length * 0.9, pitch0 = a.id === 'skizze_hals' ? 0.2 : a.id === 'skizze_dunst' ? 0.4 : 0.5;
