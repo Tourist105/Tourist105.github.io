@@ -400,6 +400,14 @@
     const extra = defs.slice(3);
     for (let i = 0; i < extra.length; i += 2) { const a = feldBauen(extra[i]); masse.append(mt(i + 1 < extra.length ? S.zweispalt(a, feldBauen(extra[i + 1])) : a, 8)); }
     masse.append(mt(text(T('annahme_rohr'), 14), 8)); if (art === 'hosenrohr') masse.append(mt(text(T('pdf_hose_annahme'), 14), 6));
+    // Segmentzahl als Wahl direkt unter den Hauptmassen (Gliederbogen / Schweizerbogen: viele kurze Stuecke, Alex 11.11.2026)
+    if (felder.n && (art === 'rohrbogen' || art === 'schwanenhals')) {
+      const werte = art === 'rohrbogen' ? ['3', '4', '5', '6', '8', '10', '12'] : ['2', '3', '4', '5', '6', '8'];
+      const segN = S.segment(werte, werte.indexOf(String(eingabe.n).trim()), i => { eingabe.n = werte[i]; felder.n.input.value = werte[i]; hebeHervor('n'); aktualisiere(); });
+      felder.n.input.addEventListener('input', () => segN.setze(werte.indexOf(felder.n.input.value.trim())));
+      const titelN = h('div', { class: 'bt', text: T(art === 'rohrbogen' ? 'w_segmente_bogen' : 'w_segmente_hals') }); titelN.style.marginTop = '8px';
+      primBox0.append(titelN, h('div', { style: { marginTop: '2px' } }, segN));
+    }
     const spMat = S.waehler(S.TA('werkstoffe'), st.mat, i => { if (i !== st.mat) { st.mat = i; st.dicke = S.dickeStandard(i); S.waehlerFuelle(spDicke, S.dickenTexte(i), S.dickenReihenfolge(i).indexOf(st.dicke)); aktualisiere(); } });
     const spDicke = S.waehler(S.dickenTexte(st.mat), S.dickenReihenfolge(st.mat).indexOf(st.dicke), p => { const idx = S.dickenReihenfolge(st.mat)[p]; if (idx != null && idx !== st.dicke) { st.dicke = idx; aktualisiere(); } });
     const ortF = S.feld(T('o_ort'), eingabe.o_ort, { text: true, onChange: v => { eingabe.o_ort = v; speichere(); } }); ortF.input.placeholder = T('hint_ort');
@@ -423,6 +431,7 @@
       mt(S.rmKarte(art, T(TITEL[name]), () => snapshot()), 12), mt(status, 6));
     const fokusiere = k => { const f = felder[k]; if (!f) return; if (!st.mehr && defs.findIndex(d => d[0] === k) >= 3) { setzeMehr(true); speichere(); } f.input.focus(); };
     R.view.beiMass = fokusiere;
+    R.view.feldFuer = k => { const f = felder[k]; return f && f.input ? f.input : null; };
 
     function einheitWechseln(neu) {
       const alt = einheit(); st.einheit = neu;

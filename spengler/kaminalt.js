@@ -490,6 +490,7 @@
       f.input.focus();
     }
     view.beiMass = fokusiere; view.beiLeerTipp = () => vollbild();
+    view.feldFuer = k => { const f = felder[k]; return f && f.input ? f.input : null; };
     function vollbild() { const a = st.tab; S.vollbildZeigen((w, hh) => view.zeichnungMit(a, w, hh), view.aktiv); }
     function waehleTab(i) {
       if (!istKamin()) i = 0;

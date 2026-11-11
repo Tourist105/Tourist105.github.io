@@ -25,8 +25,55 @@
         const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, z = this.aktuell;
         const f = z ? this.passung(z) : [1, 0, 0];
         const k = z ? z.treffer((x - f[1]) / f[0], (y - f[2]) / f[0], 18 / f[0]) : null;
-        if (k != null) { S.haptik(8); this.beiMass && this.beiMass(k); } else this.beiLeerTipp && this.beiLeerTipp();
+        if (this._eing) { this.eingabeZu(true); if (k == null) return; }   // offene Eingabe zuerst uebernehmen, ein Tipp daneben schliesst nur
+        if (k != null) { S.haptik(8); if (!this.eingabe(k, z.letzterTreffer)) this.beiMass && this.beiMass(k); } else this.beiLeerTipp && this.beiLeerTipp();
       });
+    }
+    /**
+     * Mass direkt in der Zeichnung eintippen (Alex 11.11.2026: "direkt in der Zeichnung vermassen, nicht separat").
+     * feldFuer(key) liefert das Eingabefeld der Seite, das zu diesem Mass gehoert. Die Zahl wird an der Stelle des Masses
+     * eingetippt und ueber das input-Ereignis des Feldes uebernommen, damit Rechnung, Pruefung und Speichern gleich bleiben.
+     */
+    /** Antippbar ist ein Mass nur, wenn seine Zahl der Wert des Eingabefeldes ist (ein berechneter Wert mit demselben Schluessel nicht). */
+    editierbar(key, e) {
+      const feld = this.feldFuer ? this.feldFuer(key) : null; if (!feld || feld.disabled || !e) return false;
+      const v = parseFloat(String(feld.value).trim().replace(',', '.')), m = String(e.text).replace(/,/g, '.').match(/\d+(\.\d+)?/g);
+      return isFinite(v) && !!m && m.some(x => Math.abs(parseFloat(x) - Math.abs(v)) < 0.051);
+    }
+    eingabe(key, treffer) {
+      const feld = this.feldFuer ? this.feldFuer(key) : null, z = this.aktuell;
+      if (!feld || !z || feld.disabled) return false;
+      const e = (treffer && treffer.key === key) ? treffer : z.elems.find(x => x.k === 't' && x.key === key);
+      if (!e || !this.editierbar(key, e)) return false;
+      const f = this.passung(z), r = Ze.textRect(e);
+      return this.eingabeBei(this.canvas, f[1] + (r[0] + r[2]) / 2 * f[0], f[2] + (r[1] + r[3]) / 2 * f[0], key);
+    }
+    /** Eingabe an einer Stelle (CSS-Pixel im Canvas) oeffnen: 2D-Zeichnung und 3D-Mass-Pille benutzen dasselbe Feld. */
+    eingabeBei(canvas, x, y, key) {
+      const feld = this.feldFuer ? this.feldFuer(key) : null;
+      if (!feld || feld.disabled || !canvas || !canvas.parentElement) return false;
+      if (this._eing) this.eingabeZu(true);
+      const eltern = canvas.parentElement;
+      if (getComputedStyle(eltern).position === 'static') eltern.style.position = 'relative';
+      const cr = canvas.getBoundingClientRect(), er = eltern.getBoundingClientRect(), bw = 104, bh = 46;
+      const cx = cr.left - er.left + x, cy = cr.top - er.top + y, l0 = cr.left - er.left + 4, t0 = cr.top - er.top + 4;
+      const inp = h('input', { class: 'masseingabe', type: 'text', inputmode: 'decimal', enterkeyhint: 'done', autocomplete: 'off', spellcheck: 'false', 'aria-label': feld.getAttribute('aria-label') || T('ss_masse') });
+      inp.value = feld.value;
+      inp.style.left = Math.round(Math.max(l0, Math.min(l0 + cr.width - bw - 8, cx - bw / 2))) + 'px';
+      inp.style.top = Math.round(Math.max(t0, Math.min(t0 + cr.height - bh - 8, cy - bh / 2))) + 'px';
+      inp.style.width = bw + 'px'; inp.style.height = bh + 'px';
+      eltern.append(inp); this._eing = inp; this._eingFeld = feld; this._eingKey = key; this.aktiv = key;
+      inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); this.eingabeZu(true); } else if (ev.key === 'Escape') { ev.preventDefault(); this.eingabeZu(false); } });
+      inp.addEventListener('blur', () => { if (this._eing === inp) this.eingabeZu(true); });
+      setTimeout(() => { try { inp.focus({ preventScroll: true }); inp.select(); } catch (x2) { /* */ } }, 0);
+      return true;
+    }
+    eingabeZu(uebernehmen) {
+      const inp = this._eing, feld = this._eingFeld; if (!inp) return;
+      this._eing = null; this._eingFeld = null;
+      const wert = inp.value.trim(); inp.remove();
+      if (this._aktiv === this._eingKey) this.aktiv = null;
+      if (uebernehmen && feld && wert !== '' && wert !== feld.value) { feld.value = wert; feld.dispatchEvent(new Event('input', { bubbles: true })); }
     }
     set aktiv(v) { if (this._aktiv !== v) { this._aktiv = v; this.zeichnen(); } } get aktiv() { return this._aktiv; }
     groesse(w, hh) {
@@ -52,7 +99,9 @@
       ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, this.w, this.h);
       const z = this.aktuell; if (!z) return;
       const f = this.passung(z);
-      Ze.malen(ctx, z, f[0], f[1], f[2], this._aktiv, 1);
+      // Masse, die sich hier eintippen lassen, bekommen eine feine Linie darunter (nur in der Live-Ansicht, nicht im Blatt)
+      Ze.tippKeys = this.feldFuer ? ((k, e) => this.editierbar(k, e)) : null;
+      try { Ze.malen(ctx, z, f[0], f[1], f[2], this._aktiv, 1); } finally { Ze.tippKeys = null; }
     }
   }
 
@@ -116,6 +165,14 @@
       primBox.append(winkelFeld);
     }
     primBox.append(h('div', { class: 'primreihe' }, defs.filter(d => prim.includes(d[0])).map(d => feldBauen(d))));
+    // Schwanenhals: statt Fertigboegen selber aus Segmenten bauen (Gliederbogen / Schweizerbogen, Nils und Alex 11.11.2026)
+    if (art === 'skizze_hals') {
+      const zeile = h('div', { class: 'segment', style: { marginTop: '4px' } },
+        h('button', { text: T('hals_seg_zwei'), 'aria-label': T('hals_seg_zwei'), onclick: () => S.gehe('schwanenhals-alt') }),
+        h('button', { text: T('hals_seg_glieder'), 'aria-label': T('hals_seg_glieder'), onclick: () => S.gehe('rohrbogen') }));
+      const bt = h('div', { class: 'bt', text: T('hals_seg_titel') }); bt.style.marginTop = '8px';
+      primBox.append(bt, zeile);
+    }
 
     // Kopf
     const karte = h('div', { class: 'skkarte' });
@@ -126,7 +183,7 @@
     if (hat3d) {
       cv3 = h('canvas', { 'aria-label': T('d3_beschreibung') }); karte.append(cv3);
       d3 = new root.Szene3D.Ansicht3D(cv3); d3.leerText = T('d3_leer'); d3.fuellend = true; d3.grundZoom = 1.2; d3.grundstellung(0.5, 0.2);
-      d3.beiMass3d = k => fokusiere(k);
+      d3.beiMass3d = (k, rr) => { if (!(rr && view.eingabeBei(cv3, (rr[0] + rr[2]) / 2, (rr[1] + rr[3]) / 2, k))) fokusiere(k); };
     }
     const kippGross = h('button', { class: 'kippgross', 'aria-label': T('ss_tipp'), onclick: () => vollbild() }, S.iconVollbild());
     if (!quer) karte.append(kippGross);
@@ -236,6 +293,7 @@
       f.input.focus();
     }
     view.beiMass = fokusiere; view.beiLeerTipp = () => vollbild();
+    view.feldFuer = k => { const f = felder[k]; return f ? f.input : null; };
 
     function vollbild() {
       const ansicht = st.ansicht;

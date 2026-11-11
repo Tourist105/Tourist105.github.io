@@ -217,8 +217,9 @@
         const r = textRect(e);
         const dx = max(max(r[0] - px, px - r[2]), 0), dy = max(max(r[1] - py, py - r[3]), 0);
         const d = hypot(dx, dy);
-        if (d <= spiel && d < bestD) { bestD = d; best = e.key; }
+        if (d <= spiel && d < bestD) { bestD = d; best = e.key; this.letzterTreffer = e; }
       }
+      if (best == null) this.letzterTreffer = null;
       return best;
     }
 
@@ -722,6 +723,12 @@
         }
         ctx.globalAlpha = alpha; ctx.fillStyle = TEXTFARBE[e.farbe]; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
         ctx.fillText(e.text, ox + links * scale, by);
+        // antippbares Mass: feine gestrichelte Linie unter der Zahl (root.Ze.tippKeys setzt nur die Live-Ansicht)
+        if (e.key != null && root.Ze && root.Ze.tippKeys && root.Ze.tippKeys(e.key, e)) {
+          const uy = oy + r[3] * scale + 1.5;
+          ctx.globalAlpha = 0.9 * alpha; ctx.strokeStyle = FARBEN.AKZENT; ctx.lineWidth = 1.6; ctx.setLineDash([3, 2.5]);
+          ctx.beginPath(); ctx.moveTo(ox + links * scale, uy); ctx.lineTo(ox + links * scale + bw, uy); ctx.stroke(); ctx.setLineDash([]);
+        }
       }
     }
     ctx.restore();

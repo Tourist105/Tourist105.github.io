@@ -172,6 +172,12 @@
     const plus = S.knopf(T('profil_plus_schenkel'), false, () => schenkelPlus(false));
     const umsch = S.knopf(T('profil_plus_umschlag'), false, () => schenkelPlus(true));
     const minus = S.knopf(T('profil_minus'), false, () => schenkelMinus());
+    // Profil selber aufbauen, gleich unter der Zeichnung statt unten in der Winkelkarte (Alex 11.11.2026: Profile selber erstellen)
+    { const bt = h('div', { class: 'bt', text: T('profil_bauen_titel') }); bt.style.marginTop = '8px';
+      primBox0.append(bt, h('div', { class: 'segment', style: { marginTop: '2px' } },
+        h('button', { text: T('profil_plus_kurz'), 'aria-label': T('profil_plus_schenkel'), onclick: () => schenkelPlus(false) }),
+        h('button', { text: T('profil_umschlag_kurz'), 'aria-label': T('profil_plus_umschlag'), onclick: () => schenkelPlus(true) }),
+        h('button', { text: T('profil_minus_kurz'), 'aria-label': T('profil_minus'), onclick: () => schenkelMinus() }))); }
     const matSp = S.waehler(S.TA('werkstoffe'), st.mat, i => { if (i !== st.mat) { st.mat = i; st.dicke = S.dickeStandard(i); S.waehlerFuelle(dickeSp, S.dickenTexte(i), S.dickenReihenfolge(i).indexOf(st.dicke)); aktualisiere(); } });
     const dickeSp = S.waehler(S.dickenTexte(st.mat), S.dickenReihenfolge(st.mat).indexOf(st.dicke), p => { const idx = S.dickenReihenfolge(st.mat)[p]; if (idx != null && idx !== st.dicke) { st.dicke = idx; aktualisiere(); } });
     const lf = S.feld(T('profil_laenge'), st.laenge, { onChange: v => { st.laenge = v; aktualisiere(); } });
@@ -191,7 +197,7 @@
     };
     mehrKnopf.addEventListener('click', () => { setzeMehr(!st.mehr); speichere(); });
     setzeMehr(st.mehr);
-    const winkelKarte = S.karte(text(T('w_winkel_titel'), 18, true), grau(T('profil_hinweis_winkel'), 14), winkelBox, plus, umsch, minus);
+    const winkelKarte = S.karte(text(T('w_winkel_titel'), 18, true), grau(T('profil_hinweis_winkel'), 14), winkelBox);
     if (S.vp.quer) inh.append(S.karte(text(T('ss_masse'), 18, true), primBox0), mt(winkelKarte, 10)); else inh.append(winkelKarte);
     inh.append(mt(mehrKnopf, 10), mt(mehrBox, 6),
       mt(S.karte(text(T('w_beispiele'), 18, true), vl, grau(T('profil_vorlage_info'), 14)), 10),
@@ -202,6 +208,7 @@
     const fokus = (key, an) => { if (an) R.view.aktiv = key; else if (R.view.aktiv === key) R.view.aktiv = null; };
     const fokusiere = key => { const i = parseInt(key.slice(1), 10); if (isNaN(i)) return; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; if (f) f.input.focus(); };
     R.view.beiMass = fokusiere;
+    R.view.feldFuer = key => { const i = parseInt(key.slice(1), 10); if (isNaN(i)) return null; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; return f && f.input ? f.input : null; };
 
     function reihenBauen() {
       schenkelReihe.innerHTML = ''; winkelBox.innerHTML = ''; schenkelFelder = []; winkelFelder = [];

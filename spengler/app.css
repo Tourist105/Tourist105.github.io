@@ -269,3 +269,6 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .kmweg { margin-top: 8px; } .kmweg .knopf { min-height: 48px; font-size: 15px; } .kmausweg { margin-top: 10px; }
 .scrim.km:has(> .dialog), .scrim.km { padding: 0 !important; }
 .kmfuss .kmsenden { flex: 1.7 1 0; }
+
+/* Mass direkt in der Zeichnung eintippen (Alex 11.11.2026) */
+.masseingabe { position: absolute; z-index: 6; box-sizing: border-box; border-radius: 12px; border: 2.5px solid var(--pri); background: #fff; color: var(--text); font: 700 22px/1 Roboto, sans-serif; text-align: center; padding: 0 6px; margin: 0; outline: none; -webkit-appearance: none; appearance: none; box-shadow: 0 6px 18px rgba(8, 58, 110, .28); }

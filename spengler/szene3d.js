@@ -715,7 +715,7 @@
           const r = c.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, jetzt = performance.now();
           if (letzterTipp && jetzt - letzterTipp.t < 300 && Math.hypot(x - letzterTipp.x, y - letzterTipp.y) < 100) { letzterTipp = null; this.voreinstellung(this.grundYaw, this.grundPitch); return; }
           letzterTipp = { x, y, t: jetzt };
-          for (const [rr, k] of this.pillenOrte) if (x >= rr[0] && x <= rr[2] && y >= rr[1] && y <= rr[3]) { this.beiMass3d(k); return; }
+          for (const [rr, k] of this.pillenOrte) if (x >= rr[0] && x <= rr[2] && y >= rr[1] && y <= rr[3]) { this.beiMass3d(k, rr); return; }
           this._wahlBei(x, y);
         }
       };

@@ -81,7 +81,7 @@
     if (hat3d) {
       cv3 = h('canvas', { 'aria-label': S.T('d3_beschreibung') }); karte.append(cv3);
       d3 = new root.Szene3D.Ansicht3D(cv3); d3.leerText = S.T('d3_leer'); d3.fuellend = true; d3.grundZoom = art === "fallrohr" ? 0.78 : 1.0; d3.grundstellung(art === 'mauerabdeckung' || art === 'kehle' ? 0.95 : 0.6, 0.35);
-      d3.beiMass3d = k => fokusiere(k);
+      d3.beiMass3d = (k, rr) => { if (!(rr && view.eingabeBei(cv3, (rr[0] + rr[2]) / 2, (rr[1] + rr[3]) / 2, k))) fokusiere(k); };
     }
     const kippGross = h('button', { class: 'kippgross', 'aria-label': S.T('ss_tipp'), onclick: () => vollbild() }, S.iconVollbild());
     if (!quer) karte.append(kippGross);
@@ -290,6 +290,7 @@
     }
     function fokusiere(key) { const f = felder[key]; if (!f) return; if (!st.mehr && !prim.includes(key) && art !== 'fallrohr') setzeMehr(true); f.input.focus(); }
     view.beiMass = fokusiere; view.beiLeerTipp = () => vollbild();
+    view.feldFuer = k => { const f = felder[k]; return f && f.input ? f.input : null; };
     function vollbild() { const a = st.ansicht; S.vollbildZeigen((w, hh) => view.zeichnungMit(a, w, hh), view.aktiv); }
 
     // Rechnung
