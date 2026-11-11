@@ -67,7 +67,7 @@
     const dreher = []; let weitereOffen = !!opt.weitere;
     const inh = h('div', { class: 'inhalt' });
     const titel = S.seitenTitel(T('home_titel'), 30, 52, 104);
-    inh.append(titel, mt(S.bestKarte(), 6), mt(S.warnband(T('warn_home'), 14), 6));
+    inh.append(titel);
     function mt(e, px) { e.style.marginTop = px + 'px'; return e; }
 
     const haupt = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'H'), neu = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'N'), weitere = S.ABLAEUFE.filter(a => a.stand === 'B' && a.gruppe === 'W'), folgt = S.ABLAEUFE.filter(a => a.stand !== 'B');
@@ -119,6 +119,8 @@
       neu.forEach((a, i) => { const kk = kachel(a, false, false, true); kk.style.flex = '1 1 0'; kk.style.minWidth = 0; kk.style.width = 'auto'; if (i) kk.style.marginLeft = '8px'; rn.append(kk); });
       inh.append(mt(h('div', { style: { fontSize: '15px', fontWeight: 700, color: 'var(--text2)' }, text: T('home_neu') }), 6), rn, mt(h('div', { style: { fontSize: '13px', color: 'var(--text2)' }, text: T('home_neu_info') }), 4));
     }
+    // einfacher (Nils 11.11.2026): zuerst die Teile, die Bestaetigungskarte fuer Alex und der Entwurfshinweis stehen darunter
+    inh.append(mt(S.warnband(T('warn_home'), 14), 12), mt(S.bestKarte(), 8));
     if (S.kmMenueZeile) inh.append(mt(S.kmMenueZeile(), 12));
 
     const status = h('div', { style: { fontSize: '15px' } });

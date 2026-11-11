@@ -180,6 +180,8 @@
     const knopf = h('button', { class: 'primliste', text: S.T('mass_liste'), 'aria-label': S.T('mass_liste'), onclick: () => { const an = reihe.classList.toggle('offen'); knopf.classList.toggle('an', an); } });
     return h('div', { class: 'primhinweis' }, h('span', { text: S.T('mass_tipp') }), knopf);
   };
+  /** Zugeklappte Hinweise: eine Zeile, die sich auf Tipp oeffnet (Warnungen bleiben da, stehen aber nicht mehr zwischen Zeichnung und Ergebnis). */
+  S.klapp = (kurz, kinder) => h('details', { class: 'klapp' }, h('summary', { text: kurz }), kinder);
   S.segment = (namen, start, onWahl) => {
     const d = h('div', { class: 'segment' });
     let wahl = start;

@@ -103,7 +103,29 @@
       e.schenkel.forEach((s, i) => { const w = rad(ri[i] + dr); x += s * Math.cos(w); y += s * Math.sin(w); p.push([x, y]); });
       return p;
     }
-    return { rechne, pruefe, punkte, ABC, buchstabe: i => i >= 0 && i < ABC.length ? ABC[i] : '?' };
+    /** Lage der Biegelinien im Zuschnitt (mm ab der Kante von Schenkel A): jeder Biegeabzug geht je zur Haelfte an die zwei Nachbarschenkel. */
+    function biegelagen(e, r) {
+      const out = []; let x = 0;
+      e.schenkel.forEach((s, i) => { const vor = i > 0 ? r.bieg[i - 1].abzug / 2 : 0, nach = i < r.bieg.length ? r.bieg[i].abzug / 2 : 0; x += s - vor - nach; if (i < r.bieg.length) out.push(x); });
+      return out;
+    }
+    /** Profil als DXF (ASCII, nur LINE und TEXT, Einheit mm): Querschnitt, Zuschnitt mit Biegelinien, Biegefolge als Text. */
+    function dxf(e, r, titel) {
+      const z = n => (Math.round(n * 1000) / 1000).toString(), o = [];
+      const linie = (lage, x1, y1, x2, y2) => o.push('0', 'LINE', '8', lage, '10', z(x1), '20', z(y1), '30', '0', '11', z(x2), '21', z(y2), '31', '0');
+      const txt = (x, y, hoehe, s) => o.push('0', 'TEXT', '8', 'TEXT', '10', z(x), '20', z(y), '30', '0', '40', z(hoehe), '1', String(s).replace(/[^\x20-\x7E]/g, '?'));
+      const p = punkte(e), yMin = Math.min(...p.map(q => q[1])), xMin = Math.min(...p.map(q => q[0]));
+      for (let i = 0; i + 1 < p.length; i++) linie('PROFIL', p[i][0] - xMin, p[i][1] - yMin, p[i + 1][0] - xMin, p[i + 1][1] - yMin);
+      const y1 = -40, y0 = y1 - e.laenge, b = r.breite;
+      linie('ZUSCHNITT', 0, y0, b, y0); linie('ZUSCHNITT', b, y0, b, y1); linie('ZUSCHNITT', b, y1, 0, y1); linie('ZUSCHNITT', 0, y1, 0, y0);
+      const lagen = biegelagen(e, r);
+      lagen.forEach(x => linie('BIEGELINIE', x, y0, x, y1));
+      const th = Math.max(4, Math.min(12, b / 40)); let ty = y1 + th * 0.8;
+      txt(0, ty + th * 1.6, th, (titel || 'Profil') + ', Zuschnitt ' + z(b) + ' x ' + z(e.laenge) + ' mm, Dicke ' + z(e.dicke) + ' mm, ' + e.stueck + ' Stk');
+      r.bieg.forEach((bg, i) => txt(lagen[i] + th * 0.3, y1 - th * 1.6 * (1 + (i % 3)), th * 0.8, 'B' + bg.nr + ' ' + bg.von + '-' + bg.nach + ' ' + z(bg.oeffnung) + ' Grad ' + (bg.links ? 'links' : 'rechts') + ' bei ' + z(lagen[i]) + ' mm'));
+      return ['0', 'SECTION', '2', 'ENTITIES'].concat(o, ['0', 'ENDSEC', '0', 'EOF']).join('\r\n') + '\r\n';
+    }
+    return { rechne, pruefe, punkte, biegelagen, dxf, ABC, buchstabe: i => i >= 0 && i < ABC.length ? ABC[i] : '?' };
   })();
   S.Profil = Profil;
 
@@ -151,7 +173,7 @@
   S.seiteProfil = function (opt) {
     const primBox0 = h('div', { class: 'primbox' }), schenkelReihe = h('div', { class: 'primreihe', style: { overflowX: 'auto' } });
     primBox0.append(S.primHinweis(schenkelReihe), schenkelReihe);
-    const R = S.weitereShell({ titel: T('profil_titel'), tabs: [T('ansicht_skizze'), T('ss_zuschnitt')], dreiD: -1, primBox: primBox0, beiPdf: () => pdfErstellen(), beiTeilen: () => blattTeilen(), anteil: 0.80 });
+    const R = S.weitereShell({ titel: T('profil_titel'), tabs: [T('ansicht_skizze'), T('ss_zuschnitt')], dreiD: -1, primBox: primBox0, beiPdf: () => pdfErstellen(), beiDxf: () => dxfTeilen(), beiTeilen: () => blattTeilen(), anteil: 0.80 });
     const { inh } = R, mt = S.mt, grau = S.grau, text = S.text;
     const st = { schenkel: [], winkel: [], links: [], mat: 0, dicke: 2, laenge: '1000', stueck: '1', modus: 0, radius: '', eigen: '1.4', mehr: false };
     const lade = () => { try { const j = JSON.parse(S.lies('profil.state')); if (j && Array.isArray(j.schenkel) && j.schenkel.length) Object.assign(st, j); } catch (e) { /* frisch */ } };
@@ -201,7 +223,7 @@
     if (S.vp.quer) inh.append(S.karte(text(T('ss_masse'), 18, true), primBox0), mt(winkelKarte, 10)); else inh.append(winkelKarte);
     inh.append(mt(mehrKnopf, 10), mt(mehrBox, 6),
       mt(S.karte(text(T('w_beispiele'), 18, true), vl, grau(T('profil_vorlage_info'), 14)), 10),
-      mt(S.karte(ergTitel, zuschnitt, summe, meldungBox, text(T('profil_folge_titel'), 18, true), grau(T('profil_folge_info'), 14), folge, liste), 10),
+      mt(S.karte(ergTitel, zuschnitt, summe, meldungBox, text(T('profil_folge_titel'), 18, true), grau(T('profil_folge_info'), 14), folge, liste, mt(S.knopf(T('profil_dxf'), false, () => dxfTeilen()), 10), grau(T('profil_dxf_info'), 14)), 10),
       mt(S.rmKarte('profil', T('profil_titel'), () => snapshot()), 12),
       mt(S.karte(text(T('profil_annahmen'), 15), S.knopf(T('an_karte_knopf'), false, () => S.gehe('annahmen'))), 12),
       mt(S.knopf(T('profil_leeren'), false, () => { vorlageLaden(0); st.radius = ''; st.modus = 0; speichere(); S.rendere(true); }), 12), mt(status, 6), mt(S.warnband(T('profil_warn'), 14), 12));
@@ -288,6 +310,13 @@
       if (!letztes) { status.textContent = T('status_leer'); return; }
       status.textContent = '';
       try { const d = await blattDatei(); S.pdfDialog(d.blob, d.name, d.titel, m => { status.textContent = m; }); } catch (x) { status.textContent = T('status_pdf_fehler'); }
+    }
+    // DXF fuer CAD und CNC: Querschnitt, Zuschnitt und Biegelinien in mm (Nils 11.11.2026)
+    async function dxfTeilen() {
+      if (!letztes || !letzteGueltig) { status.textContent = T('status_leer'); return; }
+      const name = 'Profil_' + letzteGueltig.schenkel.map(s => fmtTrim(s, 1).replace(',', '.')).join('-') + '.dxf';
+      const blob = new Blob([Profil.dxf(letzteGueltig, letztes, T('profil_titel'))], { type: 'application/dxf' });
+      const r = await S.teilen(blob, name, T('profil_titel')); if (r === 'download') status.textContent = name;
     }
     async function blattTeilen() {
       if (!letztes) { status.textContent = T('status_leer'); return; }

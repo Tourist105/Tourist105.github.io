@@ -5,7 +5,7 @@
   const FARBE = { beleg: '#105E32', annahme: '#965000', unsicher: '#B00020' };
 
   const DEFS = {
-    skizze_kamin: [['k', 'ss_f_k', '500'], ['t', 'ss_f_t', '400'], ['h', 'ss_f_h', '100'], ['sl', 'ss_f_sl', '100'], ['sr', 'ss_f_sr', '100'], ['ah', 'ss_f_ah', '200'], ['av', 'ss_f_av', '150'], ['u', 'ss_f_u', '15']],
+    skizze_kamin: [['k', 'ss_f_k', '500'], ['t', 'ss_f_t', '400'], ['h', 'ss_f_h', '100'], ['sl', 'ss_f_sl', '100'], ['sr', 'ss_f_sr', '100'], ['ah', 'ss_f_ah', '200'], ['av', 'ss_f_av', '150'], ['u', 'ss_f_u_vorne', '15'], ['o', 'ss_f_o', '15']],
     skizze_hals: [['a', 'ss_f_a', '400'], ['r', 'ss_f_r', '60'], ['s', 'ss_f_steck', '50']],
     skizze_dunst: [['d', 'ss_f_d', '100'], ['h', 'ss_f_hr', '300'], ['n', 'ss_f_n', '30'], ['b', 'ss_f_b', '400'], ['t', 'ss_f_pt', '400'], ['s', 'ss_f_ss', '100'], ['u', 'ss_f_u', '15'], ['z', 'ss_f_z', '15']]
   };
@@ -328,7 +328,7 @@
     }
     function aktualisiere() {
       let meld;
-      if (art === 'skizze_kamin') meld = K.KaminSkizze.pruefe(zahl('k'), zahl('t'), zahl('sl'), zahl('sr'), zahl('ah'), zahl('av'), zahl('h'), zahl('u'));
+      if (art === 'skizze_kamin') meld = K.KaminSkizze.pruefe(zahl('k'), zahl('t'), zahl('sl'), zahl('sr'), zahl('ah'), zahl('av'), zahl('h'), zahl('u'), zahl('o'));
       else if (art === 'skizze_hals') meld = K.SchwanenhalsSkizze.pruefe(zahl('a'), bogenGrad(), zahl('r'), zahl('s'));
       else meld = K.DunstrohrSkizze.pruefe(zahl('d'), zahl('b'), zahl('t'), zahl('s'), zahl('h'), zahl('u'), zahl('n'), zahl('z'));
       for (const k in felder) { const m = meld.find(x => x.feld === k); felder[k].fehler(m ? fehlerText(m) : null); }
@@ -343,7 +343,7 @@
       const teilTxt = (t, name, key) => T(key, name, fmtTrim(t.breite, 1), fmtTrim(t.tiefe, 1), fmtTrim(t.kerbeBreite, 1), fmtTrim(t.kerbeTiefe, 1), fmtM2(t.gesamtM2));
       weitereSeiten = null;
       if (art === 'skizze_kamin') {
-        const k = K.KaminSkizze(zahl('k'), zahl('t'), zahl('sl'), zahl('sr'), zahl('ah'), zahl('av'), zahl('h'), zahl('u'));
+        const k = K.KaminSkizze(zahl('k'), zahl('t'), zahl('sl'), zahl('sr'), zahl('ah'), zahl('av'), zahl('h'), zahl('u'), zahl('o'));
         view.bauer = (a, w, hh, t) => a === 0 ? Ze.kaminBlatt(k, w, hh, t, lb, w >= breitSchirm) : a === 1 ? Ze.kaminAufriss(k, w, hh, t, lb, w >= breitSchirm) : Ze.kaminGrundriss(k, w, hh, t, lb);
         zeilen = [teilTxt(k.hinten, T('ss_hinten'), 'ss_kamin_teil'), teilTxt(k.vorne, T('ss_vorne'), 'ss_kamin_teil'), T('ss_kamin_falz', fmtTrim(k.hinten.faltLaengeMm, 1), fmtTrim(zahl('h'), 1))];
         grossText = T('ss_kamin_gross', fmtM2(k.gesamtM2)); ergLabel = T('ss_ergebnis_kamin');

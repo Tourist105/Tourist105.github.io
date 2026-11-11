@@ -278,3 +278,11 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .primhinweis { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; color: var(--text2); padding: 4px 2px 2px 2px; }
 .primliste { flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 17px; border: 1.5px solid var(--feldrand); background: #fff; color: var(--text); font: 700 14px/1 Roboto, sans-serif; }
 .primliste.an { background: var(--pri); border-color: var(--pri); color: #fff; }
+/* Zugeklappte Hinweise (Nils 11.11.2026: super einfach) */
+.klapp { border-radius: 14px; background: rgba(255, 214, 102, .22); border: 1.5px solid rgba(214, 158, 0, .55); }
+.klapp > summary { list-style: none; cursor: pointer; padding: 10px 14px; font: 700 15px/1.25 Roboto, sans-serif; color: rgb(110, 72, 0); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.klapp > summary::-webkit-details-marker { display: none; }
+.klapp > summary::after { content: '\25BE'; font-size: 18px; }
+.klapp[open] > summary::after { content: '\25B4'; }
+.klapp > :not(summary) { margin-left: 10px; margin-right: 10px; }
+.klapp > :last-child:not(summary) { margin-bottom: 10px; }

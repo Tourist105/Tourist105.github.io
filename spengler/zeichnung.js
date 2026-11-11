@@ -292,17 +292,19 @@
       const tt = p.tiefe, kt = k.kerbeTiefe, hm = tt * CY + k.aufkantung, oy = cursor + name + hm * s;
       const sb = new Sb(x0, oy, s);
       const B = k.breite, sl = k.streifenLinks, kb = k.kaminBreite, hh = k.aufkantung, u = k.umschlag, ausl = tt - kt;
+      // Hinterstueck: Hohlumschlag steht am hinteren Rand nach oben. Vorderstueck: Umschlag liegt am vorderen Rand nach unten (Skizze Alex)
+      const istHinten = p === k.hinten, uu = istHinten ? k.hohl : u, uDir = istHinten ? 1 : -1, uKey = istHinten ? 'o' : 'u', ud = max(uu, 4 / s);
       z.text(6, cursor + 0.55 * t, nm + '  ' + mm(B) + ' × ' + mm(tt), t * 1.1, true, -1, 'BLAU');
       const plate = pts(sb.p(0, 0, 0), sb.p(B, 0, 0), sb.p(B, tt, 0), sb.p(sl + kb, tt, 0), sb.p(sl + kb, tt - kt, 0), sb.p(sl, tt - kt, 0), sb.p(sl, tt, 0), sb.p(0, tt, 0));
       z.flaeche(plate, 'BLECH', null);
-      if (u > 0) z.flaeche(pts(sb.p(0, 0, 0), sb.p(B, 0, 0), sb.p(B, 0, -max(u, 4 / s)), sb.p(0, 0, -max(u, 4 / s))), 'UMSCHLAG', 'KANTE', 'u');
+      if (uu > 0) z.flaeche(pts(sb.p(0, 0, 0), sb.p(B, 0, 0), sb.p(B, 0, uDir * ud), sb.p(0, 0, uDir * ud)), 'UMSCHLAG', 'KANTE', uKey);
       const wl = pts(sb.p(sl, tt - kt, 0), sb.p(sl, tt, 0), sb.p(sl, tt, hh), sb.p(sl, tt - kt, hh));
       const wr = pts(sb.p(sl + kb, tt - kt, 0), sb.p(sl + kb, tt, 0), sb.p(sl + kb, tt, hh), sb.p(sl + kb, tt - kt, hh));
       const wv = pts(sb.p(sl, tt - kt, 0), sb.p(sl + kb, tt - kt, 0), sb.p(sl + kb, tt - kt, hh), sb.p(sl, tt - kt, hh));
       z.flaeche(wl, 'AUFKANT2', 'KANTE', 'h'); z.flaeche(wr, 'AUFKANT2', 'KANTE', 'h'); z.flaeche(wv, 'AUFKANT', 'KANTE', 'h');
       const seg = (a, b, st) => z.linie(a[0], a[1], b[0], b[1], st);
       const pp = []; for (let i = 0; i < 8; i++) pp.push([plate[2 * i], plate[2 * i + 1]]);
-      seg(pp[0], pp[1], u > 0 ? 'FALZ' : 'KANTE');
+      seg(pp[0], pp[1], uu > 0 ? 'FALZ' : 'KANTE');
       seg(pp[1], pp[2], 'KANTE'); seg(pp[2], pp[3], 'KANTE');
       seg(pp[3], pp[4], 'FALZ'); seg(pp[4], pp[5], 'FALZ'); seg(pp[5], pp[6], 'FALZ');
       seg(pp[6], pp[7], 'KANTE'); seg(pp[7], pp[0], 'KANTE');
@@ -310,16 +312,16 @@
       z.poly(pts(sb.p(sl, tt - kt + d, 0), sb.p(sl, tt - kt + d, d), sb.p(sl, tt - kt, d)), 'MASS');
       const c0 = sb.p(sl, tt - kt, 0);
       z.hinweis(c0[0], c0[1], -1, 0.15, 3, '90°', null, 'GRAU', false, undefined, true);
-      const yb = sb.y(0, -max(u, 4 / s));
+      const yb = sb.y(0, istHinten ? -4 / s : -ud);
       const bx = [0, sl, sl + kb, B].map(v => [sb.x(v, 0), yb]);
       z.kette(bx, 0, 1, 8, [mm(sl), (worte ? lb.kamin + ' ' : '') + mm(kb), mm(k.streifenRechts)], ['sl', 'k', 'sr'], 1, 'TEXT');
       const dp = [0, ausl, tt].map(v => sb.p(B, v, 0));
       z.kette(dp, 1, 0, 10, [(worte ? lb.ausladung + ' ' : '') + mm(ausl), (worte ? lb.kerbe + ' ' : '') + mm(kt)], [aKey, 't'], 1, 'TEXT', undefined, undefined, undefined, undefined, 1);
       const h0 = sb.p(sl + kb, tt, 0), h1 = sb.p(sl + kb, tt, hh);
       z.mass(h0[0], h0[1], h1[0], h1[1], 1, 0, 12, (worte ? lb.aufkantung + ' ' : '') + mm(hh), 'h');
-      if (u > 0) {
-        const u0 = sb.p(B, 0, 0), u1 = sb.p(B, 0, -max(u, 4 / s));
-        z.mass(u0[0], u0[1], u1[0], u1[1], 1, 0, 10, (worte ? lb.umschlag + ' ' : '') + mm(u), 'u', 1, 'AKZENT', undefined, undefined, !worte);
+      if (uu > 0) {
+        const u0 = sb.p(B, 0, 0), u1 = sb.p(B, 0, uDir * ud);
+        z.mass(u0[0], u0[1], u1[0], u1[1], 1, 0, 10, (worte ? (istHinten ? (lb.hohl || 'Hohlumschlag') : lb.umschlag) + ' ' : '') + mm(uu), uKey, 1, 'AKZENT', undefined, undefined, !worte);
       }
       cursor += name + hm * s + max(u, 4 / s) * s + unten + 0.5 * t;
     }
@@ -330,19 +332,20 @@
   function kaminGrundriss(k, w, h, t, lb) {
     const z = new Zeichnung(w, h, t);
     const lg = 3.4 * t + 10, rg = 3.4 * t + 10, oben = 2.0 * t + 14, unten = 2.0 * t + 14, gap = 12;
-    const th = k.hinten.tiefe, tv = k.vorne.tiefe, u = k.umschlag;
-    const sx = (w - lg - rg) / k.breite, sy = (h - oben - unten - gap) / (th + tv + 2 * u);
+    const th = k.hinten.tiefe, tv = k.vorne.tiefe, u = k.umschlag, uo = k.hohl;
+    const sx = (w - lg - rg) / k.breite, sy = (h - oben - unten - gap) / (th + tv + u + uo);
     const s = max(0.02, min(sx, sy));
     const bw = k.breite * s, x0 = lg + (w - lg - rg - bw) / 2;
-    const uh = u > 0 ? max(u * s, 3) : 0;
-    const gesH = th * s + tv * s + 2 * uh + gap + oben + unten;
-    const ytop = max(0, (h - gesH) / 2) + oben, yh0 = ytop + uh, hh = th * s, yv0 = yh0 + hh + gap, hv = tv * s;
+    const uh = u > 0 ? max(u * s, 3) : 0, uhH = uo > 0 ? max(uo * s, 3) : 0;
+    const gesH = th * s + tv * s + uh + uhH + gap + oben + unten;
+    const ytop = max(0, (h - gesH) / 2) + oben, yh0 = ytop + uhH, hh = th * s, yv0 = yh0 + hh + gap, hv = tv * s;
     const sl = k.streifenLinks * s, kb = k.kaminBreite * s, kt = k.kerbeTiefe * s;
     const xs1 = x0 + sl, xs2 = x0 + sl + kb, x1 = x0 + bw, aufk = k.aufkantung * s;
     const ph = [x0, yh0, x1, yh0, x1, yh0 + hh, xs2, yh0 + hh, xs2, yh0 + hh - kt, xs1, yh0 + hh - kt, xs1, yh0 + hh, x0, yh0 + hh];
     const pv = [x0, yv0, xs1, yv0, xs1, yv0 + kt, xs2, yv0 + kt, xs2, yv0, x1, yv0, x1, yv0 + hv, x0, yv0 + hv];
     z.flaeche(ph, 'BLECH', null); z.flaeche(pv, 'BLECH', null);
-    if (u > 0) { z.rechteck(x0, yh0 - uh, x1, yh0, 'UMSCHLAG', 'KANTE', 'u'); z.rechteck(x0, yv0 + hv, x1, yv0 + hv + uh, 'UMSCHLAG', 'KANTE', 'u'); }
+    if (uo > 0) z.rechteck(x0, yh0 - uhH, x1, yh0, 'UMSCHLAG', 'KANTE', 'o');
+    if (u > 0) z.rechteck(x0, yv0 + hv, x1, yv0 + hv + uh, 'UMSCHLAG', 'KANTE', 'u');
     const a = min(aufk, min(kb / 2, kt));
     z.rechteck(xs1, yh0 + hh - kt, xs2, yh0 + hh - kt + a, 'AUFKANT', null, 'h');
     z.rechteck(xs1, yh0 + hh - kt, xs1 + a, yh0 + hh, 'AUFKANT', null, 'h');
@@ -365,10 +368,8 @@
     z.mass(x0, yv0, x0, yv0 + hv, -1, 0, 8, mm(tv), null, 1);
     z.kette([yh0, yh0 + hh - kt, yh0 + hh].map(v => [x1, v]), 1, 0, 8, [mm(th - k.kerbeTiefe), mm(k.kerbeTiefe)], ['ah', 't'], 1);
     z.kette([yv0, yv0 + kt, yv0 + hv].map(v => [x1, v]), 1, 0, 8, [mm(k.kerbeTiefe), mm(tv - k.kerbeTiefe)], ['t', 'av'], 1);
-    if (u > 0) {
-      z.mass(x0, yh0 - uh, x0, yh0, -1, 0, 8, mm(u), 'u', 1, 'AKZENT');
-      z.mass(x0, yv0 + hv, x0, yv0 + hv + uh, -1, 0, 8, mm(u), 'u', 1, 'AKZENT');
-    }
+    if (uo > 0) z.mass(x0, yh0 - uhH, x0, yh0, -1, 0, 8, mm(uo), 'o', 1, 'AKZENT');
+    if (u > 0) z.mass(x0, yv0 + hv, x0, yv0 + hv + uh, -1, 0, 8, mm(u), 'u', 1, 'AKZENT');
     // Teilbeschriftung erst nach den Massen: optional, faellt bei Kollision weg statt ueber 100/500/700 zu liegen
     z.beweglich(x0 + bw / 2, yh0 + ausH, lb.hinten, 0, 1, x0 + bw / 2, yh0 + ausH, t * 1.05, true, 'BLAU', null, 0, false, true);
     z.beweglich(x0 + bw / 2, yv0 + kt + ausV, lb.vorne, 0, -1, x0 + bw / 2, yv0 + kt + ausV, t * 1.05, true, 'BLAU', null, 0, false, true);

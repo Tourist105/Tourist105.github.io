@@ -14,18 +14,20 @@
 
   // ================================================================ Skizzen.kt
   // ---- Kamineinfassung (2-teilig: Hinterstueck + Vorderstueck mit Kerbe)
-  function KaminSkizze(kaminBreite, kaminTiefe, streifenLinks, streifenRechts, ausladungHinten, ausladungVorne, aufkantung, umschlag) {
-    const s = { kaminBreite, kaminTiefe, streifenLinks, streifenRechts, ausladungHinten, ausladungVorne, aufkantung, umschlag };
+  function KaminSkizze(kaminBreite, kaminTiefe, streifenLinks, streifenRechts, ausladungHinten, ausladungVorne, aufkantung, umschlag, hohl) {
+    // hohl: Hohlumschlag am hinteren (oberen) Rand des Hinterstuecks, steht nach oben (Skizze Alex Seite 1). Ohne Angabe wie der Umschlag.
+    if (hohl == null || !isFinite(hohl)) hohl = umschlag;
+    const s = { kaminBreite, kaminTiefe, streifenLinks, streifenRechts, ausladungHinten, ausladungVorne, aufkantung, umschlag, hohl };
     s.breite = streifenLinks + kaminBreite + streifenRechts;
     s.kerbeTiefe = kaminTiefe / 2;
-    function teil(name, ausladung) {
+    function teil(name, ausladung, um) {
       const tiefe = s.kerbeTiefe + ausladung;
       const fl = s.breite * tiefe - kaminBreite * s.kerbeTiefe;
       const falt = kaminBreite + 2 * s.kerbeTiefe;
-      const t = { name, breite: s.breite, tiefe, kerbeBreite: kaminBreite, kerbeTiefe: s.kerbeTiefe, flanschMm2: fl, faltLaengeMm: falt, aufkantungMm2: falt * aufkantung, umschlagMm2: s.breite * umschlag };
+      const t = { name, breite: s.breite, tiefe, kerbeBreite: kaminBreite, kerbeTiefe: s.kerbeTiefe, flanschMm2: fl, faltLaengeMm: falt, aufkantungMm2: falt * aufkantung, umschlagMm2: s.breite * um };
       t.gesamtMm2 = t.flanschMm2 + t.aufkantungMm2 + t.umschlagMm2; t.gesamtM2 = t.gesamtMm2 / 1e6; return t;
     }
-    s.hinten = teil('hinten', ausladungHinten); s.vorne = teil('vorne', ausladungVorne);
+    s.hinten = teil('hinten', ausladungHinten, hohl); s.vorne = teil('vorne', ausladungVorne, umschlag);
     s.gesamtM2 = s.hinten.gesamtM2 + s.vorne.gesamtM2;
     return s;
   }

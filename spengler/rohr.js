@@ -426,8 +426,10 @@
     };
     mehrKnopf.addEventListener('click', () => { setzeMehr(!st.mehr); speichere(); });
     setzeMehr(st.mehr);
-    if (quer) inh.append(mt(S.karte(text(T('ss_masse'), 18, true), primBox0), 0), mt(warn, 8)); else inh.append(mt(warn, 10));
-    inh.append(mt(fehlerText, quer ? 8 : 0), mt(warnText, 4), mt(beispielText, 6), mt(mehrKnopf, 8), mt(mehrBox, 6), mt(ergKarte, 10), mt(d3k.karte, 10),
+    if (quer) inh.append(mt(S.karte(text(T('ss_masse'), 18, true), primBox0), 0));
+    // einfacher (Nils 11.11.2026): Ergebnis direkt unter der Zeichnung, Warn- und Hinweistexte zugeklappt in einer Zeile
+    const hinweise = S.klapp(T('hinweise_kurz'), [warn, mt(warnText, 4), mt(beispielText, 6)]);
+    inh.append(mt(fehlerText, quer ? 8 : 6), mt(ergKarte, 6), mt(hinweise, 8), mt(mehrKnopf, 8), mt(mehrBox, 6), mt(d3k.karte, 10),
       mt(S.rmKarte(art, T(TITEL[name]), () => snapshot()), 12), mt(status, 6));
     const fokusiere = k => { const f = felder[k]; if (!f) return; if (!st.mehr && defs.findIndex(d => d[0] === k) >= 3) { setzeMehr(true); speichere(); } f.input.focus(); };
     R.view.beiMass = fokusiere;
