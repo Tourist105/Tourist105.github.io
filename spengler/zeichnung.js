@@ -494,8 +494,8 @@
     const z = new Zeichnung(w, h, t);
     const n = d.neigung * PI / 180, B = d.breite, T = d.tiefe, r = d.d / 2;
     const gT = T * cos(n), zT = T * sin(n), gc = gT / 2, zc = zT / 2, xc = B / 2;
-    const u = d.umschlag, uMm = u > 0 ? u : 0;
-    const topZ = max(zT + gT * CY, zc + d.rohrHoehe + (gc + r) * CY);
+    const u = d.umschlag, uMm = u > 0 ? u : 0, hMm = d.hohl > 0 ? d.hohl : 0;
+    const topZ = max(zT + gT * CY + hMm, zc + d.rohrHoehe + (gc + r) * CY);
     const breiteMm = B + gT * CX;
     const links = bild ? 6 : worte ? 8.2 * t + 6 : 3.2 * t + 6;
     const rechts = bild ? 6 : worte ? 9.2 * t : 3.2 * t + 6;
@@ -512,6 +512,8 @@
     z.flaeche(pts(plan(0, 0), plan(sS, 0), plan(sS, T), plan(0, T)), 'AUFKANT', null, 's');
     z.flaeche(pts(plan(B - sS, 0), plan(B, 0), plan(B, T), plan(B - sS, T)), 'AUFKANT', null, 's');
     if (uMm > 0) { const ud = max(uMm, 4 / s); z.flaeche(pts(plan(0, 0), plan(B, 0), plan(B, 0, -ud), plan(0, 0, -ud)), 'UMSCHLAG', 'KANTE', 'u'); }
+    // oben (firstseitig) der nach oben gestellte Hohlumschlag (Skizze Alex Seite 3)
+    if (hMm > 0) { const hd = max(hMm, 4 / s); z.flaeche(pts(plan(0, T), plan(B, T), plan(B, T, hd), plan(0, T, hd)), 'UMSCHLAG', 'KANTE', 'o'); }
     z.poly(pts(plan(0, 0), plan(B, 0), plan(B, T), plan(0, T)), 'KANTE', null, 0, true);
     z.linie(plan(sS, 0)[0], plan(sS, 0)[1], plan(sS, T)[0], plan(sS, T)[1], 'FALZ', 's');
     z.linie(plan(B - sS, 0)[0], plan(B - sS, 0)[1], plan(B - sS, T)[0], plan(B - sS, T)[1], 'FALZ', 's');
@@ -584,6 +586,10 @@
         const u0 = plan(B, 0), u1 = plan(B, 0, -max(uMm, 4 / s));
         z.mass(u0[0], u0[1], u1[0], u1[1], 1, 0, 10, (worte ? lb.umschlag + ' ' : '') + mm(uMm), 'u', 1, 'AKZENT');
       }
+      if (hMm > 0) {
+        const h0 = plan(B, T), h1 = plan(B, T, max(hMm, 4 / s));
+        z.mass(h0[0], h0[1], h1[0], h1[1], 1, 0, 10, (worte ? (lb.hohl || 'Hohlumschlag') + ' ' : '') + mm(hMm), 'o', 1, 'AKZENT');
+      }
     }
     z.fertig();
     return z;
@@ -591,15 +597,16 @@
 
   function dunstGrundriss(d, w, h, t, lb) {
     const z = new Zeichnung(w, h, t);
-    const lg = 2.2 * t + 14, rg = 3.4 * t + 10, oben = 2.0 * t + 14, unten = 4.0 * t + 22, u = d.umschlag;
-    const sx = (w - lg - rg) / d.breite, sy = (h - oben - unten) / (d.tiefe + u);
+    const lg = 2.2 * t + 14, rg = 3.4 * t + 10, oben = 2.0 * t + 14, unten = 4.0 * t + 22, u = d.umschlag, o = d.hohl > 0 ? d.hohl : 0;
+    const sx = (w - lg - rg) / d.breite, sy = (h - oben - unten) / (d.tiefe + u + o);
     const s = max(0.02, min(sx, sy));
-    const bw = d.breite * s, th = d.tiefe * s, uh = u > 0 ? max(u * s, 3) : 0;
-    const x0 = lg + (w - lg - rg - bw) / 2, y0 = max(0, (h - oben - unten - th - uh) / 2) + oben, ss = d.streifen * s;
+    const bw = d.breite * s, th = d.tiefe * s, uh = u > 0 ? max(u * s, 3) : 0, oh = o > 0 ? max(o * s, 3) : 0;
+    const x0 = lg + (w - lg - rg - bw) / 2, y0 = max(0, (h - oben - unten - th - uh - oh) / 2) + oben + oh, ss = d.streifen * s;
     z.rechteck(x0, y0, x0 + bw, y0 + th, 'BLECH', null);
     z.rechteck(x0, y0, x0 + ss, y0 + th, 'AUFKANT', null, 's');
     z.rechteck(x0 + bw - ss, y0, x0 + bw, y0 + th, 'AUFKANT', null, 's');
     if (u > 0) z.rechteck(x0, y0 + th, x0 + bw, y0 + th + uh, 'UMSCHLAG', 'KANTE', 'u');
+    if (o > 0) z.rechteck(x0, y0 - oh, x0 + bw, y0, 'UMSCHLAG', 'KANTE', 'o');   // Hohlumschlag oben
     z.rechteck(x0, y0, x0 + bw, y0 + th, 'KEINE', 'KANTE');
     z.linie(x0 + ss, y0, x0 + ss, y0 + th, 'FALZ', 's'); z.linie(x0 + bw - ss, y0, x0 + bw - ss, y0 + th, 'FALZ', 's');
     const cx = x0 + bw / 2, cy = y0 + th / 2, rx = d.lochQuer * s / 2, ry = d.lochLaengs * s / 2;
@@ -609,11 +616,12 @@
     const lochTxt = 'Ø ' + mm(d.d);
     if (textBreite(lochTxt, t, true) + 4 <= 2 * rx * 0.9 && t + 2 <= 2 * ry) z.text(cx, cy, lochTxt, t, true, 0, 'TEXT', 'd');
     else z.beweglich(cx, cy + ry + 0.9 * t, lochTxt, 0, 1, cx, cy + ry, t, true, 'TEXT', 'd');
-    z.kette([x0, x0 + ss, x0 + bw - ss, x0 + bw].map(v => [v, y0]), 0, -1, 8, [mm(d.streifen), mm(d.mitte), mm(d.streifen)], ['s', 'b', 's'], 1);
+    z.kette([x0, x0 + ss, x0 + bw - ss, x0 + bw].map(v => [v, y0 - oh]), 0, -1, 8, [mm(d.streifen), mm(d.mitte), mm(d.streifen)], ['s', 'b', 's'], 1);
     const yu = y0 + th + uh;
     z.mass(x0, yu, x0 + bw, yu, 0, 1, 8, mm(d.breite), 'b', 1);
     z.mass(x0 + bw, y0, x0 + bw, y0 + th, 1, 0, 8, mm(d.tiefe), 't', 1);
     if (u > 0) z.mass(x0, y0 + th, x0, y0 + th + uh, -1, 0, 6, mm(u), 'u', 1, 'AKZENT');
+    if (o > 0) z.mass(x0, y0 - oh, x0, y0, -1, 0, 6, mm(o), 'o', 1, 'AKZENT');
     z.fertig();
     return z;
   }

@@ -7,7 +7,7 @@
   const DEFS = {
     skizze_kamin: [['k', 'ss_f_k', '500'], ['t', 'ss_f_t', '400'], ['h', 'ss_f_h', '100'], ['sl', 'ss_f_sl', '100'], ['sr', 'ss_f_sr', '100'], ['ah', 'ss_f_ah', '200'], ['av', 'ss_f_av', '150'], ['u', 'ss_f_u_vorne', '15'], ['vw', 'ss_f_vw', '0'], ['o', 'ss_f_o', '15']],
     skizze_hals: [['a', 'ss_f_a', '400'], ['r', 'ss_f_r', '60'], ['s', 'ss_f_steck', '50']],
-    skizze_dunst: [['d', 'ss_f_d', '100'], ['h', 'ss_f_hr', '300'], ['n', 'ss_f_n', '30'], ['b', 'ss_f_b', '400'], ['t', 'ss_f_pt', '400'], ['s', 'ss_f_ss', '100'], ['u', 'ss_f_u', '15'], ['z', 'ss_f_z', '15']]
+    skizze_dunst: [['d', 'ss_f_d', '100'], ['h', 'ss_f_hr', '300'], ['n', 'ss_f_n', '30'], ['b', 'ss_f_b', '400'], ['t', 'ss_f_pt', '400'], ['s', 'ss_f_ss', '100'], ['u', 'ss_f_u', '15'], ['o', 'ss_f_o_oben', '15'], ['z', 'ss_f_z', '15']]
   };
   const PRIMAER = { skizze_kamin: ['k', 't', 'h'], skizze_hals: ['a', 'r', 's'], skizze_dunst: ['d', 'h', 'n'] };
   const TITEL = { skizze_kamin: 'ablauf_sk_kamin', skizze_hals: 'ablauf_sk_hals', skizze_dunst: 'ablauf_sk_dunst' };
@@ -332,7 +332,7 @@
       let meld;
       if (art === 'skizze_kamin') meld = K.KaminSkizze.pruefe(zahl('k'), zahl('t'), zahl('sl'), zahl('sr'), zahl('ah'), zahl('av'), zahl('h'), zahl('u'), zahl('o'));
       else if (art === 'skizze_hals') meld = K.SchwanenhalsSkizze.pruefe(zahl('a'), bogenGrad(), zahl('r'), zahl('s'));
-      else meld = K.DunstrohrSkizze.pruefe(zahl('d'), zahl('b'), zahl('t'), zahl('s'), zahl('h'), zahl('u'), zahl('n'), zahl('z'));
+      else meld = K.DunstrohrSkizze.pruefe(zahl('d'), zahl('b'), zahl('t'), zahl('s'), zahl('h'), zahl('u'), zahl('n'), zahl('z'), zahl('o'));
       for (const k in felder) { const m = meld.find(x => x.feld === k); felder[k].fehler(m ? fehlerText(m) : null); }
       if (art === 'skizze_hals' && st.winkelWahl !== 2 && winkelFeld) winkelFeld.fehler(null);
       if (meld.length) {
@@ -370,7 +370,7 @@
         seiteBauer = () => { const z = zeilen.slice(); if (st.notiz.trim()) z.push(st.notiz);
           return Bl.hals(hs, blattTexte(ergLabel, fmtTrim(hs.rohrZuschnitt, 1) + ' mm', z, [['AUFKANT', T('ss_leg_bogen')], ['BLECH', T('ss_leg_rohr')], ['UMSCHLAG', T('ss_leg_steckung')]], T('ss_zuschnitt')), lb); };
       } else {
-        const d = K.DunstrohrSkizze(zahl('d'), zahl('b'), zahl('t'), zahl('s'), zahl('h'), zahl('u'), zahl('n'), zahl('z'));
+        const d = K.DunstrohrSkizze(zahl('d'), zahl('b'), zahl('t'), zahl('s'), zahl('h'), zahl('u'), zahl('n'), zahl('z'), zahl('o'));
         view.bauer = (a, w, hh, t) => a === 0 ? Ze.dunstBlatt(d, w, hh, t, lb, w >= breitSchirm) : a === 1 ? Ze.dunstAufriss(d, w, hh, t, lb, w >= breitSchirm) : a === 2 ? Ze.dunstGrundriss(d, w, hh, t, lb) : Ze.dunstStutzen(d, w, hh, t, lb);
         grossText = T('ss_dunst_gross', fmtTrim(d.stutzenBreite, 1), fmtTrim(d.rohrHoehe, 1));
         zeilen = [T('ss_dunst_detail', fmtTrim(d.hoeheHoch, 1), fmtTrim(d.hoeheTief, 1), fmtTrim(d.lochQuer, 1), fmtTrim(d.lochLaengs, 1), fmtM2(d.plattenMm2 / 1e6), fmtM2(d.gesamtM2))];

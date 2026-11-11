@@ -56,19 +56,20 @@
   };
 
   // ---- Dunstrohr
-  function DunstrohrSkizze(d, breite, tiefe, streifen, rohrHoehe, umschlag, neigung, naht) {
-    const a = rad(neigung), s = { d, breite, tiefe, streifen, rohrHoehe, umschlag, neigung, naht };
+  function DunstrohrSkizze(d, breite, tiefe, streifen, rohrHoehe, umschlag, neigung, naht, hohl) {
+    hohl = hohl > 0 ? hohl : 0;   // Hohlumschlag oben (Skizze Alex), 0 = keiner
+    const a = rad(neigung), s = { d, breite, tiefe, streifen, rohrHoehe, umschlag, neigung, naht, hohl };
     s.lochQuer = d; s.lochLaengs = d / cos(a); s.lochMm2 = PI * (s.lochQuer / 2) * (s.lochLaengs / 2);
     s.umfang = PI * d; s.hoeheHoch = rohrHoehe + (d / 2) * tan(a); s.hoeheTief = rohrHoehe - (d / 2) * tan(a);
     s.mitte = breite - 2 * streifen; s.stutzenBreite = s.umfang + naht; s.stutzenMm2 = s.stutzenBreite * rohrHoehe;
-    s.plattenMm2 = breite * tiefe - s.lochMm2; s.umschlagMm2 = breite * umschlag;
-    s.gesamtMm2 = s.plattenMm2 + s.stutzenMm2 + s.umschlagMm2; s.gesamtM2 = s.gesamtMm2 / 1e6;
+    s.plattenMm2 = breite * tiefe - s.lochMm2; s.umschlagMm2 = breite * umschlag; s.hohlMm2 = breite * hohl;
+    s.gesamtMm2 = s.plattenMm2 + s.stutzenMm2 + s.umschlagMm2 + s.hohlMm2; s.gesamtM2 = s.gesamtMm2 / 1e6;
     s.fussWinkelHoch = 90 + neigung; s.fussWinkelTief = 90 - neigung;
     return s;
   }
   DunstrohrSkizze.NEIGUNG_MAX = 70;
-  DunstrohrSkizze.pruefe = (d, b, t, s, h, u, n, naht) => {
-    const o = []; pos(o, d, 'd'); pos(o, b, 'b'); pos(o, t, 't'); pos(o, s, 's'); pos(o, h, 'h'); nichtNeg(o, u, 'u'); nichtNeg(o, naht, 'z');
+  DunstrohrSkizze.pruefe = (d, b, t, s, h, u, n, naht, hohl) => {
+    const o = []; pos(o, d, 'd'); pos(o, b, 'b'); pos(o, t, 't'); pos(o, s, 's'); pos(o, h, 'h'); nichtNeg(o, u, 'u'); nichtNeg(o, naht, 'z'); if (hohl !== undefined) nichtNeg(o, hohl, 'o');
     if (!isFinite(n) || n < 0 || n > 70) o.push({ fehler: 'WINKEL_BEREICH', feld: 'n' });
     if (!o.length) {
       if (b - 2 * s < d) o.push({ fehler: 'PLATTE_ZU_SCHMAL', feld: 'b' });
