@@ -7,6 +7,7 @@
   // ---------------------------------------------------------------- Ablaeufe (Ablaeufe.kt)
   S.ABLAEUFE = [
     { id: 'profil', name: 'ablauf_profil', info: 'ablauf_profil_info', gruppe: 'H', stand: 'B', route: 'profil' },
+    { id: 'einlaufblech', name: 'ablauf_einlauf', info: 'ablauf_einlauf_info', gruppe: 'H', stand: 'B', route: 'einlaufblech' },
     { id: 'skizze_kamin', name: 'ablauf_sk_kamin', info: 'ablauf_sk_kamin_info', gruppe: 'H', stand: 'B', route: 'kamineinfassung' },
     { id: 'skizze_hals', name: 'ablauf_sk_hals', info: 'ablauf_sk_hals_info', gruppe: 'H', stand: 'B', route: 'schwanenhals' },
     { id: 'skizze_dunst', name: 'ablauf_sk_dunst', info: 'ablauf_sk_dunst_info', gruppe: 'H', stand: 'B', route: 'dunstrohr' },

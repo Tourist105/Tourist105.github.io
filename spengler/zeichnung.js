@@ -297,7 +297,10 @@
       z.text(6, cursor + 0.55 * t, nm + '  ' + mm(B) + ' × ' + mm(tt), t * 1.1, true, -1, 'BLAU');
       const plate = pts(sb.p(0, 0, 0), sb.p(B, 0, 0), sb.p(B, tt, 0), sb.p(sl + kb, tt, 0), sb.p(sl + kb, tt - kt, 0), sb.p(sl, tt - kt, 0), sb.p(sl, tt, 0), sb.p(0, tt, 0));
       z.flaeche(plate, 'BLECH', null);
-      if (uu > 0) z.flaeche(pts(sb.p(0, 0, 0), sb.p(B, 0, 0), sb.p(B, 0, uDir * ud), sb.p(0, 0, uDir * ud)), 'UMSCHLAG', 'KANTE', uKey);
+      // Vorderstueck: bei Winkel vorne > 0 steht der Rand als Abkantung schraeg nach unten (0 Grad = flacher Umschlag)
+      const wvG = (!istHinten && k.winkelVorne > 0) ? min(k.winkelVorne, 180) : 0, wvR = wvG * PI / 180;
+      const uG = wvG > 0 ? -ud * Math.cos(wvR) : 0, uZ = wvG > 0 ? -ud * Math.sin(wvR) : uDir * ud;
+      if (uu > 0) z.flaeche(pts(sb.p(0, 0, 0), sb.p(B, 0, 0), sb.p(B, uG, uZ), sb.p(0, uG, uZ)), 'UMSCHLAG', 'KANTE', uKey);
       const wl = pts(sb.p(sl, tt - kt, 0), sb.p(sl, tt, 0), sb.p(sl, tt, hh), sb.p(sl, tt - kt, hh));
       const wr = pts(sb.p(sl + kb, tt - kt, 0), sb.p(sl + kb, tt, 0), sb.p(sl + kb, tt, hh), sb.p(sl + kb, tt - kt, hh));
       const wv = pts(sb.p(sl, tt - kt, 0), sb.p(sl + kb, tt - kt, 0), sb.p(sl + kb, tt - kt, hh), sb.p(sl, tt - kt, hh));
@@ -312,7 +315,7 @@
       z.poly(pts(sb.p(sl, tt - kt + d, 0), sb.p(sl, tt - kt + d, d), sb.p(sl, tt - kt, d)), 'MASS');
       const c0 = sb.p(sl, tt - kt, 0);
       z.hinweis(c0[0], c0[1], -1, 0.15, 3, '90°', null, 'GRAU', false, undefined, true);
-      const yb = sb.y(0, istHinten ? -4 / s : -ud);
+      const yb = istHinten ? sb.y(0, -4 / s) : max(sb.y(0, -ud), sb.y(uG, uZ));
       const bx = [0, sl, sl + kb, B].map(v => [sb.x(v, 0), yb]);
       z.kette(bx, 0, 1, 8, [mm(sl), (worte ? lb.kamin + ' ' : '') + mm(kb), mm(k.streifenRechts)], ['sl', 'k', 'sr'], 1, 'TEXT');
       const dp = [0, ausl, tt].map(v => sb.p(B, v, 0));
@@ -320,8 +323,10 @@
       const h0 = sb.p(sl + kb, tt, 0), h1 = sb.p(sl + kb, tt, hh);
       z.mass(h0[0], h0[1], h1[0], h1[1], 1, 0, 12, (worte ? lb.aufkantung + ' ' : '') + mm(hh), 'h');
       if (uu > 0) {
-        const u0 = sb.p(B, 0, 0), u1 = sb.p(B, 0, uDir * ud);
-        z.mass(u0[0], u0[1], u1[0], u1[1], 1, 0, 10, (worte ? (istHinten ? (lb.hohl || 'Hohlumschlag') : lb.umschlag) + ' ' : '') + mm(uu), uKey, 1, 'AKZENT', undefined, undefined, !worte);
+        const u0 = sb.p(B, 0, 0), u1 = sb.p(B, uG, uZ);
+        z.mass(u0[0], u0[1], u1[0], u1[1], 1, 0, 10, (worte ? (istHinten ? (lb.hohl || 'Hohlumschlag') : (wvG > 0 ? (lb.abkantung || 'Abkantung') : lb.umschlag)) + ' ' : '') + mm(uu), uKey, 1, 'AKZENT', undefined, undefined, !worte);
+        // der Winkel vorne steht als eigenes, antippbares Mass an der vorderen Ecke (0 Grad = flach)
+        if (!istHinten && k.winkelVorne != null) { const e0 = sb.p(0, 0, 0); z.hinweis(e0[0], e0[1], -1, -0.35, 5, mm(k.winkelVorne > 0 ? k.winkelVorne : 0) + '°', 'vw', 'AKZENT', false, undefined, false); }
       }
       cursor += name + hm * s + max(u, 4 / s) * s + unten + 0.5 * t;
     }

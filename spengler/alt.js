@@ -168,19 +168,23 @@
 
   // ---------------------------------------------------------------- Seite Gekantetes Profil
   const VORLAGEN = [{ n: 'vl_winkel', s: [100, 120, 15], w: [90, 45], l: [false, true] }, { n: 'vl_mauer', s: [15, 40, 300, 40, 15], w: [45, 90, 90, 45], l: [false, false, false, false] },
-    { n: 'vl_z', s: [30, 60, 30], w: [90, 90], l: [false, true] }, { n: 'vl_leer', s: [100], w: [], l: [] }];
+    { n: 'vl_z', s: [30, 60, 30], w: [90, 90], l: [false, true] }, { n: 'vl_leer', s: [100], w: [], l: [] },
+    // Einlaufblech (Beispiel, keine Norm): Tropfkante, Schenkel in die Rinne, Blech auf dem Dach, Rueckkantung oben. Winkel in der Mitte = 90 Grad plus Dachneigung.
+    { n: 'vl_einlauf', s: [15, 60, 180, 15], w: [45, 120, 45], l: [false, false, true] }];
 
   S.seiteProfil = function (opt) {
     const primBox0 = h('div', { class: 'primbox' }), schenkelReihe = h('div', { class: 'primreihe', style: { overflowX: 'auto' } });
     primBox0.append(S.primHinweis(schenkelReihe), schenkelReihe);
-    const R = S.weitereShell({ titel: T('profil_titel'), tabs: [T('ansicht_skizze'), T('ss_zuschnitt')], dreiD: -1, primBox: primBox0, beiPdf: () => pdfErstellen(), beiDxf: () => dxfTeilen(), beiTeilen: () => blattTeilen(), anteil: 0.80 });
+    const R = S.weitereShell({ titel: (opt && opt.titel) || T('profil_titel'), tabs: [T('ansicht_skizze'), T('ss_zuschnitt')], dreiD: -1, primBox: primBox0, beiPdf: () => pdfErstellen(), beiDxf: () => dxfTeilen(), beiTeilen: () => blattTeilen(), anteil: 0.80 });
+    // Dieselbe Seite fuer das Einlaufblech: eigener Titel, eigener Speicherplatz, eigene Startform
+    const KEY = opt.schluessel || 'profil.state', START = opt.vorlage != null ? opt.vorlage : 0, SEITENTITEL = opt.titel || T('profil_titel');
     const { inh } = R, mt = S.mt, grau = S.grau, text = S.text;
     const st = { schenkel: [], winkel: [], links: [], mat: 0, dicke: 2, laenge: '1000', stueck: '1', modus: 0, radius: '', eigen: '1.4', mehr: false };
-    const lade = () => { try { const j = JSON.parse(S.lies('profil.state')); if (j && Array.isArray(j.schenkel) && j.schenkel.length) Object.assign(st, j); } catch (e) { /* frisch */ } };
+    const lade = () => { try { const j = JSON.parse(S.lies(KEY)); if (j && Array.isArray(j.schenkel) && j.schenkel.length) Object.assign(st, j); } catch (e) { /* frisch */ } };
     const vorlageLaden = i => { const v = VORLAGEN[i]; st.schenkel = v.s.map(x => fmtTrim(x, 1)); st.winkel = v.w.map(x => fmtTrim(x, 1)); st.links = v.l.slice(); };
-    vorlageLaden(0); lade();
+    vorlageLaden(START); lade();
     st.mat = Math.min(6, Math.max(0, st.mat | 0)); st.dicke = Math.min(WS()[st.mat].dicken.length - 1, Math.max(0, st.dicke | 0));
-    const speichere = () => S.schreibe('profil.state', JSON.stringify(st));
+    const speichere = () => S.schreibe(KEY, JSON.stringify(st));
 
     let letzteGueltig = null;
     // Seite
@@ -211,7 +215,7 @@
     const modusAnzeigen = () => { modusInfo.textContent = T(['profil_info_din', 'profil_info_faust', 'profil_info_eigen'][st.modus]); radiusF.style.display = st.modus === 0 ? '' : 'none'; eigenF.style.display = st.modus === 2 ? '' : 'none'; };
 
     const mehrKnopf = h('button', { class: 'mehrknopf' });
-    const mehrBox = h('div', {}, mt(S.karte(text(T('profil_material'), 18, true), matSp, dickeSp, S.zweispalt(lf, sf)), 6), mt(S.karte(text(T('profil_abzug_titel'), 18, true), modusSeg, modusInfo, radiusF, eigenF), 10));
+    const mehrBox = h('div', {}, mt(S.karte(text(T('profil_material'), 18, true), matSp, dickeSp), 6), mt(S.karte(text(T('profil_abzug_titel'), 18, true), modusSeg, modusInfo, radiusF, eigenF), 10));
     const setzeMehr = an => {
       st.mehr = an; mehrBox.style.display = an ? '' : 'none';
       const kz = T(an ? 'ss_weniger' : 'ss_mehr'), info = T('w_mehr_profil');
@@ -226,7 +230,9 @@
       mt(S.karte(ergTitel, zuschnitt, summe, meldungBox, text(T('profil_folge_titel'), 18, true), grau(T('profil_folge_info'), 14), folge, liste, mt(S.knopf(T('profil_dxf'), false, () => dxfTeilen()), 10), grau(T('profil_dxf_info'), 14)), 10),
       mt(S.rmKarte('profil', T('profil_titel'), () => snapshot()), 12),
       mt(S.karte(text(T('profil_annahmen'), 15), S.knopf(T('an_karte_knopf'), false, () => S.gehe('annahmen'))), 12),
-      mt(S.knopf(T('profil_leeren'), false, () => { vorlageLaden(0); st.radius = ''; st.modus = 0; speichere(); S.rendere(true); }), 12), mt(status, 6), mt(S.warnband(T('profil_warn'), 14), 12));
+      mt(S.knopf(T('profil_leeren'), false, () => { vorlageLaden(START); st.radius = ''; st.modus = 0; speichere(); S.rendere(true); }), 12), mt(status, 6), mt(S.warnband(T('profil_warn'), 14), 12));
+    // Laenge und Stueck gleich unter der Zeichnung: die Werkstatt braucht beides (Alex misst auf der Baustelle und schickt das Blatt)
+    primBox0.append(mt(S.zweispalt(lf, sf), 8));
     const fokus = (key, an) => { if (an) R.view.aktiv = key; else if (R.view.aktiv === key) R.view.aktiv = null; };
     const fokusiere = key => { const i = parseInt(key.slice(1), 10); if (isNaN(i)) return; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; if (f) f.input.focus(); };
     R.view.beiMass = fokusiere;
@@ -315,7 +321,7 @@
     async function dxfTeilen() {
       if (!letztes || !letzteGueltig) { status.textContent = T('status_leer'); return; }
       const name = 'Profil_' + letzteGueltig.schenkel.map(s => fmtTrim(s, 1).replace(',', '.')).join('-') + '.dxf';
-      const blob = new Blob([Profil.dxf(letzteGueltig, letztes, T('profil_titel'))], { type: 'application/dxf' });
+      const blob = new Blob([Profil.dxf(letzteGueltig, letztes, SEITENTITEL)], { type: 'application/dxf' });
       const r = await S.teilen(blob, name, T('profil_titel')); if (r === 'download') status.textContent = name;
     }
     async function blattTeilen() {
@@ -323,7 +329,8 @@
       let d; try { d = await blattDatei(); } catch (x) { d = null; }
       if (!d) { status.textContent = T('status_pdf_fehler'); return; }
       status.textContent = '';
-      R.teilenFertig(async () => { const r = await S.teilen(d.blob, d.name, d.titel); if (r === 'download') status.textContent = d.name; });
+      const dx = (letztes && letzteGueltig) ? { blob: new Blob([Profil.dxf(letzteGueltig, letztes, SEITENTITEL)], { type: 'application/dxf' }), name: d.name.replace(/\.pdf$/i, '') + '.dxf' } : null;
+      R.teilenFertig(async () => { const r = await S.teilen(d.blob, d.name, d.titel, dx ? [dx] : null); if (r === 'download') status.textContent = d.name + (dx ? ', ' + dx.name : ''); });
     }
 
     reihenBauen(); modusAnzeigen();

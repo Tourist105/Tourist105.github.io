@@ -609,7 +609,7 @@
     const fuer = id => id === 'skizze_kamin' ? kamin() : id === 'skizze_hals' ? hals() : id === 'skizze_dunst' ? dunst() : id === 'fallrohr' ? fall()
       : (id === 'dachrinne' || id === 'mauerabdeckung' || id === 'kehle') ? neu(id)
       : id === 'rohrbogen' ? rohr(id, 'rohrbogen') : id === 'hosenrohr' ? rohr(id, 'hosenrohr') : id === 'reduktion' ? rohr(id, 'reduktion')
-      : id === 'profil' ? profil() : null;
+      : (id === 'profil' || id === 'einlaufblech') ? profil() : null;
     return { kamin, dunst, hals, fall, neu, fuer };
   })();
 

@@ -215,11 +215,15 @@
     const a = h('a', { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
   };
-  S.teilen = async (blob, name, titel) => {
+  /** Teilt eine Datei ueber das Teilen-Menue. dazu: weitere Dateien ({blob, name}), z. B. die DXF zum PDF fuer die Werkstatt. Nimmt das Geraet
+   *  die Zusatzdateien nicht an, geht das Hauptblatt allein. Ohne Teilen-Menue werden alle Dateien heruntergeladen. */
+  S.teilen = async (blob, name, titel, dazu) => {
     try {
       const f = new File([blob], name, { type: blob.type });
+      const alle = [f].concat((dazu || []).map(x => new File([x.blob], x.name, { type: x.blob.type })));
+      if (alle.length > 1 && navigator.canShare && navigator.canShare({ files: alle })) { await navigator.share({ files: alle, title: titel }); return 'geteilt'; }
       if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: titel }); return 'geteilt'; }
     } catch (e) { if (e && e.name === 'AbortError') return 'abbruch'; }
-    S.download(blob, name); return 'download';
+    S.download(blob, name); (dazu || []).forEach(x => S.download(x.blob, x.name)); return 'download';
   };
 })(window);
