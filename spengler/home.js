@@ -16,6 +16,8 @@
     { id: 'rohrbogen', name: 'ablauf_rohrbogen', info: 'ablauf_rohrbogen_info', gruppe: 'H', stand: 'B', route: 'rohrbogen' },
     { id: 'hosenrohr', name: 'ablauf_hosenrohr', info: 'ablauf_hosenrohr_info', gruppe: 'H', stand: 'B', route: 'hosenrohr' },
     { id: 'reduktion', name: 'ablauf_reduktion', info: 'ablauf_reduktion_info', gruppe: 'H', stand: 'B', route: 'reduktion' },
+    { id: 'abzweig', name: 'ablauf_abzweig', info: 'ablauf_abzweig_info', gruppe: 'H', stand: 'B', route: 'abzweig' },
+    { id: 'kegelabzweig', name: 'ablauf_kegelabzweig', info: 'ablauf_kegelabzweig_info', gruppe: 'H', stand: 'B', route: 'kegelabzweig' },
     { id: 'fallrohr', name: 'ablauf_fallrohr', info: 'ablauf_fallrohr_info', gruppe: 'H', stand: 'B', route: 'fallrohr' },
     { id: 'dachrinne', name: 'ablauf_dachrinne', info: 'ablauf_dachrinne_info', gruppe: 'H', stand: 'B', route: 'dachrinne' },
     { id: 'mauerabdeckung', name: 'ablauf_mauerabdeckung', info: 'ablauf_mauerabdeckung_info', gruppe: 'H', stand: 'B', route: 'mauerabdeckung' },
@@ -38,6 +40,12 @@
       case 'skizze_dunst':
         s = '<path d="M4 80L4 94L96 94L96 56Z" ' + fl(hell) + '/><path d="M4 80L96 56" ' + st(dunkel, 4) + '/><rect x="42" y="14" width="18" height="56" ' + fl(hell) + '/><rect x="42" y="14" width="18" height="56" ' + st(blau, 4) + '/>'
           + '<path d="M26 76L42 68L60 68L80 60L80 70L60 78L42 78L26 86Z" ' + fl(blau) + '/><path d="M36 14L66 14" ' + st(orange, 3) + '/>'; break;
+      case 'abzweig':
+        s = '<path d="M6 72L94 72" ' + st(hell, 26) + '/><path d="M40 70L66 14" ' + st(hell, 20) + '/><path d="M6 59L33 59L56 10M76 18L55 59L94 59M6 85L94 85" ' + st(blau, 4.5) + '/>'
+          + '<path d="M33 59Q44 68 55 59" ' + st(orange, 3.5) + '/><path d="M6 72L94 72" ' + st(dunkel, 1.6, ' stroke-dasharray="6 4"') + '/>'; break;
+      case 'kegelabzweig':
+        s = '<path d="M10 90L70 90L50 12L30 12Z" ' + fl(hell) + '/><path d="M58 60L96 60" ' + st(hell, 20) + '/><path d="M10 90L70 90L50 12L30 12Z" ' + st(blau, 4.5) + '/>'
+          + '<path d="M60 50L96 50M64 70L96 70" ' + st(blau, 4.5) + '/><path d="M60 50Q54 60 64 70" ' + st(orange, 3.5) + '/><path d="M40 6L40 96" ' + st(dunkel, 1.6, ' stroke-dasharray="6 4"') + '/>'; break;
       case 'profil':
         s = '<path d="M20 10L20 78L80 78L66 62" ' + st(hell, 16) + '/><path d="M20 10L20 78L80 78L66 62" ' + st(blau, 5) + '/><path d="M8 10L8 78" ' + st(orange, 2.5) + '/><path d="M20 90L80 90" ' + st(orange, 2.5) + '/><path d="M20 78A20 20 0 0 1 38 78" ' + st(dunkel, 2.2) + '/>'; break;
       case 'skizze_hals': case 'schwanenhals':
@@ -92,6 +100,10 @@
         v.phase(opt.t || 0); dreher.push(v);
         const gr = () => { const w = rahmen.clientWidth; if (w) v.setzeGroesse(w, rahmen.clientHeight, window.devicePixelRatio || 1); };
         v.gr = gr; S.nachLayout(gr);
+      } else if (gross) {
+        // grosse Kachel ohne 3D-Modell (Abzweig): Symbol im selben Rahmen, Titel und Infozeile wie bei den anderen
+        const rahmen = h('div', { class: 'rahmen', style: { padding: '14px', boxSizing: 'border-box' } }, symbol(a.id, bereit));
+        k.append(rahmen, h('div', { class: 'tk' }, name, a.info ? h('div', { class: 'tinfo', text: T(a.info) }) : null)); name.style.fontSize = '20px';
       } else if (a.id === 'kamin' && bereit && !klein && root.KaminAltSzene) {
         // Kachel "Kamin alt": das echte Modell mit den Beispielmassen statt eines Platzhalters (wie Android v10)
         const cv = h('canvas', {}), sym = h('div', { class: 'sym' }, cv); k.append(sym, name); name.style.overflow = 'visible'; cv.style.cssText = 'display:block;width:100%;height:100%'; sym.style.cssText = 'overflow:hidden';

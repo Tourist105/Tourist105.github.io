@@ -170,7 +170,9 @@
   const VORLAGEN = [{ n: 'vl_winkel', s: [100, 120, 15], w: [90, 45], l: [false, true] }, { n: 'vl_mauer', s: [15, 40, 300, 40, 15], w: [45, 90, 90, 45], l: [false, false, false, false] },
     { n: 'vl_z', s: [30, 60, 30], w: [90, 90], l: [false, true] }, { n: 'vl_leer', s: [100], w: [], l: [] },
     // Einlaufblech (Beispiel, keine Norm): Tropfkante, Schenkel in die Rinne, Blech auf dem Dach, Rueckkantung oben. Winkel in der Mitte = 90 Grad plus Dachneigung.
-    { n: 'vl_einlauf', s: [15, 60, 180, 15], w: [45, 120, 45], l: [false, false, true] }];
+    { n: 'vl_einlauf', s: [15, 60, 180, 15], w: [45, 120, 45], l: [false, false, true] },
+    // Fensterbank, Bruestungsblech (Beispiel, keine Norm; Detail Lukarne von Alex 11.11.2026): Aufkantung am Fenster, Flaeche mit 5 Grad Gefaelle, Abkantung vorne, Wassernase
+    { n: 'vl_fensterbank', s: [25, 150, 40, 15], w: [95, 95, 135], l: [true, false, true] }];
 
   S.seiteProfil = function (opt) {
     const primBox0 = h('div', { class: 'primbox' }), schenkelReihe = h('div', { class: 'primreihe', style: { overflowX: 'auto' } });
