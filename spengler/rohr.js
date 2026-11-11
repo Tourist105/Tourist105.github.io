@@ -396,7 +396,7 @@
     const fehlerText = text('', 16, true), warnText = text('', 15, true), tabelle = text('', 16), kpi = text('', 18, true), status = text('', 16); status.style.minHeight = '19px';
     fehlerText.style.color = 'var(--fehler)'; warnText.style.color = 'rgb(140,90,0)'; tabelle.style.whiteSpace = 'pre-wrap'; kpi.style.whiteSpace = 'pre-line'; warnText.style.whiteSpace = 'pre-line';
     const masse = S.karte(text(T('l_einheit'), 16, true), einheitSeg);
-    primBox0.append(h('div', { class: 'primreihe' }, defs.slice(0, 3).map(f => feldBauen(f))));
+    { const pr = h('div', { class: 'primreihe' }, defs.slice(0, 3).map(f => feldBauen(f))); primBox0.append(S.primHinweis(pr), pr); }
     const extra = defs.slice(3);
     for (let i = 0; i < extra.length; i += 2) { const a = feldBauen(extra[i]); masse.append(mt(i + 1 < extra.length ? S.zweispalt(a, feldBauen(extra[i + 1])) : a, 8)); }
     masse.append(mt(text(T('annahme_rohr'), 14), 8)); if (art === 'hosenrohr') masse.append(mt(text(T('pdf_hose_annahme'), 14), 6));
@@ -431,6 +431,7 @@
       mt(S.rmKarte(art, T(TITEL[name]), () => snapshot()), 12), mt(status, 6));
     const fokusiere = k => { const f = felder[k]; if (!f) return; if (!st.mehr && defs.findIndex(d => d[0] === k) >= 3) { setzeMehr(true); speichere(); } f.input.focus(); };
     R.view.beiMass = fokusiere;
+    R.view.passung = z => z.anpassung(Math.max(160, R.view.w - 56), R.view.h, 8);
     R.view.feldFuer = k => { const f = felder[k]; return f && f.input ? f.input : null; };
 
     function einheitWechseln(neu) {

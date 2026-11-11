@@ -37,6 +37,7 @@
     /** Antippbar ist ein Mass nur, wenn seine Zahl der Wert des Eingabefeldes ist (ein berechneter Wert mit demselben Schluessel nicht). */
     editierbar(key, e) {
       const feld = this.feldFuer ? this.feldFuer(key) : null; if (!feld || feld.disabled || !e) return false;
+      if (String(feld.value).trim() === '') return String(e.text).indexOf('?') >= 0;
       const v = parseFloat(String(feld.value).trim().replace(',', '.')), m = String(e.text).replace(/,/g, '.').match(/\d+(\.\d+)?/g);
       return isFinite(v) && !!m && m.some(x => Math.abs(parseFloat(x) - Math.abs(v)) < 0.051);
     }
@@ -164,7 +165,7 @@
       winkelFeld = feldBauen(['w', 'ss_f_w', '72']); winkelFeld.style.display = st.winkelWahl === 2 ? '' : 'none'; winkelFeld.style.marginTop = '4px';
       primBox.append(winkelFeld);
     }
-    primBox.append(h('div', { class: 'primreihe' }, defs.filter(d => prim.includes(d[0])).map(d => feldBauen(d))));
+    { const pr = h('div', { class: 'primreihe' }, defs.filter(d => prim.includes(d[0])).map(d => feldBauen(d))); primBox.append(S.primHinweis(pr), pr); }
     // Schwanenhals: statt Fertigboegen selber aus Segmenten bauen (Gliederbogen / Schweizerbogen, Nils und Alex 11.11.2026)
     if (art === 'skizze_hals') {
       const zeile = h('div', { class: 'segment', style: { marginTop: '4px' } },

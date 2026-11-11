@@ -516,7 +516,7 @@
     const artInfo = text('', 14); artInfo.style.color = 'var(--text2)';
     const leerText = text('', 15, true); leerText.style.color = 'rgb(140,90,0)'; leerText.style.display = 'none';
     const spArt = S.waehler(S.TA('arten'), st.art, i => { if (i !== st.art) { st.art = i; felderNeu(); tabsAnwenden(); aktualisiere(false); } }); spArt.setAttribute('aria-label', T('l_art'));
-    primBox.append(spArt, primReihe); spArt.style.marginBottom = '6px';
+    primBox.append(spArt, S.primHinweis(primReihe), primReihe); spArt.style.marginBottom = '6px';
     const mehrKnopf = h('button', { class: 'mehrknopf' }), mehrBox = h('div', {});
     function setzeMehr(an) {
       st.mehr = an; mehrBox.style.display = an ? '' : 'none';

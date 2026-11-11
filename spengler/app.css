@@ -272,3 +272,9 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 
 /* Mass direkt in der Zeichnung eintippen (Alex 11.11.2026) */
 .masseingabe { position: absolute; z-index: 6; box-sizing: border-box; border-radius: 12px; border: 2.5px solid var(--pri); background: #fff; color: var(--text); font: 700 22px/1 Roboto, sans-serif; text-align: center; padding: 0 6px; margin: 0; outline: none; -webkit-appearance: none; appearance: none; box-shadow: 0 6px 18px rgba(8, 58, 110, .28); }
+/* Hauptmasse nur in der Zeichnung (Nils 11.11.2026): Felder zugeklappt, ein Feld mit Fehler zeigt sich von selbst */
+.primreihe:not(.offen) .feld:not(.fehler) { display: none; }
+.primreihe:not(.offen) { margin-top: 0; }
+.primhinweis { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 14px; color: var(--text2); padding: 4px 2px 2px 2px; }
+.primliste { flex: 0 0 auto; height: 34px; padding: 0 14px; border-radius: 17px; border: 1.5px solid var(--feldrand); background: #fff; color: var(--text); font: 700 14px/1 Roboto, sans-serif; }
+.primliste.an { background: var(--pri); border-color: var(--pri); color: #fff; }

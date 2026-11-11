@@ -71,7 +71,7 @@
 
     const primBox = h('div', { class: 'primbox' });
     if (quer) primBox.style.cssText = 'padding:0;margin:0';
-    primBox.append(h('div', { class: 'primreihe' }, defs.filter(d => prim.includes(d[0])).map(d => feldBauen(d))));
+    { const pr = h('div', { class: 'primreihe' }, defs.filter(d => prim.includes(d[0])).map(d => feldBauen(d))); primBox.append(S.primHinweis(pr), pr); }
 
     // Kopf
     const karte = h('div', { class: 'skkarte' }), cv2 = h('canvas', { 'aria-label': S.T('ss_live') }); karte.append(cv2);

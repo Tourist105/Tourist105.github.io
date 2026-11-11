@@ -150,7 +150,7 @@
 
   S.seiteProfil = function (opt) {
     const primBox0 = h('div', { class: 'primbox' }), schenkelReihe = h('div', { class: 'primreihe', style: { overflowX: 'auto' } });
-    primBox0.append(schenkelReihe);
+    primBox0.append(S.primHinweis(schenkelReihe), schenkelReihe);
     const R = S.weitereShell({ titel: T('profil_titel'), tabs: [T('ansicht_skizze'), T('ss_zuschnitt')], dreiD: -1, primBox: primBox0, beiPdf: () => pdfErstellen(), beiTeilen: () => blattTeilen(), anteil: 0.80 });
     const { inh } = R, mt = S.mt, grau = S.grau, text = S.text;
     const st = { schenkel: [], winkel: [], links: [], mat: 0, dicke: 2, laenge: '1000', stueck: '1', modus: 0, radius: '', eigen: '1.4', mehr: false };
@@ -208,6 +208,7 @@
     const fokus = (key, an) => { if (an) R.view.aktiv = key; else if (R.view.aktiv === key) R.view.aktiv = null; };
     const fokusiere = key => { const i = parseInt(key.slice(1), 10); if (isNaN(i)) return; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; if (f) f.input.focus(); };
     R.view.beiMass = fokusiere;
+    R.view.passung = z => z.anpassung(Math.max(160, R.view.w - 56), R.view.h, 8);
     R.view.feldFuer = key => { const i = parseInt(key.slice(1), 10); if (isNaN(i)) return null; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; return f && f.input ? f.input : null; };
 
     function reihenBauen() {
