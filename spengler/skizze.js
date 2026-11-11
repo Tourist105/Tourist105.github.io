@@ -36,7 +36,8 @@
       this.baue(false);
     }
     zeichnungMit(a, w, hh) { return this.bauer ? this.bauer(this.arten[a] == null ? 0 : this.arten[a], w, hh, 14) : null; }
-    zeichnungFuer(a) { return this.zeichnungMit(a, this.w, this.h); }
+    // Auf der Karte liegt oben links der 3D/2D-Schalter: der erste Abschnittstitel der Uebersicht rueckt daneben
+    zeichnungFuer(a) { Ze.kopfEinzug = this.kopfEinzug || 0; try { return this.zeichnungMit(a, this.w, this.h); } finally { Ze.kopfEinzug = 0; } }
     passung(z) { return z.anpassung(this.w, this.h, 8); }
     baue(animiert) {
       if (!this.w || !this.h) return;
@@ -133,13 +134,13 @@
     if (hat3d) {
       kipp3 = h('button', { text: '3D', 'aria-label': '3D', onclick: () => setzeModus(true, true) });
       kipp2 = h('button', { text: '2D', 'aria-label': '2D', onclick: () => setzeModus(false, true) });
-      karte.append(h('div', { class: 'kipp' }, kipp3, kipp2));
+      karte.append(h('div', { class: 'kipp' }, kipp3, kipp2)); view.kopfEinzug = 122;
     }
     const chips = namen.map((n, i) => h('button', { class: 'chip', text: n, onclick: () => waehleAnsicht(i) }));
     const pdfKnopf = h('button', { class: 'pdfknopf', text: T('ss_ansehen'), onclick: () => pdfErstellen() });
     const reiter = h('div', { class: 'reiterzeile' }, chips, pdfKnopf);
-    const titel = h('div', { class: 'sktitel' }, h('span', { text: T(TITEL[art]) }));
-    const titelSpan = titel.firstChild; S.autosize(titelSpan, 12, 22); titelSpan.style.display = 'block'; titelSpan.style.overflow = 'hidden'; titelSpan.style.width = '100%'; titelSpan.style.fontSize = '22px';
+    const titel = h('h1', { class: 'sktitel' }, h('span', { text: T(TITEL[art]) }));
+    const titelSpan = titel.firstChild; S.autosizeTitel(titelSpan, 22, 16); titelSpan.style.display = 'block'; titelSpan.style.overflow = 'hidden'; titelSpan.style.width = '100%'; titelSpan.style.fontSize = '22px';
     if (S.opt.kopf === 'alt') { titel.style.height = '44px'; titel.style.alignItems = 'flex-start'; titel.style.lineHeight = '1.34'; }
     const kopf = h('div', { class: 'skkopf' }, quer ? null : titel, reiter, karte, quer ? null : primBox);
 
@@ -207,17 +208,19 @@
 
     // -------------------------------------------------------- Modus, Ansicht, Fokus
     const zeigeChips = () => chips.forEach((b, i) => b.classList.toggle('an', !st.ist3d && i === st.ansicht));
+    // Hochformat-Handy: die Uebersicht braucht mehr Hoehe als eine einzelne Ansicht, 3D und Tastatur bleiben bei 38 %
+    function karteHoehe() { if (!hoch) return; karte.style.height = (st.ist3d || S.vp.tastatur ? S.karteHoch() : S.karteHochFuer(view, st.ansicht, karte.clientWidth)) + 'px'; view.groesse(karte.clientWidth, karte.clientHeight); }
     function setzeModus(an3, merken) {
       if (!d3) return; st.ist3d = an3;
       cv3.style.display = an3 ? '' : 'none'; cv2.style.visibility = an3 ? 'hidden' : 'visible';
       kippGross.style.display = an3 || quer ? 'none' : '';
       kipp3.classList.toggle('an', an3); kipp2.classList.toggle('an', !an3);
-      zeigeChips(); if (an3) { d3.zeichnen(); } if (merken) setp('m3d', an3);
+      zeigeChips(); karteHoehe(); if (an3) { d3.zeichnen(); } if (merken) setp('m3d', an3);
     }
     function waehleAnsicht(i) {
-      if (st.ist3d) { setzeModus(false, true); st.ansicht = i; view.ansicht = i; zeigeChips(); view.baue(false); return; }
+      if (st.ist3d) { st.ansicht = i; view.ansicht = i; setzeModus(false, true); view.baue(false); return; }
       if (i === st.ansicht) return;
-      st.ansicht = i; view.ansicht = i; zeigeChips(); view.baue(false); S.haptik(8);
+      st.ansicht = i; view.ansicht = i; zeigeChips(); karteHoehe(); view.baue(false); S.haptik(8);
     }
     function fokus(key, an) {
       if (!an) { if (view.aktiv === key) view.aktiv = null; if (d3 && d3.leuchteKey === key) { d3.leuchteKey = null; d3.zeichnen(); } return; }
@@ -353,15 +356,15 @@
         const frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
         let kh = wunsch;
         if (frei > 0 && S.opt.kopf !== 'alt') { kh = Math.min(wunsch, Math.max(300, frei - 96)); }   // wie Android Ui.kt kopfAnpassen: 96 dp der naechsten Karte lugen hervor
-        if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karte.style.height = S.karteHoch() + 'px'; } else kopf.style.height = kh + 'px';
-        const klein = vp.tastatur || kh < 420;   // wie Android TeilKopf: Kopf unter 420 dp oder Tastatur = Titel und Reiter weg
+        if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karteHoehe(); } else kopf.style.height = kh + 'px';
+        const klein = !hoch && (vp.tastatur || kh < 420);   // wie Android TeilKopf: Kopf unter 420 dp oder Tastatur = Titel und Reiter weg
         titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
       }
       view.groesse(karte.clientWidth, karte.clientHeight);
       if (d3) d3.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1);
       S.autosizeAlle(el);
     }
-    const ro = new ResizeObserver(() => { view.groesse(karte.clientWidth, karte.clientHeight); if (d3) d3.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1); });
+    const ro = new ResizeObserver(() => { karteHoehe(); view.groesse(karte.clientWidth, karte.clientHeight); if (d3) d3.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1); });
     ro.observe(karte);
 
     // Start

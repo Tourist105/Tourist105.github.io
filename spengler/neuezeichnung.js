@@ -179,11 +179,15 @@
     const titel = (x, y, s) => z.text(x + 6, y + 0.8 * t, s.toUpperCase(), t * 0.85, true, -1, 'GRAU');
     if (w > h * 1.25) {
       const wa = w * anteil;
-      titel(0, 0, a); z.einfuegen(bauA(wa, h - kopf), 0, kopf);
+      titel(Ze.kopfEinzug || 0, 0, a); z.einfuegen(bauA(wa, h - kopf), 0, kopf);
       titel(wa, 0, b); z.einfuegen(bauB(w - wa, h - kopf), wa, kopf);
     } else {
-      const ha = max((h - 2 * kopf) * anteil, 0), hb = max(h - 2 * kopf - ha, minB), ha2 = h - 2 * kopf - hb;
-      titel(0, 0, a); z.einfuegen(bauA(w, ha2), 0, kopf);
+      // Hoehe nach Bedarf der beiden Teile teilen (wie Ze.kombi), nicht mehr nach festem Anteil
+      const frei = max(h - 2 * kopf, 0), nA = Ze.natHoehe(bauA, w, t), nB = Ze.natHoehe(bauB, w, t);
+      let ha = frei * anteil;
+      if (nA > 0 && nB > 0) { ha = frei * nA / (nA + nB); z.wunschH = 2 * kopf + nA + max(nB, minB); }
+      const hb = min(max(frei - ha, minB), frei), ha2 = frei - hb;
+      titel(Ze.kopfEinzug || 0, 0, a); z.einfuegen(bauA(w, ha2), 0, kopf);
       titel(0, kopf + ha2, b); z.einfuegen(bauB(w, hb), 0, 2 * kopf + ha2);
     }
     z.fertig();

@@ -81,7 +81,8 @@
       if (szene) {
         const cv = h('canvas', {}); const rahmen = h('div', { class: 'rahmen' }, cv);
         const tk = h('div', { class: 'tk' }, name, a.info ? h('div', { class: 'tinfo', text: T(a.info) }) : null);
-        k.append(rahmen, tk); S.autosize(name, 14, 26);
+        // Alle grossen Kacheln mit derselben Titelgroesse (20 px, darf umbrechen). Nur ein einzelnes zu langes Wort schrumpft bis 16 px.
+        k.append(rahmen, tk); S.nachLayout(() => { let sz = 20; name.style.fontSize = sz + 'px'; while (name.scrollWidth > name.clientWidth + 0.5 && sz > 16) { sz--; name.style.fontSize = sz + 'px'; } });
         const v = new (SZ().Ansicht3D)(cv); v.szene = szene; v.blattFarben = true; v.grundZoom = (S.opt && S.opt.kopf === 'alt') ? ({ skizze_hals: 1.22, skizze_dunst: 1.35 }[a.id] || 0.95) : 0.92; v.interaktivAus = true;
         const schwenk = a.id === 'skizze_hals' || a.id === 'skizze_dunst' || a.id === 'fallrohr';
         const yaw0 = schwenk ? 0.5 : 0.6 + a.id.length * 0.9, pitch0 = a.id === 'skizze_hals' ? 0.2 : a.id === 'skizze_dunst' ? 0.4 : 0.5;
@@ -110,7 +111,8 @@
       return k;
     }
 
-    for (const a of haupt) inh.append(mt(kachel(a, true), 10));
+    // Ein Raster statt einer Liste: auf dem Handy eine Spalte, auf Tablet und PC zwei bis drei Spalten (sonst ziehen sich die Kacheln ueber die ganze Breite)
+    const raster = h('div', { class: 'homeraster' }); for (const a of haupt) raster.append(kachel(a, true)); inh.append(mt(raster, 8));
     if (neu.length) {
       // Dachrinne, Mauerabdeckung, Kehle (seit 09.11.): drei schlanke Kacheln in einer Reihe, Werte sind Annahmen (wie Android HomeActivity)
       const rn = h('div', { style: { display: 'flex', marginTop: '6px' } });

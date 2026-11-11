@@ -102,18 +102,26 @@
   /** Hochformat-Handy (Breite < Hoehe und < 700 px): Zeichnungs-Karte hoechstens 38 % der Fensterhoehe, Kopf scrollt mit der Seite weg. */
   S.kopfScrollt = () => !S.vp.quer && S.vp.w < S.vp.voll && S.vp.w < 700;
   S.karteHoch = () => Math.round(S.vp.voll * 0.38);
+  /** Uebersicht (zwei Zeichnungen uebereinander) bekommt die Hoehe, die ihr Inhalt bei voller Breite braucht, hoechstens 68 % des Fensters. */
+  S.karteHochFuer = (view, a, w) => {
+    const basis = S.karteHoch();
+    try { const z = w > 0 ? view.zeichnungMit(a, w, 4000) : null; if (z && z.wunschH > basis) return Math.round(Math.min(z.wunschH, S.vp.voll * 0.68)); } catch (e) { }
+    return basis;
+  };
   S.opt = {};   // Optionen aus der URL (Testfaelle)
   S.messe = () => {
     const vv = window.visualViewport, app = document.getElementById('app');
     const iw = window.innerWidth, ih = window.innerHeight;
-    let vh = vv ? vv.height : ih;
+    // Mit zwei Fingern vergroessert (vv.scale > 1): die sichtbare Hoehe schrumpft dann wie bei offener Tastatur. Layout nicht anfassen.
+    const zoom = !!vv && vv.scale > 1.01;
+    let vh = vv && !zoom ? vv.height : ih;
     const quer = iw > ih;
     let ime = 0;
     if (S.opt.kb) { ime = S.opt.kb > 1 ? S.opt.kb : 334; vh = ih; }
     else if (ih - vh > 120) ime = ih - vh;
     const eff = S.opt.kb ? ih : vh;
     document.documentElement.style.setProperty('--vh', eff + 'px');
-    app.style.transform = vv && !S.opt.kb && vv.offsetTop ? 'translateY(' + vv.offsetTop + 'px)' : '';
+    app.style.transform = vv && !zoom && !S.opt.kb && vv.offsetTop ? 'translateY(' + vv.offsetTop + 'px)' : '';
     S.vp = { w: iw, h: eff, voll: ih, tastatur: ime > 0, quer, ime };
     document.documentElement.style.setProperty('--ime', ime + 'px');
     return S.vp;
@@ -134,8 +142,21 @@
   S.warnband = (s, gr) => h('div', { class: 'warnband', style: { fontSize: (gr || 16) + 'px' }, text: s });
   S.infoband = (s, gr) => h('div', { class: 'infoband', style: { fontSize: (gr || 15) + 'px' }, text: s });
   S.knopf = (label, prim, onClick) => h('button', { class: 'knopf' + (prim ? ' prim' : ''), onclick: onClick, text: label });
+  /** Seitentitel im Kopf: eine Zeile, schrumpft bis min. Passt er dann noch nicht, bricht er auf zwei Zeilen um statt abgeschnitten zu werden. */
+  S.autosizeTitel = (el, max, min) => {
+    const pass = () => {
+      if (!el.isConnected) return; const w = el.clientWidth; if (!w) return;
+      el.style.whiteSpace = 'nowrap'; el.style.lineHeight = '';
+      let sz = max; el.style.fontSize = sz + 'px';
+      while (el.scrollWidth > w + 0.5 && sz > min) { sz--; el.style.fontSize = sz + 'px'; }
+      if (el.scrollWidth > w + 0.5) { el.style.whiteSpace = 'normal'; el.style.lineHeight = '1.12'; }
+    };
+    S.nachLayout(pass); el._autosize = pass;
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(pass);
+    return el;
+  };
   S.seitenTitel = (text, max, links, rechts) => {
-    const t = h('div', { class: 'titel', text, style: { fontSize: max + 'px', padding: '0 ' + (rechts == null ? 52 : rechts) + 'px 0 ' + (links == null ? 52 : links) + 'px' } });
+    const t = h('h1', { class: 'titel', text, style: { fontSize: max + 'px', padding: '0 ' + (rechts == null ? 52 : rechts) + 'px 0 ' + (links == null ? 52 : links) + 'px' } });
     S.autosize(t, 18, max); return t;
   };
   S.feld = (label, wert, opts) => {

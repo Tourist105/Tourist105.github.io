@@ -20,8 +20,8 @@
     const chips = o.tabs.map((n, i) => h('button', { class: 'chip', text: n, onclick: () => R.setzeTab(i, true) }));
     const pdfKnopf = h('button', { class: 'pdfknopf', text: T('ss_ansehen'), onclick: () => o.beiPdf && o.beiPdf() });
     const reiter = h('div', { class: 'reiterzeile' }, chips, pdfKnopf);
-    const titel = h('div', { class: 'sktitel' }, h('span', { text: o.titel }));
-    const ts = titel.firstChild; S.autosize(ts, 12, 22); ts.style.display = 'block'; ts.style.overflow = 'hidden'; ts.style.width = '100%'; ts.style.fontSize = '22px';
+    const titel = h('h1', { class: 'sktitel' }, h('span', { text: o.titel }));
+    const ts = titel.firstChild; S.autosizeTitel(ts, 22, 16); ts.style.display = 'block'; ts.style.overflow = 'hidden'; ts.style.width = '100%'; ts.style.fontSize = '22px';
     const primBox = o.primBox; if (quer && primBox) primBox.style.cssText = 'padding:0;margin:0';
     const kopf = h('div', { class: 'skkopf' }, quer ? null : titel, reiter, karte, quer ? null : primBox);
 
@@ -77,7 +77,7 @@
         const frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
         let kh = wunsch; if (frei > 0) kh = Math.min(wunsch, Math.max(300, frei - 96));
         if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karte.style.height = S.karteHoch() + 'px'; } else kopf.style.height = kh + 'px';
-        const klein = vp.tastatur || kh < 420;
+        const klein = !hoch && (vp.tastatur || kh < 420);
         titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
       }
       view.groesse(karte.clientWidth, karte.clientHeight);

@@ -88,13 +88,13 @@
     if (hat3d) {
       kipp3 = h('button', { text: '3D', 'aria-label': '3D', onclick: () => setzeModus(true, true) });
       kipp2 = h('button', { text: '2D', 'aria-label': '2D', onclick: () => setzeModus(false, true) });
-      karte.append(h('div', { class: 'kipp' }, kipp3, kipp2));
+      karte.append(h('div', { class: 'kipp' }, kipp3, kipp2)); view.kopfEinzug = 122;
     }
     const chips = namen.map((n, i) => h('button', { class: 'chip', text: n, onclick: () => waehleAnsicht(i) }));
     const pdfKnopf = h('button', { class: 'pdfknopf', text: S.T('ss_ansehen'), onclick: () => pdfErstellen() });
     const reiter = h('div', { class: 'reiterzeile' }, chips, pdfKnopf);
-    const titel = h('div', { class: 'sktitel' }, h('span', { text: S.T(TITEL[art]) }));
-    const titelSpan = titel.firstChild; S.autosize(titelSpan, 12, 22); titelSpan.style.display = 'block'; titelSpan.style.overflow = 'hidden'; titelSpan.style.width = '100%'; titelSpan.style.fontSize = '22px';
+    const titel = h('h1', { class: 'sktitel' }, h('span', { text: S.T(TITEL[art]) }));
+    const titelSpan = titel.firstChild; S.autosizeTitel(titelSpan, 22, 16); titelSpan.style.display = 'block'; titelSpan.style.overflow = 'hidden'; titelSpan.style.width = '100%'; titelSpan.style.fontSize = '22px';
     const kopf = h('div', { class: 'skkopf' }, quer ? null : titel, reiter, karte, quer ? null : primBox);
 
     const leisteLabel = h('div', { class: 'll' }), leisteWert = h('div', { class: 'lw' });
@@ -268,16 +268,18 @@
     if (quer) el.append(kopf, h('div', { class: 'skrechts' }, scroll, leiste)); else if (hoch) { scroll.prepend(kopf); el.append(scroll, leiste); } else el.append(kopf, scroll, leiste);
 
     const zeigeChips = () => chips.forEach((b, i) => b.classList.toggle('an', !st.ist3d && i === st.ansicht));
+    // Hochformat-Handy: die Uebersicht braucht mehr Hoehe als eine einzelne Ansicht, 3D und Tastatur bleiben bei 38 %
+    function karteHoehe() { if (!hoch) return; karte.style.height = (st.ist3d || S.vp.tastatur ? S.karteHoch() : S.karteHochFuer(view, st.ansicht, karte.clientWidth)) + 'px'; view.groesse(karte.clientWidth, karte.clientHeight); }
     function setzeModus(an3, merken) {
       if (!d3) return; st.ist3d = an3;
       cv3.style.display = an3 ? '' : 'none'; cv2.style.visibility = an3 ? 'hidden' : 'visible';
       kippGross.style.display = an3 || quer ? 'none' : '';
       kipp3.classList.toggle('an', an3); kipp2.classList.toggle('an', !an3);
-      zeigeChips(); if (an3) d3.zeichnen(); if (merken) setp('m3d', an3);
+      zeigeChips(); karteHoehe(); if (an3) d3.zeichnen(); if (merken) setp('m3d', an3);
     }
     function waehleAnsicht(i) {
-      if (st.ist3d) { setzeModus(false, true); st.ansicht = i; view.ansicht = i; zeigeChips(); view.baue(false); return; }
-      if (i === st.ansicht) return; st.ansicht = i; view.ansicht = i; zeigeChips(); view.baue(false); S.haptik(8); }
+      if (st.ist3d) { st.ansicht = i; view.ansicht = i; setzeModus(false, true); view.baue(false); return; }
+      if (i === st.ansicht) return; st.ansicht = i; view.ansicht = i; zeigeChips(); karteHoehe(); view.baue(false); S.haptik(8); }
     function fokus(key, an) {
       if (!an) { if (view.aktiv === key) view.aktiv = null; if (d3 && d3.leuchteKey === key) { d3.leuchteKey = null; d3.zeichnen(); } return; }
       view.aktiv = key; if (d3) { d3.leuchteKey = key; d3.zeichnen(); }
@@ -441,15 +443,15 @@
         const wunsch = vp.voll * (vp.tastatur ? 0.52 : art === 'fallrohr' ? 0.5 : 0.80);
         const frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
         let kh = wunsch; if (frei > 0) kh = Math.min(wunsch, Math.max(300, frei - 96));
-        if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karte.style.height = S.karteHoch() + 'px'; } else kopf.style.height = kh + 'px';
-        const klein = vp.tastatur || kh < 420;
+        if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karteHoehe(); } else kopf.style.height = kh + 'px';
+        const klein = !hoch && (vp.tastatur || kh < 420);
         titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
       }
       view.groesse(karte.clientWidth, karte.clientHeight);
       if (d3) d3.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1);
       S.autosizeAlle(el);
     }
-    const ro = new ResizeObserver(() => { view.groesse(karte.clientWidth, karte.clientHeight); if (d3) d3.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1); }); ro.observe(karte);
+    const ro = new ResizeObserver(() => { karteHoehe(); view.groesse(karte.clientWidth, karte.clientHeight); if (d3) d3.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1); }); ro.observe(karte);
 
     setzeMehr(st.mehr);
     if (art === 'fallrohr') { mehrKnopf.style.display = 'none'; mehrBox.style.display = 'none'; }

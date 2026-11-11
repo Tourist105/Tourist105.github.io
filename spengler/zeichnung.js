@@ -630,17 +630,43 @@
   }
 
   function abschnittsKopf(z, x, y, titel, t) { z.text(x + 6, y + 0.8 * t, titel.toUpperCase(), t * 0.85, true, -1, 'GRAU'); }
+  /** Natuerliche Hoehe eines Teilblatts bei voller Breite (0 = nicht messbar, dann gilt der feste Anteil). */
+  const PROBE = 4000;
+  // Mass fuer den Massstab eines Teilblatts: Summe der Breiten und Hoehen aller Flaechen (ohne Flaechen: aller Linien).
+  // Die Gesamtbreite taugt nicht, weil Hilfslinien oft unabhaengig vom Massstab ueber das ganze Blatt laufen.
+  function geoBreite(z) {
+    let f = 0, l = 0;
+    for (const e of z.elems) {
+      if (e.k === 'f') f += max.apply(null, e.xs) - min.apply(null, e.xs) + max.apply(null, e.ys) - min.apply(null, e.ys);
+      else if (e.k === 'l') l += abs(e.x2 - e.x1) + abs(e.y2 - e.y1);
+    }
+    return f > 0 ? f : l;
+  }
+  // Kleinste Hoehe, bei der das Teil seinen vollen (von der Breite begrenzten) Massstab erreicht: die Geometrie wird
+  // mit mehr Hoehe nicht mehr breiter. Die Inhaltshoehe allein taugt nicht, weil jedes Teil feste Raender abzieht.
+  function natHoehe(bau, w, t) {
+    const ziel = geoBreite(bau(w, PROBE)) * 0.97; if (!(ziel > 0)) return 0;
+    let lo = 40, hi = 900;
+    if (geoBreite(bau(w, hi)) >= ziel) for (let i = 0; i < 8; i++) { const m = (lo + hi) / 2; if (geoBreite(bau(w, m)) >= ziel) hi = m; else lo = m; }
+    const r = bau(w, hi).inhalt();
+    return max(hi, min(r[3] - r[1] + t, hi + 200));
+  }
   function kombi(w, h, t, anteil, a, b, bauA, bauB, minB, quer, titelImBild) {
     minB = minB || 0; quer = quer == null ? true : quer;
     const z = new Zeichnung(w, h, t);
     const kopf = titelImBild && !(quer && w > h * 1.25) ? 0 : 1.6 * t;
     if (quer && w > h * 1.25) {
       const wa = w * anteil;
-      abschnittsKopf(z, 0, 0, a, t); z.einfuegen(bauA(wa, h - kopf), 0, kopf);
+      abschnittsKopf(z, root.Ze.kopfEinzug || 0, 0, a, t); z.einfuegen(bauA(wa, h - kopf), 0, kopf);
       abschnittsKopf(z, wa, 0, b, t); z.einfuegen(bauB(w - wa, h - kopf), wa, kopf);
     } else {
-      const ha = max((h - 2 * kopf) * anteil, 0), hb = max(h - 2 * kopf - ha, minB), ha2 = h - 2 * kopf - hb;
-      abschnittsKopf(z, 0, 0, a, t); z.einfuegen(bauA(w, ha2), 0, kopf);
+      // Hoehe nach Bedarf teilen: jedes Teil einmal sehr hoch bauen und seinen Inhalt messen. Der feste Anteil liess
+      // einem Teil auf dem Handy weniger als seinen festen Rand, die Zeichnung schrumpfte dann auf Briefmarkengroesse.
+      const frei = max(h - 2 * kopf, 0), nA = natHoehe(bauA, w, t), nB = natHoehe(bauB, w, t);
+      let ha = frei * anteil;
+      if (nA > 0 && nB > 0) { ha = frei * nA / (nA + nB); z.wunschH = 2 * kopf + nA + max(nB, minB); }
+      const hb = min(max(frei - ha, minB), frei), ha2 = frei - hb;
+      abschnittsKopf(z, root.Ze.kopfEinzug || 0, 0, a, t); z.einfuegen(bauA(w, ha2), 0, kopf);
       abschnittsKopf(z, 0, kopf + ha2, b, t); z.einfuegen(bauB(w, hb), 0, 2 * kopf + ha2);
     }
     z.fertig();
@@ -701,7 +727,7 @@
     ctx.restore();
   }
 
-  root.Ze = { Zeichnung, Stift, Fuell, TFarbe, FARBEN, FUELL, Fmt, fmt, fmtTrim, parseNum, textBreite, textRect, BESCHR_DE,
+  root.Ze = { natHoehe, Zeichnung, Stift, Fuell, TFarbe, FARBEN, FUELL, Fmt, fmt, fmtTrim, parseNum, textBreite, textRect, BESCHR_DE,
     kaminAufriss, kaminGrundriss, halsAufriss, halsZuschnitt, dunstAufriss, dunstGrundriss, dunstStutzen, kaminBlatt, dunstBlatt, halsBlatt, malen, CX, CY };
   if (typeof module !== 'undefined') module.exports = root.Ze;
 })(typeof window !== 'undefined' ? window : globalThis);

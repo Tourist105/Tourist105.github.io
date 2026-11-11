@@ -405,8 +405,8 @@
     const chips = namen.map((n, i) => h('button', { class: 'chip', text: n, onclick: () => waehleTab(i) }));
     const pdfKnopf = h('button', { class: 'pdfknopf', text: T('ss_ansehen'), onclick: () => pdfErstellen() });
     const reiter = h('div', { class: 'reiterzeile' }, chips, pdfKnopf);
-    const titel = h('div', { class: 'sktitel' }, h('span', { text: T('ablauf_kamin') }));
-    const titelSpan = titel.firstChild; S.autosize(titelSpan, 12, 22); titelSpan.style.display = 'block'; titelSpan.style.overflow = 'hidden'; titelSpan.style.width = '100%'; titelSpan.style.fontSize = '22px';
+    const titel = h('h1', { class: 'sktitel' }, h('span', { text: T('ablauf_kamin') }));
+    const titelSpan = titel.firstChild; S.autosizeTitel(titelSpan, 22, 16); titelSpan.style.display = 'block'; titelSpan.style.overflow = 'hidden'; titelSpan.style.width = '100%'; titelSpan.style.fontSize = '22px';
     if (S.opt.kopf === 'alt') { titel.style.height = '44px'; titel.style.alignItems = 'flex-start'; titel.style.lineHeight = '1.34'; }
     const primBox = h('div', { class: 'primbox' }), primReihe = h('div', { class: 'primreihe' }), extraBox = h('div', {});
     if (quer) primBox.style.cssText = 'padding:0;margin:0';
@@ -771,7 +771,7 @@
         let kh = wunsch;
         if (frei > 0 && S.opt.kopf !== 'alt') { kh = Math.min(wunsch, Math.max(300, frei - 96)); }
         if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karte.style.height = S.karteHoch() + 'px'; } else kopf.style.height = kh + 'px';
-        const klein = vp.tastatur || kh < 420; titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
+        const klein = !hoch && (vp.tastatur || kh < 420); titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
       }
       view.groesse(karte.clientWidth, karte.clientHeight); live.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1);
       if (st.mehr || true) d3Groesse();
