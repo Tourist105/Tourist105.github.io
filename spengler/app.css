@@ -303,10 +303,26 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .mb-input { width: 100%; box-sizing: border-box; height: 52px; border-radius: 14px; border: 2.5px solid var(--pri); background: #fff; color: var(--text); font: 700 26px/1 Roboto, sans-serif; text-align: center; padding: 0 34px 0 8px; margin: 0; outline: none; -webkit-appearance: none; appearance: none; }
 .mband.fehler .mb-input { border-color: #B00020; background: #FFF3F4; }
 .mb-einheit { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); font: 400 14px/1 Roboto, sans-serif; color: var(--text2); pointer-events: none; }
-.mband.quer { flex-direction: column; box-shadow: -4px 0 16px rgba(8, 40, 80, .22), inset 1px 0 0 var(--linie); padding: 8px 10px; gap: 8px; justify-content: center; }
-.mband.quer .mb-zeile { display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "f f" "z v" "e e"; gap: 6px; }
-.mband.quer .mb-feld { grid-area: f; } .mband.quer .mb-zur { grid-area: z; min-height: 44px; } .mband.quer .mb-vor { grid-area: v; min-height: 44px; } .mband.quer .mb-fertig { grid-area: e; min-height: 44px; }
-.mband.quer .mb-input { height: 48px; }
+/* Zahlenblock im Band (Runde 3): grosse Tasten, im Querformat Spalte rechts mit Block, Weiter, Fertig */
+.mb-pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.mb-pad[hidden] { display: none; }
+.mb-t { min-height: 52px; min-width: 0; padding: 0; border-radius: 14px; background: #EEF3F9; color: var(--text); font: 700 24px/1 Roboto, sans-serif; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
+.mb-t:active { background: var(--tonal); }
+.mb-t-loe, .mb-t-komma { background: var(--tonal); color: var(--pri); }
+.mb-pad-k { display: none; min-height: 44px; min-width: 52px; padding: 0 8px; font-size: 16px; background: transparent; color: var(--pri); }
+.mband .mb-pad-k { display: inline-block; }
+.mband.padfest .mb-pad-k { display: none; }
+.mband.quer { display: grid; grid-template-columns: 1fr 1.25fr 1.25fr; grid-template-rows: auto auto minmax(0, 1fr) auto; grid-template-areas: "k k k" "f f f" "p p p" "z v e"; gap: 5px; padding: 6px 10px; justify-content: stretch; align-content: stretch; }
+.mband.quer .mb-kopf { grid-area: k; min-height: 36px; }
+.mband.quer .mb-kopf .mb-pad-k, .mband.quer .mb-x { min-height: 36px; }
+.mband.quer .mb-zeile { display: contents; }
+.mband.quer .mb-feld { grid-area: f; } .mband.quer .mb-zur { grid-area: z; } .mband.quer .mb-vor { grid-area: v; } .mband.quer .mb-fertig { grid-area: e; }
+.mband.quer .mb-pad { grid-area: p; grid-template-rows: repeat(3, minmax(30px, 1fr)); gap: 5px; }
+.mband.quer .mb-t { min-height: 30px; font-size: 22px; border-radius: 10px; }
+.mband.quer .mb-input { height: 44px; font-size: 24px; }
+.mband.quer .mb-zur, .mband.quer .mb-vor, .mband.quer .mb-fertig { min-height: 42px; padding: 0 4px; font-size: 16px; }
+.mband.quer:not(.pad) { grid-template-rows: auto auto auto; grid-template-areas: "k k k" "f f f" "z v e"; align-content: center; }
+.mband.quer .mb-name { font-size: 14px; } .mband.quer .mb-erg { font-size: 13px; }
 .mband.wackel { animation: wackel .28s; }
 @keyframes wackel { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 .mundo { position: fixed; left: 12px; right: 12px; z-index: 131; display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #151515; color: #fff; border-radius: 14px; padding: 4px 6px 4px 16px; font: 400 15px/1.2 Roboto, sans-serif; box-shadow: 0 4px 14px rgba(0, 0, 0, .3); }

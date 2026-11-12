@@ -6,7 +6,7 @@
   'use strict';
   const S = root.S, h = S.h, T = S.T, Ze = root.Ze;
   const E = {};
-  let ungueltig = false, q = null, key = null, feld = null, el = null, inp = null, sitzung = null, mo = null, scrollVor = 0, scrollEl = null, rueck = null;
+  let padAn = false, frisch = false, ungueltig = false, q = null, key = null, feld = null, el = null, inp = null, sitzung = null, mo = null, scrollVor = 0, scrollEl = null, rueck = null;
   const ref = {};
 
   const box = f => (f && f.closest ? f.closest('.feld') : null);
@@ -35,6 +35,15 @@
     if (text && String(text).indexOf('°') >= 0) return '°';
     return 'mm';
   };
+  /** Zahlenblock in der App (statt der Bildschirmtastatur): keine Autofill-Leiste, keine Hoehenspruenge, im Querformat bleibt die Zeichnung gross.
+   *  Auf Touchgeraeten Standard, Umschalter im Band, Wahl wird gemerkt. Am PC mit Maus und Tastatur aus. */
+  const padWahl = () => { try { return localStorage.getItem('sp_pad'); } catch (e) { return null; } };
+  const grob = () => { try { return !!(window.matchMedia && matchMedia('(pointer: coarse)').matches); } catch (e) { return false; } };
+  /** Touch im Querformat: immer Zahlenblock (mit Bildschirmtastatur bleiben dort nur ca. 100 px Hoehe, am Samsung gemessen). */
+  const padFest = () => grob() && S.vp.quer;
+  const padStart = () => { if (padFest()) return true; const w = padWahl(); if (w === '1') return true; if (w === '0') return false; return grob(); };
+  E.padAn = () => padAn;
+  const dezi = () => (S.sprache() === 'en' ? '.' : ',');
   const beschriftung = f => { const l = f.getAttribute('aria-label') || ''; return l || T('ss_masse'); };
 
   // ---- Querformat mit Tastatur: nur ca. 190 px Hoehe. Die Zeichnung wird dann nicht in den schmalen Streifen gequetscht, sondern in der Hoehe OHNE Tastatur
@@ -94,9 +103,18 @@
     ref.zur = knopf('mb-zur', '‹', T('mb_zurueck'), () => E.weiter(-1));
     ref.vor = knopf('mb-vor', T('mb_weiter') + ' ›', T('mb_weiter'), () => E.weiter(1));
     ref.fertig = knopf('mb-fertig', T('mb_fertig'), T('mb_fertig'), () => E.zu());
-    const kopf = h('div', { class: 'mb-kopf' }, h('div', { class: 'mb-texte' }, ref.name, ref.erg), ref.abbruch);
+    ref.umschalt = knopf('mb-pad-k', '', T('mb_pad_umschalten'), () => E.padUmschalten());
+    const kopf = h('div', { class: 'mb-kopf' }, h('div', { class: 'mb-texte' }, ref.name, ref.erg), ref.umschalt, ref.abbruch);
+    padAn = padStart();
+    const taste = (text, label, fn, cls) => knopf('mb-t ' + (cls || ''), text, label, fn);
+    const ziff = z => taste(z, z, () => E.tippe(z));
+    ref.pad = h('div', { class: 'mb-pad', role: 'group', 'aria-label': T('mb_pad') },
+      ziff('7'), ziff('8'), ziff('9'), taste('⌫', T('mb_loeschen'), () => E.tippe('<'), 'mb-t-loe'),
+      ziff('4'), ziff('5'), ziff('6'), taste(dezi(), T('mb_komma'), () => E.tippe(dezi()), 'mb-t-komma'),
+      ziff('1'), ziff('2'), ziff('3'), ziff('0'));
     const feldBox = h('div', { class: 'mb-feld' }, inp, ref.einheit);
-    el = h('div', { class: 'mband' + (S.vp.quer ? ' quer' : ''), role: 'group', 'aria-label': T('mb_titel') }, kopf, h('div', { class: 'mb-zeile' }, ref.zur, feldBox, ref.vor, ref.fertig));
+    el = h('div', { class: 'mband' + (S.vp.quer ? ' quer' : ''), role: 'group', 'aria-label': T('mb_titel') }, kopf, h('div', { class: 'mb-zeile' }, ref.zur, feldBox, ref.vor, ref.fertig), ref.pad);
+    E.padSetzen(padAn, true);
     document.body.append(el);
     inp.addEventListener('input', () => {
       const neg = /^-/.test(sitzung.get(key) || '');
@@ -107,7 +125,7 @@
       setzeWert(v); zustand();
     });
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); E.weiter(1); } else if (e.key === 'Escape') { e.preventDefault(); E.abbrechen(); } });
-    inp.addEventListener('focus', () => { setTimeout(() => { try { inp.select(); } catch (x) { /* */ } }, 0); });
+    inp.addEventListener('focus', () => { frisch = true; setTimeout(() => { try { inp.select(); } catch (x) { /* */ } }, 0); });
     const l = document.querySelector('.leiste');
     if (l) { mo = new MutationObserver(() => { if (el && !fehlerMeldung()) ref.erg.textContent = ergebnis(); }); mo.observe(l, { childList: true, subtree: true, characterData: true }); }
     scrollEl = document.querySelector('.skscroll'); scrollVor = scrollEl ? scrollEl.scrollTop : 0;
@@ -115,6 +133,26 @@
     S.bandAn = true; document.body.classList.add('eingabe');
     E.layout();
   }
+  E.padSetzen = (an, ohneMerken) => {
+    padAn = !!an; if (!el) return;
+    el.classList.toggle('pad', padAn); ref.pad.hidden = !padAn;
+    inp.setAttribute('inputmode', padAn ? 'none' : 'decimal');
+    ref.umschalt.textContent = padAn ? '⌨' : '123';
+    ref.umschalt.setAttribute('aria-label', padAn ? T('mb_tastatur') : T('mb_pad_umschalten'));
+    if (!ohneMerken) { try { localStorage.setItem('sp_pad', padAn ? '1' : '0'); } catch (e) { /* */ } }
+    if (!ohneMerken) { try { inp.blur(); inp.focus({ preventScroll: true }); inp.select(); } catch (e) { /* */ } E.layout(); setTimeout(E.layout, 120); S.umgebung && S.umgebung(); }
+  };
+  E.padUmschalten = () => E.padSetzen(!padAn);
+  /** Taste des Zahlenblocks: Ziffer, Komma (im Englischen Punkt) oder '<' fuer Loeschen. Der erste Druck ersetzt den ganzen alten Wert. */
+  E.tippe = z => {
+    if (!el || !inp) return;
+    let v = frisch ? '' : inp.value; frisch = false;
+    if (z === '<') v = v.slice(0, -1);
+    else if (z === ',' || z === '.') { if (/[.,]/.test(v)) return; v = (v === '' || v === '-' ? v + '0' : v) + z; }
+    else v += z;
+    inp.value = v; inp.dispatchEvent(new Event('input', { bubbles: true }));
+    S.haptik(6);
+  };
   /** Band an den sichtbaren Bereich setzen (unten ueber der Tastatur, im Querformat als Spalte rechts). */
   E.layout = () => {
     syncSpaeter();
@@ -123,6 +161,8 @@
     const insB = vp.tastatur ? 0 : S.inset('bottom'), insR = S.inset('right');
     if (rueck && rueck.platz) rueck.platz();
     el.classList.toggle('quer', vp.quer);
+    el.classList.toggle('padfest', padFest());
+    { const soll = padStart(); if (soll !== padAn) E.padSetzen(soll, true); }
     if (vp.quer) {
       const w = Math.min(280, Math.round(vp.w * 0.34));
       el.style.cssText = 'top:' + (oben + S.inset('top')) + 'px;right:0;width:' + (w + insR) + 'px;height:' + (vp.h - kb - S.inset('top') - insB) + 'px;padding-right:' + (insR + 10) + 'px';
@@ -148,7 +188,9 @@
     key = k; feld = f; if (!sitzung.has(k)) sitzung.set(k, f.value);
     q.aktivSetzen(k); inp.value = f.value; ref.einheit.textContent = q.einheit(k);
     zustand();
+    frisch = true;
     try { inp.focus({ preventScroll: true }); inp.select(); } catch (x) { /* */ }
+    for (const t of [80, 300]) setTimeout(() => { if (el && inp && document.activeElement !== inp && !padAn) { try { inp.focus({ preventScroll: true }); inp.select(); } catch (x) { /* */ } } }, t);
     if (q.sichtbar) q.sichtbar(k);
     syncSpaeter();
     try { document.scrollingElement.scrollTop = 0; document.getElementById('app').scrollTop = 0; } catch (x) { /* */ }
