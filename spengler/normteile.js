@@ -18,7 +18,12 @@
     return t.replace('.', ',');
   }
 
-  const statusText = s => D.status[s];
+  // Anzeigesprache: im Browser die Wahl der Seite, in den Node-Tests immer Deutsch (Referenzdateien bleiben unveraendert)
+  const en = () => typeof root.S !== 'undefined' && root.S && root.S.sprache && root.S.sprache() === 'en';
+  const STATUS_EN = { beleg: 'Source found', annahme: 'Assumption, Alex checks', unsicher: 'Uncertain, Alex checks' };
+  const HINWEIS_EN = 'I did not read any Swiss wholesaler catalogue in detail. What Alex gets from his supplier, he will say.';
+  const statusText = s => (en() && STATUS_EN[s]) || D.status[s];
+  const hinweisText = () => (en() ? HINWEIS_EN : D.hinweis);
   const nt = m => ({ v: String(m.v), s: m.s, q: m.q, v120: m.ab120 == null ? null : m.ab120, fuer(dn) { return dn >= 120 && this.v120 != null ? this.v120 : this.v; } });
   const werkstoffe = D.werkstoffe.map(m => ({ id: m.id, name: m.name, dichte: m.dichte, bogenDicke: nt(m.bogen_dicke), rohrDicke: nt(m.rohr_dicke),
     rinne: { v: m.rinne_dicke.v, s: m.rinne_dicke.s, q: m.rinne_dicke.q }, rinne400: m.rinne_dicke.ab400, mauer: { v: m.mauer_dicke.v, s: m.mauer_dicke.s, q: m.mauer_dicke.q }, kehle: { v: m.kehle_dicke.v, s: m.kehle_dicke.s, q: m.kehle_dicke.q } }));
@@ -118,6 +123,6 @@
   }
 
   const zeile = z => nz(z.menge, 2) + ' ' + z.einheit + '  ' + z.teil + '  (' + z.detail + ')';
-  root.Normteile = { D, nz, statusText, werkstoffe, werkstoff, durchmesser, dnVon, winkel, winkelVon, rinneAbwicklung, rinneStueck, teil, regelZahl, radiusFaktor, versatz, versatzQuelle, hals, rinne, mauer, kehle, zeile, schlechter };
+  root.Normteile = { D, nz, statusText, werkstoffe, werkstoff, durchmesser, dnVon, winkel, winkelVon, rinneAbwicklung, rinneStueck, teil, regelZahl, radiusFaktor, versatz, versatzQuelle, hals, rinne, mauer, kehle, zeile, schlechter, hinweisText };
   if (typeof module !== 'undefined' && module.exports) module.exports = root.Normteile;
 })(typeof window !== 'undefined' ? window : globalThis);

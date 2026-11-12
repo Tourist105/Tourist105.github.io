@@ -286,7 +286,7 @@
     const mass = ev => { 
       if (!quelle || bewegt || !z) return false;
       const f = bild(), px = ((ev.clientX - tx) / s - f[1]) / f[0], py = ((ev.clientY - ty) / s - f[2]) / f[0], sp = 18 / (f[0] * s), mh = 22 / (f[0] * s);
-      let k = z.treffer(px, py, sp, mh, (kk, ee) => view.editierbar(kk, ee));
+      let k = z.trefferMass(px, py, sp, mh, (kk, ee) => view.editierbar(kk, ee));
       if (k == null) return false;
       S.haptik(8); view._ist3d = false; S.band.oeffne(quelle, k); return true;
     };

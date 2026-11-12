@@ -395,7 +395,7 @@
     // ---- Kopf: Reiter, Skizze, 3D, Hauptfelder
     const karte = h('div', { class: 'skkarte' });
     const cv2 = h('canvas', { 'aria-label': T('ss_live') }); karte.append(cv2);
-    const view = new S.SkizzenAnsicht(cv2); view.arten = [2, 1, 0];
+    const view = new S.SkizzenAnsicht(cv2); view.arten = [2, 1, 0]; S.band.karte(karte, { view });
     const cv3 = h('canvas', { 'aria-label': T('d3_rohr_beschreibung') }); karte.append(cv3);
     const live = new root.Szene3D.Ansicht3D(cv3); live.leerText = T('d3_leer'); live.fuellend = true; live.grundZoom = 0.95; live.grundstellung(0.6, 0.55);
     live.beschriftung = i => { const m = live.szene; return m && m.instanzen ? E().text(einheit(), m.instanzen[i].zeile.laenge) + ' x ' + E().text(einheit(), m.instanzen[i].zeile.breite) + ' ' + eu().kurz : ''; };

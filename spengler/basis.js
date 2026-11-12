@@ -19,6 +19,8 @@
     return String(s).replace(/%(\d+)\$[sd]/g, (m, i) => { const v = a[i - 1]; return v == null ? '' : String(v); }).replace(/%%/g, '%');
   };
   S.TA = k => { const L = root.TEXTE, sp = S.sprache(); return (L[sp] && L[sp][k]) || L.de[k] || []; };
+  /** Zeitstempel fuer Dateinamen: immer Ortszeit (Jahr-Monat-Tag_StundeMinute), nie UTC (ein Blatt, zwei Teile, gleiche Zeit). */
+  S.zeitName = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes()); };
   S.setzeSprache = w => { S.sprachWahl = w; S.schreibe('sprache', w); S.dezimal(); };
   S.dezimal = () => { Ze.Fmt.dez = S.sprache() === 'en' ? '.' : ','; };
   S.dezimal();

@@ -524,7 +524,7 @@
       const sc = document.createElement('canvas'); sc.width = W - 80; sc.height = Math.round((W - 80) * bild.verhaeltnis()); bild.zeichne(sc.getContext('2d'), sc.width, sc.height, 2.2); ctx.drawImage(sc, 40, 140);
       const y0 = 140 + sc.height + 50; ctx.font = '24px Roboto, sans-serif'; zeilenText(r).split('\n').forEach((z, i) => ctx.fillText(z, 40, y0 + i * 32));
       const blob = await new Promise(res => c.toBlob(res, 'image/png'));
-      return { blob, name: 'Werkblatt_' + name + '_' + new Date().toISOString().slice(0, 10) + '.png', titel: T('share_rohr_titel', T(TITEL[name]), eingabe.o_ort || '') };
+      return { blob, name: 'Werkblatt_' + name + '_' + S.zeitName() + '.png', titel: T('share_rohr_titel', T(TITEL[name]), eingabe.o_ort || '') };
     }
     async function pdfErstellen() {
       if (!ergebnis) { status.textContent = T('status_leer'); return; }

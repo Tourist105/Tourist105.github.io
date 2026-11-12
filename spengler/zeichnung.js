@@ -228,6 +228,21 @@
       return best;
     }
 
+    /** Wie treffer, aber ein nicht eintippbares Zahlenfeld unter dem Finger (z. B. der Winkel "90 Grad") gewinnt gegen ein Nachbarmass, das nur wegen
+     *  seiner grossen Tippflaeche in Reichweite liegt: dann passiert nichts (gleiches Verhalten auf allen Bildschirmbreiten). */
+    trefferMass(px, py, spiel, minHalb, nur) {
+      const k = this.treffer(px, py, spiel, minHalb, nur); if (k == null) return null;
+      const gewaehlt = this.letzterTreffer;
+      return this.fremdeZahlBei(px, py, gewaehlt, nur) ? (this.letzterTreffer = null) : k;
+    }
+    fremdeZahlBei(px, py, gewaehlt, nur) {
+      const innen = (e, pad) => { const r = textRect(e); return px >= r[0] - pad && px <= r[2] + pad && py >= r[1] - pad && py <= r[3] + pad; };
+      const abstand = e => { const r = textRect(e); return Math.hypot(px - (r[0] + r[2]) / 2, py - (r[1] + r[3]) / 2); };
+      const eigen = gewaehlt && innen(gewaehlt, 0) ? abstand(gewaehlt) : Infinity;   // liegt der Finger auf beiden, gewinnt die Zahl mit der naechsten Mitte
+      for (const e of this.elems) if (e.k === 't' && e !== gewaehlt && /\d/.test(e.text) && !(nur && nur(e.key, e)) && innen(e, 2) && abstand(e) < eigen) return true;
+      return false;
+    }
+
     inhalt() {
       let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
       const p = (x, y) => { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; };

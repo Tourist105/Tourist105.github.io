@@ -309,7 +309,7 @@
         ctx.font = '700 34px Roboto, sans-serif'; ctx.fillText(T('profil_zuschnitt', fmtTrim(r.breite, 1)), 40, H - 150); ctx.font = '24px Roboto, sans-serif';
         ctx.fillText(T('profil_stueckliste', S.TA('werkstoffe')[st.mat], fmtTrim(e.dicke, 2), String(e.stueck), fmtTrim(e.laenge, 1), S.fmtM2(r.m2), S.fmtKg(r.kg)), 40, H - 100); ctx.fillText(datum(), 40, H - 60);
         const blob = await new Promise(res => c.toBlob(res, 'image/png'));
-        return { blob, name: 'Profil_' + new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-') + '.png', titel: T('profil_share_titel') };
+        return { blob, name: 'Profil_' + S.zeitName() + '.png', titel: T('profil_share_titel') };
       }
     }
     async function pdfErstellen() {

@@ -17,6 +17,7 @@
   /** Die Skizze live im Kopf (SkizzenView). */
   class SkizzenAnsicht {
     constructor(canvas) {
+      (S._ansichten = S._ansichten || []).push(this);   // Pruefzugriff der Tests
       this.canvas = canvas; this.bauer = null; this.ansicht = 0; this.arten = [0]; this.beiMass = null; this.beiLeerTipp = null; this._aktiv = null;
       this.von = null; this.ziel = null; this.aktuell = null; this.w = 0; this.h = 0; this.dpr = 1; this.stopp = null;
       canvas.addEventListener('pointerdown', e => { this.d0 = { x: e.clientX, y: e.clientY }; });
@@ -26,8 +27,9 @@
         const f = z ? this.passung(z) : [1, 0, 0];
         const px = (x - f[1]) / f[0], py = (y - f[2]) / f[0];
         // erst nur eintippbare Masse (mindestens 44 x 44 px Tippflaeche, dichte Gruppen: naechste Mitte), sonst irgendein Mass mit Schluessel
-        let k = z ? z.treffer(px, py, 18 / f[0], 22 / f[0], (kk, ee) => this.editierbar(kk, ee)) : null;
-        if (k == null && z) k = z.treffer(px, py, 18 / f[0], 22 / f[0]);
+        const nur = (kk, ee) => this.editierbar(kk, ee);
+        let k = z ? z.trefferMass(px, py, 18 / f[0], 22 / f[0], nur) : null;
+        if (k == null && z && !z.fremdeZahlBei(px, py, null, nur)) k = z.treffer(px, py, 18 / f[0], 22 / f[0]);
         if (S.band.offen()) { if (k != null) { S.haptik(8); this._ist3d = false; this.eingabe(k, z.letzterTreffer); } return; }   // Tipp daneben aendert nichts
         if (k != null) { S.haptik(8); if (!this.eingabe(k, z.letzterTreffer)) this.beiMass && this.beiMass(k); } else this.beiLeerTipp && this.beiLeerTipp();
       });
@@ -57,7 +59,7 @@
         feldFuer: k => (this.feldFuer ? this.feldFuer(k) : null),
         schluessel: () => this.schluessel(),
         einheit: k => this.einheit(k),
-        aktivSetzen: k => { if (k && this.beiBand) this.beiBand(k); this.aktiv = k; if (this.beiAktiv) this.beiAktiv(k); },
+        aktivSetzen: k => { if (k) this.bandSprung(k); else this.bandRueck(); this.aktiv = k; if (this.beiAktiv) this.beiAktiv(k); },
         neuZeichnen: () => this.zeichnen()
       });
     }
@@ -65,13 +67,25 @@
       const f = k => (this.feldFuer ? this.feldFuer(k) : null), reihe = (a, b) => { const fa = f(a), fb = f(b); if (!fa || !fb) return 0; return fa.compareDocumentPosition(fb) & 4 ? -1 : 1; };
       let ks = [];
       if (this._ist3d && this.ordnung3d) ks = this.ordnung3d().filter(k => f(k));
+      else if (this._start === 0) { for (let i = 1; i < this.arten.length; i++) { const q = this.zeichnungFuer(i); if (q) for (const e of q.elems) if (e.k === 't' && e.key != null && !ks.includes(e.key) && this.editierbar(e.key, e)) ks.push(e.key); } }   // aus der Uebersicht gestartet: Weiter geht durch die Masse aller Ansichten
       else { const z = this.aktuell; if (!z) return []; for (const e of z.elems) if (e.k === 't' && e.key != null && !ks.includes(e.key) && this.editierbar(e.key, e)) ks.push(e.key); }
       return ks.sort(reihe);
     }
     einheit(key) {
       const z = this.aktuell, e = z && z.elems.find(x => x.k === 't' && x.key === key);
-      const feld = this.feldFuer ? this.feldFuer(key) : null, l = feld ? (feld.getAttribute('aria-label') || '') : '';
-      return (e && String(e.text).indexOf('°') >= 0) || /winkel|angle|°/i.test(l) ? '°' : 'mm';
+      return S.band.einheitVon(this.feldFuer ? this.feldFuer(key) : null, e && e.text);
+    }
+    /** Eingabeband offen: Die Uebersicht ist zu klein fuer die Masse, es zaehlt die Einzelansicht, in der das Mass steht. Beim Schliessen geht es zurueck in die
+     *  Uebersicht, in der man angefangen hat. Die Seite meldet sich mit view.seite = { ist3d, ansicht, waehle }. */
+    einzelFuer(key) { for (let i = 1; i < this.arten.length; i++) { const q = this.zeichnungFuer(i); if (q && q.elems.some(e => e.k === 't' && e.key === key && this.editierbar(key, e))) return i; } return -1; }
+    bandSprung(key) {
+      const s = this.seite; if (!s || s.ist3d() || this.arten[0] !== 0) return;
+      if (this._start == null) { if (s.ansicht() !== 0) return; this._start = 0; }
+      const i = this.einzelFuer(key); if (i > 0 && i !== s.ansicht()) s.waehle(i);
+    }
+    bandRueck() {
+      const s = this.seite, start = this._start; this._start = null;
+      if (s && start === 0 && !s.ist3d() && s.ansicht() !== 0) s.waehle(0);
     }
     set aktiv(v) { if (this._aktiv !== v) { this._aktiv = v; this.zeichnen(); } } get aktiv() { return this._aktiv; }
     groesse(w, hh) {
@@ -86,19 +100,27 @@
     zeichnungFuer(a) {
       Ze.kopfEinzug = this.kopfEinzug || 0;
       try {
-        let t = 14, z = this.zeichnungMit(a, this.w, this.h, t);
-        // nur uebernehmen, wenn die groessere Schrift keine zusaetzlichen Ueberlappungen bringt (sonst bleibt es bei der alten Grösse)
+        const z0 = this.zeichnungMit(a, this.w, this.h, 14); if (!z0) return z0;
+        // Die groessere Schrift wird nur uebernommen, wenn sie keine zusaetzlichen Ueberlappungen bringt UND keine Beschriftung kuerzt oder verliert
+        // (Fallrohr: "Rohr 2864,9 (Rest)" und das Achsmass 250 muessen in der Uebersicht stehen bleiben). Sonst die groesste Schrift dazwischen, die das erfuellt.
         const zaehle = q => { try { return q.kollisionen().filter(s => /^(Text auf Text|ausserhalb)/.test(s)).length; } catch (e) { return 0; } };
-        let beste = z, basis = z ? zaehle(z) : 0;
-        for (let i = 0; z && i < 4 && this.w <= 700; i++) {
-          let mg = Infinity; for (const e of z.elems) if (e.k === 't' && e.key != null && e.groesse < mg) mg = e.groesse;
+        const satz = q => q.elems.filter(e => e.k === 't').map(e => e.text).sort().join('|');
+        const basis = zaehle(z0), inhalt = satz(z0);
+        let beste = z0, tb = 14;
+        for (let i = 0; i < 4 && this.w <= 700; i++) {
+          let mg = Infinity; for (const e of beste.elems) if (e.k === 't' && e.key != null && e.groesse < mg) mg = e.groesse;
           if (!isFinite(mg)) break;
-          const px = mg * this.passung(z)[0]; if (px >= 15) break;
-          t = Math.min(26, t * 15.2 / px); z = this.zeichnungMit(a, this.w, this.h, t);
-          if (zaehle(z) > basis) { z = beste; break; }
-          beste = z;
+          const px = mg * this.passung(beste)[0]; if (px >= 15) break;
+          let hi = Math.min(26, tb * 15.2 / px), gut = null;
+          for (let v = 0; v < 4 && hi - tb > 0.3; v++) {
+            const zz = this.zeichnungMit(a, this.w, this.h, hi);
+            if (zz && zaehle(zz) <= basis && satz(zz) === inhalt) { gut = zz; break; }
+            hi = (tb + hi) / 2;
+          }
+          if (!gut) break;
+          beste = gut; tb = hi;
         }
-        return beste || z;
+        return beste;
       } finally { Ze.kopfEinzug = 0; }
     }
     passung(z) { return z.anpassung(this.w, this.h, 12, 2.6, 20); }
@@ -195,7 +217,7 @@
     const cv2 = h('canvas', { 'aria-label': T('ss_live') });
     karte.append(cv2);
     const view = new SkizzenAnsicht(cv2); view.arten = artenAlle;
-    let d3 = null, cv3 = null;
+    let d3 = null, cv3 = null; S.band.karte(karte, { view, d3: () => d3 });
     if (hat3d) {
       cv3 = h('canvas', { 'aria-label': T('d3_beschreibung') }); karte.append(cv3);
       d3 = new root.Szene3D.Ansicht3D(cv3); d3.leerText = T('d3_leer'); d3.fuellend = true; d3.grundZoom = 1.2; d3.grundstellung(0.5, 0.2);
@@ -246,7 +268,7 @@
     const chipZeile = (liste, an, zeig, wahl, minB) => { const z = h('div', { style: { display: 'flex', overflowX: 'auto', marginTop: '4px' } }); for (const x of liste) z.append(h('button', { class: 'chip' + (an(x) ? ' an' : ''), text: zeig(x), style: { marginRight: '6px', minWidth: (minB || 64) + 'px', flex: '0 0 auto' }, onclick: () => wahl(x) })); return z; };
     function baueHalsNorm() {
       normBox.innerHTML = ''; const wk = NT.werkstoffe[st.nmat];
-      const hint = S.text(NT.D.hinweis, 13, false); hint.style.color = 'var(--text2)'; normBox.append(hint);
+      const hint = S.text(NT.hinweisText(), 13, false); hint.style.color = 'var(--text2)'; normBox.append(hint);
       normBox.append(mtop(S.text(L('Werkstoff', 'Material'), 14, true), 10), mtop(S.waehler(NT.werkstoffe.map(w => w.name), st.nmat, i => { st.nmat = i; baueHalsNorm(); aktualisiere(); }), 4));
       normBox.append(statusZeile(wk.bogenDicke.s, L('Dicke Bogen ', 'Bend thickness ') + wk.bogenDicke.fuer(st.ndn) + '. ' + wk.bogenDicke.q));
       normBox.append(mtop(S.text(L('Rohr (Nennweite)', 'Pipe (nominal size)'), 14, true), 12), chipZeile(NT.durchmesser, d => st.ndn === d.dn, d => String(d.dn), d => { st.ndn = d.dn; baueHalsNorm(); aktualisiere(); }));
@@ -312,7 +334,7 @@
     }
     view.beiMass = fokusiere; view.beiLeerTipp = () => vollbild();
     // Eingabeband offen: die Uebersicht ist zu klein fuer die Masse, es zaehlt die Einzelansicht, in der das Mass steht
-    view.beiBand = key => { if (st.ist3d || st.ansicht !== 0 || artenAlle[0] !== 0) return; for (let i = 1; i < namen.length; i++) { const q = view.zeichnungFuer(i); if (q && q.elems.some(e => e.key === key)) { waehleAnsicht(i); return; } } };
+    view.seite = { ist3d: () => st.ist3d, ansicht: () => st.ansicht, waehle: i => waehleAnsicht(i) };
     view.feldFuer = k => { const f = felder[k]; return f ? f.input : null; };
     // Einzelansichten lassen rechts Platz fuer den Vollbild-Knopf (sonst liegt ein Mass darunter), die Uebersicht nutzt die ganze Breite
     view.passung = z => z.anpassung(st.ansicht === 0 ? view.w : Math.max(160, view.w - 56), view.h, 12, 2.6, 20);
@@ -408,7 +430,7 @@
       if (art === 'skizze_kamin') s += '\nLattenabstand: ' + st.latten + ', Deckungsart: ' + st.deckung + ', Material: ' + S.TA('werkstoffe')[st.mat]; if (grossText) s += '\n' + grossText; return s; };
 
     // -------------------------------------------------------- Blatt, PDF
-    const zeitName = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes()); };
+    const zeitName = () => S.zeitName();
     async function blattDatei() { if (!seiteBauer) return null; const z = seiteBauer(); const blob = weitereSeiten ? await root.Blatt.alsPngSeiten([z].concat(weitereSeiten()), 2) : await root.Blatt.alsPng(z, 2); return { blob, name: art + '_' + zeitName() + '.png' }; }
     async function blattTeilen() {
       let d; try { d = await blattDatei(); } catch (e) { d = null; }

@@ -283,7 +283,7 @@
       speichere();
     }
     const snapshot = () => defs.map(d => d[1] + ' ' + st.werte[d[0]]).join(', ');
-    const zeitName = () => new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-');
+    const zeitName = () => S.zeitName();
     const datum = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return p(d.getDate()) + '.' + p(d.getMonth() + 1) + '.' + d.getFullYear(); };
     /** Blatt A4 hoch: Ansicht und Tabelle oben, darunter beide Abwicklungen. */
     function blatt(e, r) {

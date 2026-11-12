@@ -5,14 +5,64 @@
 (function (root) {
   'use strict';
   const S = root.S, h = S.h, T = S.T, Ze = root.Ze;
-  let ungueltig = false, q = null, key = null, feld = null, el = null, inp = null, sitzung = null, mo = null, scrollVor = 0, scrollEl = null, rueck = null;
   const E = {};
+  let ungueltig = false, q = null, key = null, feld = null, el = null, inp = null, sitzung = null, mo = null, scrollVor = 0, scrollEl = null, rueck = null;
   const ref = {};
 
   const box = f => (f && f.closest ? f.closest('.feld') : null);
   // Fehler am Feld selbst (Meldung im Feld) oder die Seite meldet die Masse insgesamt als ungueltig (S.dimm wird nur im Fehlerfall gerufen)
-  const fehlerMeldung = () => { const b = box(feld); if (b && b.classList.contains('fehler')) { const m = b.querySelector('.fm'); return (m && m.textContent) || T('mb_ungueltig'); } return ungueltig ? T('mb_passt_nicht') : null; };
+  // Zwei Arten von Fehler: das Mass selbst ist nicht gueltig (0, Minuswert) oder es passt nur nicht zu einem anderen Mass (Kombination, z. B. Streifen breiter als die Platte).
+  const eigenFehler = () => { const b = box(feld); if (b && b.classList.contains('fehler')) { const m = b.querySelector('.fm'); return (m && m.textContent) || T('mb_ungueltig'); } return null; };
+  const kombiFehler = () => {
+    if (!ungueltig) return null;
+    const eigen = box(feld), andere = [...document.querySelectorAll('.feld.fehler')].filter(x => x !== eigen);
+    if (andere.length) { const i = andere[0].querySelector('input'), m = andere[0].querySelector('.fm'); return T('mb_passt_mit', i ? (i.getAttribute('aria-label') || '') : '', (m && m.textContent) || ''); }
+    return T('mb_passt_nicht');
+  };
+  const fehlerMeldung = () => eigenFehler() || kombiFehler();
+  /** Einheit zum Mass, aus der Beschriftung des Feldes: (mm), (cm), (Grad), (%), (mm/m), Zoll, Anzahl und Stueck (Nils/Pruefer 12.11.: cm und Stueck duerfen nicht "mm" heissen). */
+  E.einheitVon = (f, text) => {
+    const l = f ? (f.getAttribute('aria-label') || '') : '';
+    for (const x of (l.match(/\(([^)]*)\)/g) || [])) {
+      const u = x.slice(1, -1).trim().toLowerCase();
+      if (/^(grad|°|deg|degrees?)$/.test(u)) return '°';
+      if (/^(mm|cm|m|%|mm\/m)$/.test(u)) return u;
+      if (/^(zoll|inch|in|")$/.test(u)) return u === 'zoll' ? 'Zoll' : 'in';
+      if (/^(anzahl|count|number|pieces?|pcs)$/.test(u)) return T('mb_stueck');
+    }
+    if (/winkel|neigung|angle|slope|\bgrad\b|degree|°/i.test(l)) return '°';
+    if (/(^|\s)(st[üu]ck|anzahl|pieces|pcs|count)/i.test(l) || /^n\s/.test(l)) return T('mb_stueck');
+    if (text && String(text).indexOf('°') >= 0) return '°';
+    return 'mm';
+  };
   const beschriftung = f => { const l = f.getAttribute('aria-label') || ''; return l || T('ss_masse'); };
+
+  // ---- Querformat mit Tastatur: nur ca. 190 px Hoehe. Die Zeichnung wird dann nicht in den schmalen Streifen gequetscht, sondern in der Hoehe OHNE Tastatur
+  // gebaut (gleiche Schrift, gleiche Aufteilung wie sonst) und der Streifen zeigt den Ausschnitt um das aktive Mass (Pille/Zahl bleibt in der Mitte).
+  const hoeheEcht = Object.getOwnPropertyDescriptor(Element.prototype, 'clientHeight').get;
+  const karten = [];
+  E.virtAn = () => S.bandAn && S.vp.quer && S.vp.tastatur;
+  /** Karte (Zeichnungsflaeche) anmelden: quellen = { view, d3 (Ansicht3D oder Funktion, die sie liefert) }. Ab dann liefert karte.clientHeight die Hoehe ohne Tastatur. */
+  E.karte = (karte, quellen) => {
+    if (karten.some(k => k.karte === karte)) return;
+    const k = { karte, view: quellen.view, d3: quellen.d3, ruhe: 0 };
+    Object.defineProperty(karte, 'clientHeight', { configurable: true, get() { const r = hoeheEcht.call(karte); if (!E.virtAn()) { k.ruhe = r; return r; } return Math.max(r, k.ruhe || r); } });
+    karten.push(k);
+  };
+  E.sync = () => {
+    for (let i = karten.length - 1; i >= 0; i--) if (!karten[i].karte.isConnected) karten.splice(i, 1);
+    for (const k of karten) {
+      const cvs = [...k.karte.querySelectorAll(':scope > canvas')];
+      if (!E.virtAn()) { for (const c of cvs) { c.style.height = ''; c.style.transform = ''; } continue; }
+      const vis = hoeheEcht.call(k.karte), H = k.karte.clientHeight; let y = null;
+      const d3 = typeof k.d3 === 'function' ? k.d3() : k.d3;
+      if (d3 && d3.canvas && d3.canvas.style.display !== 'none' && d3.pillenOrte) { const p = d3.pillenOrte.find(x => x[1] === key); if (p) y = (p[0][1] + p[0][3]) / 2; }
+      else if (k.view && k.view.aktuell && key != null) { const z = k.view.aktuell, e = z.elems.find(x => x.k === 't' && x.key === key); if (e) y = k.view.passung(z)[2] + k.view.passung(z)[0] * (e.y - e.groesse * 0.35); }
+      const off = y == null ? (k.off || 0) : Math.min(Math.max(0, H - vis), Math.max(0, y - vis / 2)); k.off = off;
+      for (const c of cvs) { c.style.height = H + 'px'; c.style.transform = 'translateY(' + (-off) + 'px)'; }
+    }
+  };
+  const syncSpaeter = () => { E.sync(); requestAnimationFrame(E.sync); setTimeout(E.sync, 120); setTimeout(E.sync, 400); };
 
   /** Ergebnis der Seite (Leiste unten, bei offener Tastatur ausgeblendet) im Band mitzeigen. */
   function ergebnis() {
@@ -25,6 +75,7 @@
     if (!el) return;
     const m = fehlerMeldung();
     el.classList.toggle('fehler', !!m);
+    el.dataset.feld = beschriftung(feld);
     ref.name.textContent = m || beschriftung(feld);
     ref.erg.textContent = m ? '' : ergebnis();
     Ze.fehlerKey = m ? key : null;
@@ -50,7 +101,7 @@
     inp.addEventListener('input', () => {
       const neg = /^-/.test(sitzung.get(key) || '');
       let v = inp.value.replace(neg ? /[^0-9.,-]/g : /[^0-9.,]/g, '');
-      const m = v.match(/^(-?)(\d*)([.,]?)(\d*)/); v = m ? m[1] + m[2] + m[3] + m[4] : '';
+      const m = v.match(/^(-?)(\d*)([.,]?)(\d*)/); v = m ? m[1] + m[2].slice(0, 6) + m[3] + m[4].slice(0, 3) : '';   // hoechstens 6 Stellen vor und 3 nach dem Komma (keine absurden Zahlen)
       if (v !== inp.value) inp.value = v;
       if (v === '-' || v === ',' || v === '.') { zustand(); return; }   // leer geht an die Seite: manche Felder duerfen leer sein (z. B. Laenge leer = Rest)
       setzeWert(v); zustand();
@@ -66,6 +117,7 @@
   }
   /** Band an den sichtbaren Bereich setzen (unten ueber der Tastatur, im Querformat als Spalte rechts). */
   E.layout = () => {
+    syncSpaeter();
     if (!el) { if (rueck && rueck.platz) rueck.platz(); return; }
     const vp = S.vp, vv = window.visualViewport, oben = vv && !S.opt.kb ? vv.offsetTop : 0, kb = S.opt.kb ? vp.imeAbzug : 0;
     const insB = vp.tastatur ? 0 : S.inset('bottom'), insR = S.inset('right');
@@ -93,16 +145,17 @@
   };
   E.waehle = k => {
     const f = q.feldFuer(k); if (!f) return;
-    key = k; feld = f; ungueltig = false; if (!sitzung.has(k)) sitzung.set(k, f.value);
+    key = k; feld = f; if (!sitzung.has(k)) sitzung.set(k, f.value);
     q.aktivSetzen(k); inp.value = f.value; ref.einheit.textContent = q.einheit(k);
     zustand();
     try { inp.focus({ preventScroll: true }); inp.select(); } catch (x) { /* */ }
     if (q.sichtbar) q.sichtbar(k);
+    syncSpaeter();
     try { document.scrollingElement.scrollTop = 0; document.getElementById('app').scrollTop = 0; } catch (x) { /* */ }
   };
   E.weiter = r => {
     if (!el) return;
-    if (fehlerMeldung()) { S.haptik(30); el.classList.remove('wackel'); void el.offsetWidth; el.classList.add('wackel'); return; }
+    if (eigenFehler()) { S.haptik(30); el.classList.remove('wackel'); void el.offsetWidth; el.classList.add('wackel'); return; }   // nur das Mass selbst sperrt, ein Kombinationsfehler laesst Weiter zu (das andere Mass wird als naechstes geaendert)
     const ks = q.schluessel(); if (!ks.length) return;
     let i = ks.indexOf(key); i = i < 0 ? 0 : (i + r + ks.length) % ks.length;
     E.waehle(ks[i]);
@@ -112,18 +165,20 @@
   /** Band schliessen. Ungueltiger oder leerer Wert springt auf den alten zurueck (mit Hinweis). */
   E.zu = (still, abgebrochen) => {
     if (!el) return;
-    let zurueckgesetzt = false;
-    if (fehlerMeldung()) { setzeZurueck(q, key, sitzung.get(key)); zurueckgesetzt = !abgebrochen; }
+    let zurueckgesetzt = false, kombi = null;
+    if (eigenFehler()) { setzeZurueck(q, key, sitzung.get(key)); zurueckgesetzt = !abgebrochen; }
+    else if (!abgebrochen) kombi = kombiFehler();   // gueltiges Mass, das nur noch nicht zu den anderen passt: bleibt wie auf der Liste, mit Hinweis
     const qu = q, geaendert = [...sitzung].filter(([k, o]) => { const f = qu.feldFuer(k); return f && f.value !== o; });
     const vorher = new Map(sitzung);
     if (mo) { mo.disconnect(); mo = null; }
     if (scrollEl && scrollEl._bandWacht) { scrollEl.removeEventListener('scroll', scrollEl._bandWacht); scrollEl.scrollTop = scrollVor; }
     el.remove(); el = null; inp = null; Ze.fehlerKey = null;
     S.bandAn = false; S.bandH = 0; S.bandB = 0; document.body.classList.remove('eingabe');
-    qu.aktivSetzen(null); qu.neuZeichnen(); q = null; key = null; feld = null;
+    qu.aktivSetzen(null); qu.neuZeichnen(); q = null; key = null; feld = null; syncSpaeter();
     try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (x) { /* */ }
     if (S.umgebung) S.umgebung();
     if (zurueckgesetzt) S.toast(T('mb_alt_bleibt'));
+    else if (kombi) { S.toast(kombi); if (geaendert.length) E.rueckgaengig(qu, geaendert.map(([k]) => [k, vorher.get(k)])); }
     else if (geaendert.length) E.rueckgaengig(qu, geaendert.map(([k]) => [k, vorher.get(k)]));
   };
   /** Ein Schritt Rueckgaengig nach "Fertig": Hinweiszeile unten fuer ein paar Sekunden. */
@@ -142,7 +197,7 @@
     if (mo) { mo.disconnect(); mo = null; }
     if (el) el.remove(); if (rueck) rueck.el.remove();
     el = null; rueck = null; q = null; key = null; feld = null; inp = null; Ze.fehlerKey = null;
-    S.bandAn = false; S.bandH = 0; S.bandB = 0; document.body.classList.remove('eingabe');
+    S.bandAn = false; S.bandH = 0; S.bandB = 0; document.body.classList.remove('eingabe'); E.sync();
   };
   S.band = E;
 })(window);

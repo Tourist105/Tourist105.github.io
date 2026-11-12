@@ -897,6 +897,7 @@
       const sz = 15, hoehe = sz + 14 * d;   // 12.11.: groessere Schrift und Pille (Handy, Tippflaeche)
       ctx.font = '700 ' + sz + 'px Roboto, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
       const scr = v => { kam.projiziere(v, p); return [p[0], p[1]]; };
+      const pillen = [];   // erst alle Pillen platzieren, dann gegenseitig auseinanderschieben (12.11.), dann zeichnen
       for (const ms of this.masse3d) {
         if (Number.isNaN(ms.wert)) {
           if (!ms.b) continue;
@@ -945,7 +946,34 @@
         }
         if (r[1] < 2 * d) { const o = 2 * d - r[1]; r[1] += o; r[3] += o; }
         if (r[3] > h - 2 * d) { const o = h - 2 * d - r[3]; r[1] += o; r[3] += o; }
-        belegt.push(r); this.pillenOrte.push([r, ms.key]);
+        belegt.push(r); pillen.push({ r, ms, an, farbeL, t, mx, my });
+      }
+      // Restliche Ueberlappungen (z. B. durch das Zurueckschieben in den Bildrand) aufloesen: je Paar entlang der kleineren Ueberdeckung auseinander
+      const luft = 5 * d, lo2 = 2 * d;
+      for (let durchgang = 0; durchgang < 120; durchgang++) {
+        let bewegt = false;
+        for (let i = 0; i < pillen.length; i++) for (let j = i + 1; j < pillen.length; j++) {
+          const a = pillen[i].r, b = pillen[j].r;
+          const ox = min(a[2], b[2]) - max(a[0], b[0]) + luft, oy = min(a[3], b[3]) - max(a[1], b[1]) + luft;
+          if (ox <= 0 || oy <= 0) continue;
+          bewegt = true;
+          const schieb = (r, dx, dy) => { r[0] += dx; r[2] += dx; r[1] += dy; r[3] += dy; };
+          if (oy <= ox) { const v = ((a[1] + a[3]) / 2 <= (b[1] + b[3]) / 2 ? -1 : 1) * oy / 2; schieb(a, 0, v); schieb(b, 0, -v); }
+          else { const v = ((a[0] + a[2]) / 2 <= (b[0] + b[2]) / 2 ? -1 : 1) * ox / 2; schieb(a, v, 0); schieb(b, -v, 0); }
+        }
+        for (const q of pillen) {
+          const r = q.r; let dx = 0, dy = 0;
+          if (r[0] < lo2) dx = lo2 - r[0]; else if (r[2] > w - lo2) dx = w - lo2 - r[2];
+          if (r[1] < lo2) dy = lo2 - r[1]; else if (r[3] > h - lo2) dy = h - lo2 - r[3];
+          r[0] += dx; r[2] += dx; r[1] += dy; r[3] += dy;
+        }
+        if (!bewegt) break;
+      }
+      for (const { r, ms, an, farbeL, t, mx, my } of pillen) {
+        this.pillenOrte.push([r, ms.key]);
+        // weit vom Messpunkt weggeschoben: duenne Fuehrungslinie zum Messpunkt, damit klar bleibt, was die Pille misst
+        const nx = min(max(mx, r[0]), r[2]), ny = min(max(my, r[1]), r[3]);
+        if (Math.hypot(nx - mx, ny - my) > hoehe * 0.6) { ctx.strokeStyle = css(farbeL); ctx.lineWidth = 1 * d; ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(nx, ny); ctx.stroke(); }
         ctx.fillStyle = an ? css(rgb(255, 238, 214)) : css(argb(240, 255, 255, 255));
         ctx.strokeStyle = css(farbeL); ctx.lineWidth = (an ? 2 : 1.2) * d;
         ctx.beginPath(); ctx.roundRect(r[0], r[1], r[2] - r[0], r[3] - r[1], hoehe / 2); ctx.fill(); ctx.stroke();

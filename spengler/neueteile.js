@@ -75,7 +75,7 @@
 
     // Kopf
     const karte = h('div', { class: 'skkarte' }), cv2 = h('canvas', { 'aria-label': S.T('ss_live') }); karte.append(cv2);
-    const view = new S.SkizzenAnsicht(cv2); view.arten = artenAlle;
+    const view = new S.SkizzenAnsicht(cv2); view.arten = artenAlle; S.band.karte(karte, { view, d3: () => d3 });
     const hat3d = HAT3D.includes(art) && !!root.Szene3D;
     let d3 = null, cv3 = null, kipp3 = null, kipp2 = null;
     if (hat3d) {
@@ -148,7 +148,7 @@
     function baueNormBox() {
       normBox.innerHTML = '';
       const wk = norm.werkstoffe[st.mat];
-      normBox.append(S.text(norm.D.hinweis, 13, false));
+      normBox.append(S.text(norm.hinweisText(), 13, false));
       normBox.lastChild.style.color = 'var(--text2)';
       // Werkstoff als Chips (wenige feste Werte, kein Dropdown)
       normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), chipZeile(norm.werkstoffe.map((w, i) => [w.name, i]), st.mat, 56, v => { if (v !== st.mat) { st.mat = v; baueNormBox(); aktualisiere(); } }));
@@ -293,7 +293,7 @@
     function fokusiere(key) { const f = felder[key]; if (!f) return; if (!st.mehr && !prim.includes(key) && art !== 'fallrohr') setzeMehr(true); f.input.focus(); }
     view.beiMass = fokusiere; view.beiLeerTipp = () => vollbild();
     // Eingabeband offen: die Uebersicht ist zu klein fuer die Masse, es zaehlt die Einzelansicht, in der das Mass steht
-    view.beiBand = key => { if (st.ist3d || st.ansicht !== 0 || artenAlle[0] !== 0) return; for (let i = 1; i < namen.length; i++) { const q = view.zeichnungFuer(i); if (q && q.elems.some(e => e.key === key)) { waehleAnsicht(i); return; } } };
+    view.seite = { ist3d: () => st.ist3d, ansicht: () => st.ansicht, waehle: i => waehleAnsicht(i) };
     view.feldFuer = k => { const f = felder[k]; return f && f.input ? f.input : null; };
     function vollbild() { const a = st.ansicht; S.vollbildZeigen((w, hh) => view.zeichnungMit(a, w, hh), view.aktiv, false, view); }
 
@@ -423,7 +423,7 @@
     };
 
     // Blatt, PDF
-    const zeitName = () => { const d = new Date(), p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '_' + p(d.getHours()) + p(d.getMinutes()); };
+    const zeitName = () => S.zeitName();
     async function blattDatei() { if (!seiteBauer) return null; const blob = await Bl.alsPngSeiten(seiteBauer(), 2); return { blob, name: art + '_' + zeitName() + '.png' }; }
     async function blattTeilen() {
       let d; try { d = await blattDatei(); } catch (e) { d = null; }

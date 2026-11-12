@@ -12,7 +12,7 @@
     const R = { tab: 0, quer };
     const karte = h('div', { class: 'skkarte' }), cv2 = h('canvas', { 'aria-label': T('ss_live') });
     karte.append(cv2);
-    const view = new S.SkizzenAnsicht(cv2); view.arten = o.tabs.map((_, i) => i);
+    const view = new S.SkizzenAnsicht(cv2); view.arten = o.tabs.map((_, i) => i); S.band.karte(karte, { view });
     let cv3 = null;
     if (dreiD >= 0) { cv3 = h('canvas', { 'aria-label': T('d3_rohr_beschreibung') }); cv3.style.display = 'none'; karte.append(cv3); }
     const kippGross = h('button', { class: 'kippgross', 'aria-label': T('ss_tipp'), onclick: () => R.vollbild() }, S.iconVollbild());
