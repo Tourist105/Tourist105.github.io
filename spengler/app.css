@@ -98,7 +98,9 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .skkopf { display: flex; flex-direction: column; padding: 2px 12px 6px; background: var(--bg); flex: none; min-height: 0; }
 .sk.quer .skkopf { flex: 1.25 1 0; }
 .sktitel { height: 58px; flex: none; padding: 0 156px 0 56px; display: flex; align-items: center; font-weight: 700; letter-spacing: .045em; font-size: 22px; white-space: nowrap; }
-.reiterzeile { height: 52px; flex: none; display: flex; align-items: center; }
+.reiterzeile { height: 52px; flex: none; display: flex; align-items: center; gap: 6px; }
+.reiterzeile .chip + .chip { margin-left: 0; }
+.reiterzeile .pdfknopf + .pdfknopf { margin-left: 0; }
 .reiterzeile .chip { padding: 0 clamp(3px, 1.1vw, 8px); font-size: clamp(12.5px, 3.6vw, 15px); }
 .chip[style*="flex"] { white-space: normal; line-height: 1.15; }
 .sk.quer .reiterzeile { padding-left: 60px; }

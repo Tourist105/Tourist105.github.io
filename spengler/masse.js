@@ -198,6 +198,8 @@
     const f = q.feldFuer(k); if (!f) return;
     key = k; feld = f; if (!sitzung.has(k)) sitzung.set(k, f.value);
     q.aktivSetzen(k); inp.value = f.value; ref.einheit.textContent = q.einheit(k);
+    // leeres Feld (z. B. Rohrlaenge leer = Rest): die Zeichnung zeigt den berechneten Wert, das Band zeigt ihn als Platzhalter statt eines nackten leeren Feldes
+    inp.placeholder = f.value.trim() === '' ? ((q.platzhalter && q.platzhalter(k)) || f.placeholder || '') : '';
     zustand();
     frisch = true;
     try { inp.focus({ preventScroll: true }); inp.select(); } catch (x) { /* */ }

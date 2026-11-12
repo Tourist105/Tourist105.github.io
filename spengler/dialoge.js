@@ -295,6 +295,7 @@
       feldFuer: k => view.feldFuer ? view.feldFuer(k) : null,
       schluessel: () => { const f = k => view.feldFuer(k), ks = []; if (z) for (const e of z.elems) if (e.k === 't' && e.key != null && !ks.includes(e.key) && view.editierbar(e.key, e)) ks.push(e.key); return ks.sort((a, b) => { const fa = f(a), fb = f(b); return !fa || !fb ? 0 : (fa.compareDocumentPosition(fb) & 4 ? -1 : 1); }); },
       einheit: k => view.einheit(k),
+      platzhalter: k => { const e = z && z.elems.find(x => x.k === 't' && x.key === k); return e ? String(e.text) : ''; },
       aktivSetzen: k => { aktivKey = k; view.aktiv = k; zeichne(); },
       neuZeichnen: () => { z = bauer(w, hh) || z; zeichne(); },
       sichtbar: k => {

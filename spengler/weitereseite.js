@@ -20,7 +20,6 @@
     const chips = o.tabs.map((n, i) => h('button', { class: 'chip', text: n, onclick: () => R.setzeTab(i, true) }));
     const pdfKnopf = h('button', { class: 'pdfknopf', text: T('ss_ansehen'), 'aria-label': T('ss_ansehen_lang'), onclick: () => o.beiPdf && o.beiPdf() });
     const dxfKnopf = o.beiDxf ? h('button', { class: 'pdfknopf', text: 'DXF', 'aria-label': 'DXF', onclick: () => o.beiDxf() }) : null;
-    if (dxfKnopf) pdfKnopf.style.marginLeft = '6px';
     const reiter = h('div', { class: 'reiterzeile' }, chips, dxfKnopf, pdfKnopf);
     const titel = h('h1', { class: 'sktitel' }, h('span', { text: o.titel }));
     const ts = titel.firstChild; S.autosizeTitel(ts, 22, 16); ts.style.display = 'block'; ts.style.overflow = 'hidden'; ts.style.width = '100%'; ts.style.fontSize = '22px';

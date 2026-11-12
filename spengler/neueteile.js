@@ -2,7 +2,7 @@
  * Alles mit Status "Annahme" oder "Unsicher" steht als "Annahme, Alex prueft" da. Katalog: normteile_daten.js (eine Quelle mit der App). */
 (function (root) {
   'use strict';
-  const S = root.S, Ze = root.Ze, K = root.Kern, NT = root.Normteile, Bl = root.Blatt, h = S.h, fmtTrim = Ze.fmtTrim, fmtM2 = S.fmtM2, nz = NT.nz;
+  const S = root.S, Ze = root.Ze, K = root.Kern, NT = root.Normteile, EN = root.ENTXT, Bl = root.Blatt, h = S.h, fmtTrim = Ze.fmtTrim, fmtM2 = S.fmtM2, nz = NT.nz;
   const L = (de, en) => S.sprache() === 'en' ? en : de;
 
   const DEFS = () => ({
@@ -109,7 +109,7 @@
     const detail = h('div', { class: 'stat', style: { whiteSpace: 'pre-line', fontSize: '16px' } });
     const status = h('div', { style: { fontSize: '16px', marginTop: '6px' } });
     const hinweisBox = h('div', {}), materialBox = h('div', {}), normBox = h('div', {});
-    const statusZeile = (s, q, gr) => h('div', { style: { fontSize: (gr || 12.5) + 'px', color: FARBE[s], marginTop: '2px' }, text: NT.statusText(s) + ': ' + q });
+    const statusZeile = (s, q, gr) => h('div', { style: { fontSize: (gr || 12.5) + 'px', color: FARBE[s], marginTop: '2px' }, text: NT.statusText(s) + ': ' + EN.t(q) });
     const mt = (e, px) => { e.style.marginTop = px + 'px'; return e; };
     if (quer) inh.append(S.karte(S.text(S.T('ss_masse'), 18, true), h('div', {}, primBox, mt(mehrKnopf, 12), mt(mehrBox, 6))));
     else inh.append(mehrKnopf, mt(mehrBox, 6));
@@ -151,7 +151,7 @@
       normBox.append(S.text(norm.hinweisText(), 13, false));
       normBox.lastChild.style.color = 'var(--text2)';
       // Werkstoff als Chips (wenige feste Werte, kein Dropdown)
-      normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), chipZeile(norm.werkstoffe.map((w, i) => [w.name, i]), st.mat, 56, v => { if (v !== st.mat) { st.mat = v; baueNormBox(); aktualisiere(); } }));
+      normBox.append(mt(S.text(L('Werkstoff', 'Material'), 14, true), 10), chipZeile(norm.werkstoffe.map((w, i) => [EN.werkstoff(w.name), i]), st.mat, 56, v => { if (v !== st.mat) { st.mat = v; baueNormBox(); aktualisiere(); } }));
       if (art === 'fallrohr') normBox.append(statusZeile(wk.rohrDicke.s, L('Dicke ', 'Thickness ') + wk.rohrDicke.fuer(st.dn) + '. ' + wk.rohrDicke.q));
       else { const dicke = art === 'dachrinne' ? wk.rinne : art === 'mauerabdeckung' ? wk.mauer : wk.kehle;
         normBox.append(statusZeile(dicke.s, L('Dicke ', 'Thickness ') + nz(dicke.v, 2) + ' mm. ' + dicke.q)); }
@@ -219,7 +219,7 @@
         k.append(kopfZ);
         const key = 'p' + i;
         const zahlFeld = (label, wert, hint, set) => {
-          const f = S.feld(label, isNaN(wert) ? '' : nz(wert, 2).replace(',', '.'), { onChange: v => { const x = v.trim() === '' ? NaN : (S.parseNum(v) == null ? -1 : S.parseNum(v)); st.teile[i] = set(x); aktualisiere(); }, onFokus: an => fokus(key, an) });
+          const f = S.feld((i + 1) + '. ' + kurzName(p.typ) + ': ' + label, isNaN(wert) ? '' : nz(wert, 2).replace(',', '.'), { onChange: v => { const x = v.trim() === '' ? NaN : (S.parseNum(v) == null ? -1 : S.parseNum(v)); st.teile[i] = set(x); aktualisiere(); }, onFokus: an => fokus(key, an) });
           f.input.placeholder = hint; felder[key] = f; k.append(mt(f, 6));
         };
         const winkelChips = liste => k.append(mt(chipZeile(liste.map(g => [nz(g, 0) + '°', g]), p.w, 48, w => { st.teile[i] = Object.assign({}, st.teile[i], { w }); teileGeaendert(); }), 6));
@@ -250,7 +250,7 @@
     }
     if (art === 'fallrohr') baueTeileBox();
 
-    const annahmenListe = () => art === 'fallrohr' ? FR.annahmenListe() : art === 'dachrinne' ? K.RinneSkizze.annahmenListe() : art === 'mauerabdeckung' ? K.MauerSkizze.annahmenListe() : K.KehleSkizze.annahmenListe();
+    const annahmenListe = () => EN.ann(art === 'fallrohr' ? FR.annahmenListe() : art === 'dachrinne' ? K.RinneSkizze.annahmenListe() : art === 'mauerabdeckung' ? K.MauerSkizze.annahmenListe() : K.KehleSkizze.annahmenListe());
     const belegText = b => b === 'QUELLE' ? NT.statusText('beleg') : b === 'HERLEITUNG' ? L('Eigene Herleitung', 'Own derivation') : NT.statusText('annahme');
     const annBox = h('div', {});
     annahmenListe().forEach((a, i) => {
@@ -365,7 +365,7 @@
           L('Höhenunterschied: ' + fmtTrim(r.hoehenunterschied, 1) + ' mm auf ' + fmtTrim(r.wirksameLaengeM, 1) + ' m', 'Height difference: ' + fmtTrim(r.hoehenunterschied, 1) + ' mm over ' + fmtTrim(r.wirksameLaengeM, 1) + ' m'),
           L('Dilatationen: ' + r.dilatationen, 'Expansion joints: ' + r.dilatationen), L('Streifen je Tafel: ' + r.streifenProBahn, 'Strips per sheet: ' + r.streifenProBahn)];
         grossText = fmtM2(r.blechM2) + ' m²'; ergLabel = L('Blech mit Verschnitt, ' + r.halter + ' Halter', 'Sheet with waste, ' + r.halter + ' brackets');
-        zaehleHoch(r.blechM2, v => fmtM2(v) + ' m²'); hinw = r.hinweise().map(x => x.text);
+        zaehleHoch(r.blechM2, v => fmtM2(v) + ' m²'); hinw = r.hinweise().map(x => EN.t(x.text));
         basis = () => [Bl.neu.rinne(r, blattTexte(ergLabel, grossText, zeilen, [['BLECH', L('Rinne', 'Gutter')], ['AUFKANT2', L('Halter', 'Brackets')], ['UMSCHLAG', L('Dilatation', 'Expansion joint')]]), lb)];
       } else if (art === 'mauerabdeckung') {
         const m = K.MauerSkizze(mauerEin());
@@ -376,7 +376,7 @@
           L('Blech: ' + fmtM2(m.blechNettoM2) + ' m² netto, ' + fmtM2(m.blechM2) + ' m² mit Verschnitt', 'Sheet: ' + fmtM2(m.blechNettoM2) + ' m² net, ' + fmtM2(m.blechM2) + ' m² with waste'),
           L('Stücke: ' + m.stuecke + ', Dilatationen: ' + m.dilatationen, 'Pieces: ' + m.stuecke + ', expansion joints: ' + m.dilatationen)];
         grossText = fmtTrim(m.abwicklung, 1) + ' mm × ' + m.stuecke; ergLabel = L('Abwicklung und Stücke', 'Girth and pieces');
-        zaehleHoch(m.abwicklung, v => fmtTrim(v, 1) + ' mm × ' + m.stuecke); hinw = m.hinweise().map(x => x.text);
+        zaehleHoch(m.abwicklung, v => fmtTrim(v, 1) + ' mm × ' + m.stuecke); hinw = m.hinweise().map(x => EN.t(x.text));
         basis = () => [Bl.neu.mauer(m, blattTexte(ergLabel, grossText, zeilen, [['BLECH', L('Abdeckung', 'Coping')], ['UMSCHLAG', L('Umschlag', 'Hem')]]), lb)];
       } else {
         const k = K.KehleSkizze(kehleEin());
@@ -386,10 +386,10 @@
           L('Stücke: ' + k.stuecke + ', Blechlänge: ' + fmtTrim(k.blechLaenge / 1000, 2) + ' m', 'Pieces: ' + k.stuecke + ', sheet length: ' + fmtTrim(k.blechLaenge / 1000, 2) + ' m'),
           L('Blech: ' + fmtM2(k.blechNettoM2) + ' m² netto, ' + fmtM2(k.blechM2) + ' m² mit Verschnitt', 'Sheet: ' + fmtM2(k.blechNettoM2) + ' m² net, ' + fmtM2(k.blechM2) + ' m² with waste')];
         grossText = fmtTrim(k.e.abwicklung, 1) + ' mm × ' + k.stuecke; ergLabel = L('Abwicklung und Stücke', 'Girth and pieces');
-        zaehleHoch(k.e.abwicklung, v => fmtTrim(v, 1) + ' mm × ' + k.stuecke); hinw = k.hinweise().map(x => x.text);
+        zaehleHoch(k.e.abwicklung, v => fmtTrim(v, 1) + ' mm × ' + k.stuecke); hinw = k.hinweise().map(x => EN.t(x.text));
         basis = () => [Bl.neu.kehle(k, blattTexte(ergLabel, grossText, zeilen, [['BLECH', L('Kehlblech', 'Valley flashing')], ['AUFKANT', L('Aufkantung', 'Upstand')]]), lb)];
       }
-      letzteListe = ml;
+      letzteListe = ml; ml = EN.liste(ml);   // Anzeige und Blatt englisch, der Schnappschuss (letzteListe) bleibt deutsch
       seiteBauer = () => {
         const tx = blattTexte(ergLabel, grossText, zeilen, []); tx.titel = S.T(TITEL[art]) + ': ' + L('Materialliste', 'Bill of materials');
         return basis().concat(Bl.neu.material(ml, annahmenListe(), tx, matTexte()));

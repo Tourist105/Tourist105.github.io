@@ -1,7 +1,7 @@
 /* Spengler-Web: Eingabeseiten Kamineinfassung, Schwanenhals, Dunstrohr. Port von SkizzenActivity.kt (Aufbau, Zustaende, Rechnung ueber kern.js). */
 (function (root) {
   'use strict';
-  const S = root.S, Ze = root.Ze, K = root.Kern, h = S.h, T = S.T, fmtTrim = Ze.fmtTrim, fmtM2 = S.fmtM2, NT = root.Normteile, nz = NT.nz;
+  const S = root.S, Ze = root.Ze, K = root.Kern, h = S.h, T = S.T, fmtTrim = Ze.fmtTrim, fmtM2 = S.fmtM2, NT = root.Normteile, EN = root.ENTXT, nz = NT.nz;
   const FARBE = { beleg: '#105E32', annahme: '#965000', unsicher: '#B00020' };
 
   const DEFS = {
@@ -59,6 +59,7 @@
         feldFuer: k => (this.feldFuer ? this.feldFuer(k) : null),
         schluessel: () => this.schluessel(),
         einheit: k => this.einheit(k),
+        platzhalter: k => { const z = this.aktuell, e = z && z.elems.find(x => x.k === 't' && x.key === k); return e ? String(e.text) : ''; },
         aktivSetzen: k => { if (k) this.bandSprung(k); else this.bandRueck(); this.aktiv = k; if (this.beiAktiv) this.beiAktiv(k); },
         neuZeichnen: () => this.zeichnen()
       });
@@ -263,13 +264,13 @@
     }
     const L = (de, en) => S.sprache() === 'en' ? en : de;
     const normBox = h('div', {}), materialBox = h('div', {});
-    const statusZeile = (sx, q, gr) => h('div', { style: { fontSize: (gr || 12.5) + 'px', color: FARBE[sx], marginTop: '2px' }, text: NT.statusText(sx) + ': ' + q });
+    const statusZeile = (sx, q, gr) => h('div', { style: { fontSize: (gr || 12.5) + 'px', color: FARBE[sx], marginTop: '2px' }, text: NT.statusText(sx) + ': ' + EN.t(q) });
     const mtop = (e, px) => { e.style.marginTop = px + 'px'; return e; };
     const chipZeile = (liste, an, zeig, wahl, minB) => { const z = h('div', { style: { display: 'flex', overflowX: 'auto', marginTop: '4px' } }); for (const x of liste) z.append(h('button', { class: 'chip' + (an(x) ? ' an' : ''), text: zeig(x), style: { marginRight: '6px', minWidth: (minB || 64) + 'px', flex: '0 0 auto' }, onclick: () => wahl(x) })); return z; };
     function baueHalsNorm() {
       normBox.innerHTML = ''; const wk = NT.werkstoffe[st.nmat];
       const hint = S.text(NT.hinweisText(), 13, false); hint.style.color = 'var(--text2)'; normBox.append(hint);
-      normBox.append(mtop(S.text(L('Werkstoff', 'Material'), 14, true), 10), mtop(S.waehler(NT.werkstoffe.map(w => w.name), st.nmat, i => { st.nmat = i; baueHalsNorm(); aktualisiere(); }), 4));
+      normBox.append(mtop(S.text(L('Werkstoff', 'Material'), 14, true), 10), mtop(S.waehler(NT.werkstoffe.map(w => EN.werkstoff(w.name)), st.nmat, i => { st.nmat = i; baueHalsNorm(); aktualisiere(); }), 4));
       normBox.append(statusZeile(wk.bogenDicke.s, L('Dicke Bogen ', 'Bend thickness ') + wk.bogenDicke.fuer(st.ndn) + '. ' + wk.bogenDicke.q));
       normBox.append(mtop(S.text(L('Rohr (Nennweite)', 'Pipe (nominal size)'), 14, true), 12), chipZeile(NT.durchmesser, d => st.ndn === d.dn, d => String(d.dn), d => { st.ndn = d.dn; baueHalsNorm(); aktualisiere(); }));
       const dd = NT.dnVon(st.ndn); if (dd) normBox.append(statusZeile(dd.s, 'Nenn ' + dd.dn + ': ' + dd.q));
@@ -404,7 +405,7 @@
         grossText = T('ss_hals_gross', fmtTrim(hs.rohrZuschnitt, 1));
         zeilen = [T('ss_hals_detail', fmtTrim(hs.luecke, 1), fmtTrim(hs.steckung, 1), fmtTrim(hs.neigungZurWaagrechten, 1), fmtTrim(hs.hoehe, 1))];
         ergLabel = T('ss_ergebnis_hals'); zaehleHoch(hs.rohrZuschnitt, v => fmtTrim(v, 1) + ' mm');
-        const ml = NT.hals(hs, { dn: st.ndn, werkstoff: NT.werkstoffe[st.nmat].id, rinneStueck: 5000, rohrStueck: 2000 });
+        const ml = EN.liste(NT.hals(hs, { dn: st.ndn, werkstoff: NT.werkstoffe[st.nmat].id, rinneStueck: 5000, rohrStueck: 2000 }));
         baueHalsMaterial(ml);
         weitereSeiten = () => { const tx = blattTexte(ergLabel, fmtTrim(hs.rohrZuschnitt, 1) + ' mm', zeilen, []); tx.titel = T('ablauf_sk_hals') + ': ' + L('Materialliste', 'Bill of materials');
           return root.Blatt.neu.material(ml, [], tx, { summen: L('Summen', 'Totals'), hinweise: L('Hinweise', 'Notes'), annahmen: T('ss_annahmen_titel'), status: sx => NT.statusText(sx), beleg: () => NT.statusText('beleg') }); };

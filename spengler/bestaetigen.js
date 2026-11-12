@@ -89,11 +89,11 @@
 
   // ------------------------------------------------------------ Karte im Hauptmenue (bestaetigenKarte)
   S.bestKarte = function () {
-    const rg = ring(72), unter = h('div', { class: 'bunter' }), stand = h('div', { class: 'bstand' });
-    const k = h('button', { class: 'bkarte', 'aria-label': 'Bitte kurz bestätigen, Fortschritt anzeigen' }, rg, h('div', { class: 'btext' }, h('div', { class: 'btitel', text: 'Bitte kurz bestätigen' }), unter, stand));
+    const en = S.sprache() === 'en', rg = ring(72), unter = h('div', { class: 'bunter' }), stand = h('div', { class: 'bstand' });   // die Fragen selbst sind der deutsche Fragebogen fuer Alex
+    const k = h('button', { class: 'bkarte', 'aria-label': en ? 'Please confirm briefly (questions in German), show progress' : 'Bitte kurz bestätigen, Fortschritt anzeigen' }, rg, h('div', { class: 'btext' }, h('div', { class: 'btitel', text: en ? 'Please confirm briefly' : 'Bitte kurz bestätigen' }), unter, stand));
     const [f, alle] = fortschritt();
-    unter.textContent = alle + ' Punkte, etwa ' + minuten(alle) + ' Minuten';
-    stand.textContent = f >= alle ? 'Alles beantwortet. Danke!' : f === 0 ? 'Jetzt starten' : 'Weiter mit Punkt ' + (f + 1);
+    unter.textContent = en ? alle + ' points, about ' + minuten(alle) + ' minutes, questions in German' : alle + ' Punkte, etwa ' + minuten(alle) + ' Minuten';
+    stand.textContent = en ? (f >= alle ? 'All answered. Thank you!' : f === 0 ? 'Start now' : 'Continue with point ' + (f + 1)) : (f >= alle ? 'Alles beantwortet. Danke!' : f === 0 ? 'Jetzt starten' : 'Weiter mit Punkt ' + (f + 1));
     rg.setze(0, alle); requestAnimationFrame(() => requestAnimationFrame(() => rg.setze(f, alle)));
     k.addEventListener('click', () => { S.haptik(10); S.gehe('bestaetigen'); });
     return k;
