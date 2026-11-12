@@ -188,7 +188,7 @@
       if (nA > 0 && nB > 0) { ha = frei * nA / (nA + nB); z.wunschH = 2 * kopf + nA + max(nB, minB); }
       const hb = min(max(frei - ha, minB), frei), ha2 = frei - hb;
       titel(Ze.kopfEinzug || 0, 0, a); z.einfuegen(bauA(w, ha2), 0, kopf);
-      titel(0, kopf + ha2, b); z.einfuegen(bauB(w, hb), 0, 2 * kopf + ha2);
+      titel(0, kopf + ha2 + 0.15 * t, b); z.einfuegen(bauB(w, hb), 0, 2 * kopf + ha2);   // 0,15 t tiefer: der Titel beruehrte sonst die Masslinie am unteren Rand der Ansicht
     }
     z.fertig();
     return z;

@@ -299,6 +299,7 @@
   const BESCHR_DE = { aufriss: 'Aufriss', grundriss: 'Grundriss', hinten: 'Hinterstück', vorne: 'Vorderstück', kamin: 'Kamin', achsmass: 'Achsmass', steckung: 'Steckung', rohr: 'Rohr', aufkantung: 'Aufkantung', umschlag: 'Umschlag', ausladung: 'Ausladung', kerbe: 'Kerbe', tiefe: 'Tiefe', hoehe: 'Höhe', zuschnitt: 'Zuschnitt', stutzen: 'Stutzen', neigung: 'Dachneigung', umfang: 'Umfang', naht: 'Naht', loch: 'Loch' };
 
   function kaminAufriss(k, w, h, t, lb, worte) {
+    if (w < 360) worte = false;   // Worte an den Massen brauchen Breite (die App zeigt sie ab 420): in schmalen Zeichnungen stiessen 'Hohlumschlag 15' und der Titel zusammen
     const z = new Zeichnung(w, h, t);
     const teile = [[k.hinten, lb.hinten, 'ah'], [k.vorne, lb.vorne, 'av']];
     const links = 14, rechts = worte ? 9.2 * t : 3.6 * t + 8, name = 1.9 * t, unten = 18 + 1.7 * t, fest = name + unten + 0.5 * t;
