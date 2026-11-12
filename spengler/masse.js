@@ -10,12 +10,45 @@
   const ref = {};
   /** Geisterklick-Sperre (Pruefer 12.11.): Das Band erscheint beim Loslassen des Fingers, genau unter ihm. Der Klick, den der Browser aus derselben Beruehrung nachschickt,
    *  darf keine Taste und keinen Knopf des Bandes ausloesen (sonst aendert sich still ein Wert, z. B. Steckung 50 wird 1). Darum nimmt das Band nach dem Oeffnen
-   *  eine kurze Zeit lang keine Klicks an. Die Sperre gilt fuer das ganze Band, auch die Pfeile und Fertig. */
-  let sperreBis = 0;
-  const SPERRE_MS = 450;
+   *  nur Klicks an, die mit einem eigenen Fingerdruck IM Band begonnen haben. Die Sperre gilt fuer das ganze Band, auch die Pfeile und Fertig.
+   *  Zweite Pruefung 12.11.: Eine reine Zeitsperre ab dem Oeffnen war falsch in beide Richtungen (auf einem langsamen Handy zu kurz, bei zuegigem Tippen
+   *  verschluckte sie eine gewollte Ziffer). Jetzt gilt:
+   *  1. Ein Klick ohne eigenen Fingerdruck im Band ist der nachgeschickte Klick der Beruehrung, die das Band geoeffnet hat: nie annehmen.
+   *  2. Ein Fingerdruck, der frueher als SPERRE_MS nach dem ersten GEZEICHNETEN Bild des Bandes beginnt, gilt nicht (auf eine Taste, die eben erst
+   *     erschienen ist, kann niemand zielen). Die Zeit laeuft ab dem Zeichnen, nicht ab dem Aufruf, damit ein langsames Handy nicht frueher freigibt.
+   *  3. Ein Fingerdruck an derselben Stelle wie der oeffnende Tipp (naeher als GLEICH_PX) innerhalb von DOPPEL_MS ist ein Doppeltipp auf die Zahl,
+   *     kein gezielter Tastendruck: nicht annehmen. Eine Taste an anderer Stelle gilt dagegen sofort nach Regel 2, zuegiges Tippen verliert keine Ziffer.
+   *  4. Klicks ohne Zeiger (Tastatur, detail 0) gelten nach Ablauf der Zeit aus Regel 2. */
+  let sperreBis = Infinity, druckOk = false, offenSeit = 0, ursprung = null, letzterTipp = null;
+  const SPERRE_MS = 150, DOPPEL_MS = 700, GLEICH_MS = 500, GLEICH_PX = 48;
+  // Zeit = Entstehungszeit der Beruehrung (ev.timeStamp), nicht der Moment der Verarbeitung: auf einem langsamen Handy liegen dazwischen leicht ein paar hundert Millisekunden.
+  const zeit = ev => (typeof ev.timeStamp === 'number' && ev.timeStamp > 0 ? ev.timeStamp : performance.now());
+  const punkt = ev => { const t = (ev.changedTouches && ev.changedTouches[0]) || (ev.touches && ev.touches[0]) || ev; return (t && typeof t.clientX === 'number') ? { x: t.clientX, y: t.clientY, t: zeit(ev) } : null; };
+  const merkeTipp = ev => { const p = punkt(ev); if (p) letzterTipp = p; };
+  document.addEventListener('pointerup', merkeTipp, true);
+  document.addEventListener('touchend', merkeTipp, { capture: true, passive: true });
+  const merkeDruck = ev => {
+    if (!el || !el.contains(ev.target)) return;
+    const p = punkt(ev), jetzt = p ? p.t : zeit(ev);
+    // Gleiche Stelle wie der oeffnende Tipp: gilt erst DOPPEL_MS nach jenem Tipp UND erst GLEICH_MS nachdem das Band wirklich zu sehen war (langsames Handy: das Band
+    // erscheint spaet, der zweite Tipp eines Doppeltipps trifft es dann fast sofort).
+    const nah = !!(p && ursprung && Math.hypot(p.x - ursprung.x, p.y - ursprung.y) < GLEICH_PX);
+    const doppelt = nah && (jetzt - ursprung.t < DOPPEL_MS || jetzt < sperreBis - SPERRE_MS + GLEICH_MS);
+    druckOk = jetzt >= sperreBis && !doppelt;
+  };
+  document.addEventListener('pointerdown', merkeDruck, true);
+  document.addEventListener('touchstart', merkeDruck, { capture: true, passive: true });
   document.addEventListener('click', ev => {
-    if (el && performance.now() < sperreBis && el.contains(ev.target)) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); E.gesperrt = (E.gesperrt || 0) + 1; }
+    if (!el || !el.contains(ev.target)) return;
+    const ok = ev.detail === 0 ? performance.now() >= sperreBis : druckOk;
+    druckOk = false;
+    if (!ok) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); E.gesperrt = (E.gesperrt || 0) + 1; }
   }, true);
+  const sperreNeu = () => {
+    druckOk = false; sperreBis = Infinity; offenSeit = performance.now();
+    ursprung = (letzterTipp && offenSeit - letzterTipp.t < 5000) ? letzterTipp : null;
+    requestAnimationFrame(() => requestAnimationFrame(() => { sperreBis = performance.now() + SPERRE_MS; }));
+  };
 
   const box = f => (f && f.closest ? f.closest('.feld') : null);
   // Fehler am Feld selbst (Meldung im Feld) oder die Seite meldet die Masse insgesamt als ungueltig (S.dimm wird nur im Fehlerfall gerufen)
@@ -188,7 +221,7 @@
     if (rueck) { rueck.el.remove(); rueck = null; }
     if (el && q !== quelle) E.zu(true);
     const neu = !el; q = quelle;
-    sperreBis = performance.now() + SPERRE_MS;
+    sperreNeu();
     if (neu) { sitzung = new Map(); bauen(); }
     E.waehle(k);
     if (neu && S.umgebung) S.umgebung();

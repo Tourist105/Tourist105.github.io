@@ -177,7 +177,7 @@
 
     // ---- Fallrohr: Bauteile von oben nach unten
     const teileBox = h('div', {});
-    const typName = tp => ({ rohr: L('Rohrstück', 'Pipe section'), versatz: L('Versatz (2 Bögen)', 'Offset (2 bends)'), bogen: L('Bogen am Ende', 'Bend at the end'), abzweig: L('Abzweiger (Hosenrohr)', 'Branch (trouser pipe)'),
+    const typName = tp => ({ rohr: L('Rohrstück', 'Pipe section'), versatz: L('Versatz (2 Bögen)', 'Offset (2 bends)'), bogen: L('Bogen am Ende', 'Bend at the end'), abzweig: L('Abzweiger (Hosenrohr)', 'Branch (breeches pipe)'),
       reduktion: L('Reduktion', 'Reducer'), muffe: L('Muffe', 'Coupler'), schelle: L('Schelle', 'Clamp'), endstueck: L('Endstück', 'End piece') })[tp];
     const kurzName = tp => ({ rohr: L('Rohr', 'Pipe'), versatz: L('Versatz', 'Offset'), bogen: L('Bogen', 'Bend'), abzweig: L('Abzweiger', 'Branch'), reduktion: L('Reduktion', 'Reducer'),
       muffe: L('Muffe', 'Coupler'), schelle: L('Schelle', 'Clamp'), endstueck: L('Endstück', 'End piece') })[tp];
