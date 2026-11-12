@@ -887,10 +887,12 @@
     _unterzeile(t, rand) {
       const ctx = this.ctx; let sz = 14;
       ctx.font = '700 ' + sz + 'px Roboto, sans-serif';
-      while (ctx.measureText(t).width > this.w - rand && sz > 9) { sz -= 0.5; ctx.font = '700 ' + sz + 'px Roboto, sans-serif'; }
+      while (ctx.measureText(t).width > this.w - rand && sz > 12) { sz -= 0.5; ctx.font = '700 ' + sz + 'px Roboto, sans-serif'; }
+      // nie kleiner als 12 px: was dann noch nicht passt, kommt in zwei Zeilen (Mindestschrift am Handy)
+      let zeilen = [t];
+      if (ctx.measureText(t).width > this.w - rand) { const m = Math.floor(t.length / 2); let i = t.lastIndexOf(' ', m), j = t.indexOf(' ', m); if (i < 0 || (j >= 0 && m - i > j - m)) i = j; if (i > 0) zeilen = [t.slice(0, i), t.slice(i + 1)]; }
       ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
-      ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.strokeText(t, this.w / 2, this.h - 12);
-      ctx.fillStyle = '#000'; ctx.fillText(t, this.w / 2, this.h - 12);
+      zeilen.forEach((z, k) => { const y = this.h - 12 - (zeilen.length - 1 - k) * (sz + 3); ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.strokeText(z, this.w / 2, y); ctx.fillStyle = '#000'; ctx.fillText(z, this.w / 2, y); });
     }
     _masse3d() {
       const ctx = this.ctx, kam = this.kam, p = [0, 0, 0], belegt = [], d = 1, w = this.w, h = this.h;
@@ -949,7 +951,7 @@
         belegt.push(r); pillen.push({ r, ms, an, farbeL, t, mx, my });
       }
       // Restliche Ueberlappungen (z. B. durch das Zurueckschieben in den Bildrand) aufloesen: je Paar entlang der kleineren Ueberdeckung auseinander
-      const luft = 5 * d, lo2 = 2 * d;
+      const luft = 9 * d, lo2 = 2 * d;
       for (let durchgang = 0; durchgang < 120; durchgang++) {
         let bewegt = false;
         for (let i = 0; i < pillen.length; i++) for (let j = i + 1; j < pillen.length; j++) {

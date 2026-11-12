@@ -254,7 +254,7 @@
     const dxfBlob = () => new Blob([dxfLiefern()], { type: 'application/dxf' });
     const dxfBox = S.karte(S.text('DXF', 18, true), S.knopf(L('DXF der Abwicklung teilen', 'Share DXF of the flat pattern'), false, () => dxfTeilen()),
       h('div', { style: { fontSize: '14px', marginTop: '8px', color: 'var(--text2)' }, text: L('Abwicklung in mm für CAD und CNC, Biegelinien auf eigener Lage. Die Rechnung ist dieselbe wie auf dem Blatt.', 'Flat pattern in mm for CAD and CNC, fold lines on their own layer. The calculation is the same as on the sheet.') }));
-    dxfBox.style.display = 'none';
+    dxfBox.classList.add('dxfkarte'); dxfBox.style.display = 'none';
     async function dxfTeilen() { if (!dxfLiefern) { status.textContent = S.T('status_leer'); return; } const name = dxfName(), r = await S.teilen(dxfBlob(), name, S.T(TITEL[art])); if (r === 'download') status.textContent = name; }
     const annahmenListe = () => EN.ann(art === 'fallrohr' ? FR.annahmenListe() : art === 'dachrinne' ? K.RinneSkizze.annahmenListe() : art === 'mauerabdeckung' ? K.MauerSkizze.annahmenListe() : K.KehleSkizze.annahmenListe());
     const belegText = b => b === 'QUELLE' ? NT.statusText('beleg') : b === 'HERLEITUNG' ? L('Eigene Herleitung', 'Own derivation') : NT.statusText('annahme');

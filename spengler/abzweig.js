@@ -116,7 +116,7 @@
   /** Nummern 1 bis 12 aussen um den Ausschnitt herum. */
   function nummern(z, pkte, t) {
     const cx = pkte.reduce((s, p) => s + p[0], 0) / pkte.length, cy = pkte.reduce((s, p) => s + p[1], 0) / pkte.length;
-    pkte.forEach(p => { const dx = p[0] - cx, dy = p[1] - cy, l = max(hypot(dx, dy), 1e-6); z.text(p[0] + dx / l * 0.85 * t, p[1] + dy / l * 0.85 * t, String(p[2]), 0.72 * t, false, 0, 'GRAU'); });
+    pkte.forEach(p => { const dx = p[0] - cx, dy = p[1] - cy, l = max(hypot(dx, dy), 1e-6); { const fs = Math.max(12, 0.72 * t), off = 0.85 * t + (fs - 0.72 * t) * 1.5; z.text(p[0] + dx / l * off, p[1] + dy / l * off, String(p[2]), fs, false, 0, 'GRAU'); } });
   }
 
   function ansichtRohr(e, r, w, hh, t) {
@@ -160,7 +160,9 @@
   }
 
   /** Abwicklung des Stutzens: gerade Kante unten, 12 Mantellinien mit Nummer und Hoehe. */
-  function abwStutzen(e, r, w, hh, t) {
+  function abwStutzen(e, r, w, hh, t, fsH) {
+    // Hoehenzahlen: moeglichst >= 12 px (Mindestschrift am Handy). Stossen sie dabei zusammen, gilt die kleinere Schrift (dazu bietet die Seite das Vollbild an).
+    if (fsH == null) { for (const f of [Math.max(12, 0.76 * t), Math.max(11, 0.76 * t), 0.76 * t]) { const q = abwStutzen(e, r, w, hh, t, f); if (f === 0.76 * t || !q.kollisionen().length) return q; } }
     const z = new Ze.Zeichnung(w, hh, t), st = r.stutzen, zg = e.z || 0;
     const F = passend(w, hh, 0, -st.hMax, st.breite + zg, 0, 1.6 * t, 3.8 * t, 1.6 * t, 4.6 * t), X = F.X, Y = v => F.Y(-v);
     z.flaeche(flat(st.umriss.map(p => [X(p[0]), Y(p[1])])), 'BLECH', 'KANTE');
@@ -168,9 +170,9 @@
     const eng = (X(st.breite) - X(0)) / 12 < 2.9 * t;
     st.linien.forEach((l, i) => {
       z.linie(X(l.s), Y(0), X(l.s), Y(l.h), 'HILFE');
-      z.text(X(l.s), Y(0) + 0.85 * t, String(l.nr), 0.78 * t, false, 0, 'GRAU');
+      z.text(X(l.s), Y(0) + 0.85 * t, String(l.nr), Math.max(12, 0.78 * t), false, 0, 'GRAU');
       // Hoehen in zwei festen Zeilen ueber dem hoechsten Punkt (abwechselnd), sonst stossen sie an steilen Stellen zusammen
-      z.text(X(l.s), Y(st.hMax) - (eng && i % 2 ? 2.0 : 0.9) * t, mm(l.h), 0.76 * t, true, 0, 'BLAU');
+      z.text(X(l.s), Y(st.hMax) - (eng && i % 2 ? 2.0 : 0.9) * t, mm(l.h), fsH, true, 0, 'BLAU');
     });
     z.mass(X(0), Y(0), X(st.breite), Y(0), 0, 1, 2.1 * t, mm(st.breite) + ' mm', null, 1, 'TEXT');
     z.fertig(); return z;

@@ -268,7 +268,7 @@
     const dxfBlob = () => new Blob([dxfLiefern()], { type: 'application/dxf' });
     const dxfBox = S.karte(S.text('DXF', 18, true), S.knopf(L('DXF der Abwicklung teilen', 'Share DXF of the flat pattern'), false, () => dxfTeilen()),
       h('div', { style: { fontSize: '14px', marginTop: '8px', color: 'var(--text2)' }, text: L('Abwicklung des Stutzens in mm für CAD und CNC.', 'Flat pattern of the pipe in mm for CAD and CNC.') }));
-    dxfBox.style.display = 'none';
+    dxfBox.classList.add('dxfkarte'); dxfBox.style.display = 'none';
     async function dxfTeilen() { if (!dxfLiefern) { status.textContent = T('status_leer'); return; } const name = dxfName(), r = await S.teilen(dxfBlob(), name, T(TITEL[art])); if (r === 'download') status.textContent = name; }
     const normBox = h('div', {}), materialBox = h('div', {});
     const statusZeile = (sx, q, gr) => h('div', { style: { fontSize: (gr || 12.5) + 'px', color: FARBE[sx], marginTop: '2px' }, text: NT.statusText(sx) + ': ' + EN.t(q) });
