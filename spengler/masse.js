@@ -8,6 +8,14 @@
   const E = {};
   let padAn = false, frisch = false, ungueltig = false, q = null, key = null, feld = null, el = null, inp = null, sitzung = null, mo = null, scrollVor = 0, scrollEl = null, rueck = null;
   const ref = {};
+  /** Geisterklick-Sperre (Pruefer 12.11.): Das Band erscheint beim Loslassen des Fingers, genau unter ihm. Der Klick, den der Browser aus derselben Beruehrung nachschickt,
+   *  darf keine Taste und keinen Knopf des Bandes ausloesen (sonst aendert sich still ein Wert, z. B. Steckung 50 wird 1). Darum nimmt das Band nach dem Oeffnen
+   *  eine kurze Zeit lang keine Klicks an. Die Sperre gilt fuer das ganze Band, auch die Pfeile und Fertig. */
+  let sperreBis = 0;
+  const SPERRE_MS = 450;
+  document.addEventListener('click', ev => {
+    if (el && performance.now() < sperreBis && el.contains(ev.target)) { ev.preventDefault(); ev.stopPropagation(); ev.stopImmediatePropagation(); E.gesperrt = (E.gesperrt || 0) + 1; }
+  }, true);
 
   const box = f => (f && f.closest ? f.closest('.feld') : null);
   // Fehler am Feld selbst (Meldung im Feld) oder die Seite meldet die Masse insgesamt als ungueltig (S.dimm wird nur im Fehlerfall gerufen)
@@ -178,6 +186,7 @@
     if (rueck) { rueck.el.remove(); rueck = null; }
     if (el && q !== quelle) E.zu(true);
     const neu = !el; q = quelle;
+    sperreBis = performance.now() + SPERRE_MS;
     if (neu) { sitzung = new Map(); bauen(); }
     E.waehle(k);
     if (neu && S.umgebung) S.umgebung();
