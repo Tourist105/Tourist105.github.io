@@ -433,7 +433,7 @@
       mt(S.rmKarte(art, T(TITEL[name]), () => snapshot()), 12), mt(status, 6));
     const fokusiere = k => { const f = felder[k]; if (!f) return; if (!st.mehr && defs.findIndex(d => d[0] === k) >= 3) { setzeMehr(true); speichere(); } f.input.focus(); };
     R.view.beiMass = fokusiere;
-    R.view.passung = z => z.anpassung(Math.max(160, R.view.w - 56), R.view.h, 12, 2.6, 20);
+    R.view.passung = z => z.anpassung(Math.max(160, R.view.w - 56), R.view.h, 24, 2.6, 20);
     R.view.feldFuer = k => { const f = felder[k]; return f && f.input ? f.input : null; };
 
     function einheitWechseln(neu) {
