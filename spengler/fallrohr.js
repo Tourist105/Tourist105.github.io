@@ -328,7 +328,7 @@
     return z;
   }
 
-  const blatt = (f, w, h, t, lb) => Ze.Neu.kombi(w, h, t, 0.64, lb.ansicht, lb.zuschnitt, (ww, hh) => ansicht(f, ww, hh, t, lb), (ww, hh) => zuschnitt(f, ww, hh, t, lb));
+  const blatt = (f, w, h, t, lb) => Ze.Neu.kombi(w, h, t, 0.64, lb.ansicht, lb.zuschnitt, (ww, hh) => ansicht(f, ww, hh, t, lb), (ww, hh) => zuschnitt(f, ww, hh, t, lb), 16 + Math.max(1, f.schnitte.length) * (1.25 * t + 2));   // Mindesthoehe fuer den Zuschnitt: sonst schrumpft seine Schrift auf 6 px und rutscht an den Rand (Test 12.11.)
 
   // ================================================================ A4-Seite (Bl.neu.fallrohr)
   function seite(f, tx, lb) {
