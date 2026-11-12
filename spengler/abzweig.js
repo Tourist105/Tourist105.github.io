@@ -250,7 +250,7 @@
     if (S.vp.quer) R.inh.append(S.karte(text(T('ss_masse'), 18, true), primBox0));
     R.inh.append(mt(fehlerText, 6), mt(ergKarte, 6), mt(hinweise, 8), mt(S.rmKarte(kegel ? 'kegelabzweig' : 'abzweig', titel, () => snapshot()), 12), mt(status, 6));
     R.view.beiMass = k => { const f = felder[k]; if (!f) return; reihe.classList.add('offen'); f.input.focus(); };
-    R.view.passung = zz => zz.anpassung(Math.max(160, R.view.w - 56), R.view.h, 8);
+    R.view.passung = zz => zz.anpassung(Math.max(160, R.view.w - 56), R.view.h, 12, 2.6, 20);
     R.view.feldFuer = k => { const f = felder[k]; return f && f.input ? f.input : null; };
 
     let letzteE = null, letztes = null;
@@ -271,7 +271,7 @@
       const f = kegel ? Abzweig.pruefeKegel(e) : Abzweig.pruefeRohr(e);
       if (f) {
         const k = f === 'd_gross' ? 'd' : f, msg = FEHLER[f] || f; if (felder[k]) felder[k].fehler(msg);
-        letztes = null; R.cv2.style.opacity = .4; fehlerText.textContent = msg; erg.textContent = '-'; tab.innerHTML = ''; R.leiste_leer(msg); speichere(); return;
+        letztes = null; R.cv2.style.opacity = S.dimm(); fehlerText.textContent = msg; erg.textContent = '-'; tab.innerHTML = ''; R.leiste_leer(msg); speichere(); return;
       }
       const r = kegel ? Abzweig.kegel(e) : Abzweig.rohr(e); letzteE = e; letztes = r; fehlerText.textContent = ''; R.cv2.style.opacity = 1;
       R.view.bauer = (a, w, hh, t) => a === 0 ? (kegel ? ansichtKegel : ansichtRohr)(e, r, w, hh, t) : a === 1 ? abwStutzen(e, r, w, hh, t) : (kegel ? abwKegel : abwHaupt)(e, r, w, hh, t);

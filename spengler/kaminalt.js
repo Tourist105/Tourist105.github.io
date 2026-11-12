@@ -403,7 +403,7 @@
     if (!quer) karte.append(kippGross);
     const namen = [T('ka_tab_oben'), T('ka_tab_seite'), T('ansicht_3d')];
     const chips = namen.map((n, i) => h('button', { class: 'chip', text: n, onclick: () => waehleTab(i) }));
-    const pdfKnopf = h('button', { class: 'pdfknopf', text: T('ss_ansehen'), onclick: () => pdfErstellen() });
+    const pdfKnopf = h('button', { class: 'pdfknopf', text: T('ss_ansehen'), 'aria-label': T('ss_ansehen_lang'), onclick: () => pdfErstellen() });
     const reiter = h('div', { class: 'reiterzeile' }, chips, pdfKnopf);
     const titel = h('h1', { class: 'sktitel' }, h('span', { text: T('ablauf_kamin') }));
     const titelSpan = titel.firstChild; S.autosizeTitel(titelSpan, 22, 16); titelSpan.style.display = 'block'; titelSpan.style.overflow = 'hidden'; titelSpan.style.width = '100%'; titelSpan.style.fontSize = '22px';
@@ -491,7 +491,7 @@
     }
     view.beiMass = fokusiere; view.beiLeerTipp = () => vollbild();
     view.feldFuer = k => { const f = felder[k]; return f && f.input ? f.input : null; };
-    function vollbild() { const a = st.tab; S.vollbildZeigen((w, hh) => view.zeichnungMit(a, w, hh), view.aktiv); }
+    function vollbild() { const a = st.tab; S.vollbildZeigen((w, hh) => view.zeichnungMit(a, w, hh), view.aktiv, false, view); }
     function waehleTab(i) {
       if (!istKamin()) i = 0;
       st.tab = i; const an3 = i === 2;
@@ -764,15 +764,14 @@
     // ---- Layout (Kopfhoehe, Tastatur)
     function layout() {
       const vp = S.vp;
-      leiste.style.display = vp.tastatur ? 'none' : '';
-      const insTop = S.inset('top'), insBot = S.inset('bottom');
-      el.style.paddingBottom = (vp.tastatur ? Math.max(vp.ime, 0) : insBot) + 'px';
+      const insTop = S.inset('top'), { rand, kompakt } = S.layoutRahmen(el, leiste);
       if (!quer) {
-        const wunsch = vp.voll * (vp.tastatur ? 0.52 : 0.80), frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
+        const wunsch = vp.voll * (vp.tastatur ? 0.52 : 0.80), frei = vp.h - insTop - rand - (kompakt ? 0 : leiste.offsetHeight);
         let kh = wunsch;
         if (frei > 0 && S.opt.kopf !== 'alt') { kh = Math.min(wunsch, Math.max(300, frei - 96)); }
+        if (kompakt && frei > 0) kh = frei;
         if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karte.style.height = S.karteHoch() + 'px'; } else kopf.style.height = kh + 'px';
-        const klein = !hoch && (vp.tastatur || kh < 420); titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
+        const klein = !hoch && (kompakt || kh < 420); titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : ''; titel.style.display = reiter.style.display = kompakt && hoch ? 'none' : '';
       }
       view.groesse(karte.clientWidth, karte.clientHeight); live.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1);
       if (st.mehr || true) d3Groesse();

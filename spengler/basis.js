@@ -98,10 +98,29 @@
   };
 
   // ---------------------------------------------------------------- Viewport (100dvh-Falle, Tastatur, Insets)
-  S.vp = { w: 0, h: 0, voll: 0, tastatur: false, quer: false, ime: 0 };
+  S.vp = { w: 0, h: 0, voll: 0, tastatur: false, quer: false, ime: 0, imeAbzug: 0 };
   /** Hochformat-Handy (Breite < Hoehe und < 700 px): Zeichnungs-Karte hoechstens 38 % der Fensterhoehe, Kopf scrollt mit der Seite weg. */
   S.kopfScrollt = () => !S.vp.quer && S.vp.w < S.vp.voll && S.vp.w < 700;
-  S.karteHoch = () => Math.round(S.vp.voll * 0.38);
+  S.karteHoch = () => S.kompakt() ? Math.max(150, Math.round(S.vp.h - S.inset('top') - S.randUnten() - 12)) : Math.round(S.vp.voll * 0.38);
+  /** Eingabeband offen oder Bildschirmtastatur da: die Seite zeigt nur noch die Zeichnung (Titel, Reiter, Ergebnisleiste weg). */
+  S.bandAn = false; S.bandH = 0; S.bandB = 0;
+  S.kompakt = () => S.vp.tastatur || S.bandAn;
+  /** Platz unten, den die Seite freilassen muss. Die App-Hoehe ist schon visualViewport.height (Tastatur abgezogen), darum zaehlt die Tastatur hier nicht noch einmal (nur in der URL-Simulation kb, dort bleibt die Hoehe voll). */
+  S.randUnten = () => (S.bandAn && !S.vp.quer ? S.vp.imeAbzug + S.bandH : (S.vp.tastatur ? S.vp.imeAbzug : S.inset('bottom')));
+  S.randRechts = () => (S.bandAn && S.vp.quer ? S.bandB : 0);
+  /** Gemeinsamer Anfang aller Seiten-Layouts: Leiste, Klasse, Rand unten und rechts. */
+  S.layoutRahmen = (el, leiste) => {
+    const k = S.kompakt();
+    leiste.style.display = k ? 'none' : '';
+    el.classList.toggle('kompakt', k);
+    const rand = S.randUnten(), rr = S.randRechts();
+    el.style.paddingBottom = rand + 'px';
+    el.style.paddingRight = rr ? 'calc(var(--si-right) + ' + rr + 'px)' : '';
+    return { rand, kompakt: k };
+  };
+  /** Zeichnung bei ungueltigem Wert: ohne Eingabeband grau, mit Eingabeband bleibt sie in Farbe (das Mass selbst ist rot). */
+  S.ungueltig = false;
+  S.dimm = () => { S.ungueltig = true; return S.bandAn ? 1 : 0.4; };
   /** Uebersicht (zwei Zeichnungen uebereinander) bekommt die Hoehe, die ihr Inhalt bei voller Breite braucht, hoechstens 68 % des Fensters. */
   S.karteHochFuer = (view, a, w) => {
     const basis = S.karteHoch();
@@ -116,13 +135,18 @@
     const zoom = !!vv && vv.scale > 1.01;
     let vh = vv && !zoom ? vv.height : ih;
     const quer = iw > ih;
-    let ime = 0;
-    if (S.opt.kb) { ime = S.opt.kb > 1 ? S.opt.kb : 334; vh = ih; }
+    let ime = 0, abzug = 0;
+    // hoechste Fensterhoehe der Ausrichtung merken (falls Chrome die Layout-Hoehe selbst verkleinert)
+    const feldFokus = !!document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName);
+    if (!S._ih || Math.abs(iw - (S._iw || 0)) > 50 || !feldFokus) S._ih = ih;
+    S._iw = iw;
+    if (S.opt.kb) { ime = S.opt.kb > 1 ? S.opt.kb : 334; vh = ih; abzug = ime; }
     else if (ih - vh > 120) ime = ih - vh;
+    else if (S._ih - ih > 120 && document.activeElement && /INPUT|TEXTAREA/.test(document.activeElement.tagName)) ime = S._ih - ih;
     const eff = S.opt.kb ? ih : vh;
     document.documentElement.style.setProperty('--vh', eff + 'px');
     app.style.transform = vv && !zoom && !S.opt.kb && vv.offsetTop ? 'translateY(' + vv.offsetTop + 'px)' : '';
-    S.vp = { w: iw, h: eff, voll: ih, tastatur: ime > 0, quer, ime };
+    S.vp = { w: iw, h: eff, voll: ih, tastatur: ime > 0, quer, ime, imeAbzug: abzug };
     document.documentElement.style.setProperty('--ime', ime + 'px');
     return S.vp;
   };
@@ -149,7 +173,10 @@
       el.style.whiteSpace = 'nowrap'; el.style.lineHeight = '';
       let sz = max; el.style.fontSize = sz + 'px';
       while (el.scrollWidth > w + 0.5 && sz > min) { sz--; el.style.fontSize = sz + 'px'; }
-      if (el.scrollWidth > w + 0.5) { el.style.whiteSpace = 'normal'; el.style.lineHeight = '1.12'; }
+      if (el.scrollWidth > w + 0.5) {
+        if (/\s/.test(el.textContent.trim())) { el.style.whiteSpace = 'normal'; el.style.lineHeight = '1.12'; }
+        else { while (el.scrollWidth > w + 0.5 && sz > 11) { sz--; el.style.fontSize = sz + 'px'; } }   // ein langes Wort (Kamineinfassung): weiter schrumpfen statt abschneiden
+      }
     };
     S.nachLayout(pass); el._autosize = pass;
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(pass);
@@ -211,19 +238,40 @@
   // Feedback bei Druck auf Standardknoepfe (Haptik, wo vorhanden)
   document.addEventListener('click', e => { if (e.target.closest && e.target.closest('button')) S.haptik(8); }, true);
 
+  /** Hinweiszeile unten mit einem Knopf je Zusatzdatei (z. B. DXF), die beim ersten Teilen nicht mitgekommen ist. */
+  S.teilenRest = (dazu, titel) => {
+    const zeile = h('div', { class: 'mundo', role: 'status' }, h('span', { text: S.T('mb_rest') }));
+    const vv = window.visualViewport;
+    for (const x of dazu) zeile.append(h('button', { class: 'mu-k', type: 'button', text: x.name.replace(/^.*\./, '').toUpperCase(), onclick: async () => {
+      try { const f = new File([x.blob], x.name, { type: x.blob.type }); if (navigator.canShare && navigator.canShare({ files: [f] })) await navigator.share({ files: [f], title: titel }); else S.download(x.blob, x.name); } catch (e) { if (!e || e.name !== 'AbortError') S.download(x.blob, x.name); }
+      zeile.remove(); } }));
+    document.body.append(zeile); zeile.style.top = ((vv ? vv.offsetTop : 0) + S.vp.h - zeile.offsetHeight - 14 - S.inset('bottom')) + 'px';
+    setTimeout(() => zeile.remove(), 20000);
+  };
   S.download = (blob, name) => {
     const a = h('a', { href: URL.createObjectURL(blob), download: name }); document.body.append(a); a.click();
     setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 4000);
   };
   /** Teilt eine Datei ueber das Teilen-Menue. dazu: weitere Dateien ({blob, name}), z. B. die DXF zum PDF fuer die Werkstatt. Nimmt das Geraet
    *  die Zusatzdateien nicht an, geht das Hauptblatt allein. Ohne Teilen-Menue werden alle Dateien heruntergeladen. */
-  S.teilen = async (blob, name, titel, dazu) => {
+  /** Android-Chrome (am Samsung A52s geprueft, 12.11.2026) laesst .dxf NICHT ins Teilen-Menue (NotAllowedError), PNG geht. Solche Dateien werden darum
+   *  heruntergeladen (liegen in Downloads, von dort ins CAD oder die Werkstatt-Mail) und nur das Bild geht ins Teilen-Menue. */
+  S.nichtTeilbar = x => /android/i.test(navigator.userAgent) && /\.(dxf|dwg)$/i.test(x.name);
+  S.teilen = async (blob, name, titel, dazu, ohneDialog) => {
+    const zusatz = dazu || [], teilbar = zusatz.filter(x => !S.nichtTeilbar(x)), lokal = zusatz.filter(S.nichtTeilbar);
     try {
       const f = new File([blob], name, { type: blob.type });
-      const alle = [f].concat((dazu || []).map(x => new File([x.blob], x.name, { type: x.blob.type })));
-      if (alle.length > 1 && navigator.canShare && navigator.canShare({ files: alle })) { await navigator.share({ files: alle, title: titel }); return 'geteilt'; }
-      if (navigator.canShare && navigator.canShare({ files: [f] })) { await navigator.share({ files: [f], title: titel }); return 'geteilt'; }
-    } catch (e) { if (e && e.name === 'AbortError') return 'abbruch'; }
-    S.download(blob, name); (dazu || []).forEach(x => S.download(x.blob, x.name)); return 'download';
+      const alle = [f].concat(teilbar.map(x => new File([x.blob], x.name, { type: x.blob.type })));
+      if (alle.length > 1 && navigator.canShare && navigator.canShare({ files: alle })) { for (const x of lokal) S.download(x.blob, x.name); await navigator.share({ files: alle, title: titel }); if (lokal.length) S.toast(S.T('mb_dxf_dl')); return 'geteilt'; }
+      if (navigator.canShare && navigator.canShare({ files: [f] })) {
+        for (const x of lokal) S.download(x.blob, x.name);
+        await navigator.share({ files: [f], title: titel });
+        if (lokal.length) S.toast(S.T('mb_dxf_dl'));
+        // Das Geraet nimmt Bild und Zusatzdatei nicht zusammen: die Zusatzdateien einzeln anbieten (ein zweites Teilen braucht einen neuen Fingertipp)
+        if (teilbar.length) S.teilenRest(teilbar, titel);
+        return 'geteilt';
+      }
+    } catch (e) { S.teilFehler = e && (e.name + ': ' + e.message); if (e && e.name === 'AbortError') return 'abbruch'; if (!ohneDialog && e && e.name === 'NotAllowedError' && S.teilenDialog) { S.teilenDialog(blob, name, titel, dazu); return 'dialog'; } }
+    S.download(blob, name); zusatz.forEach(x => S.download(x.blob, x.name)); return 'download';
   };
 })(window);

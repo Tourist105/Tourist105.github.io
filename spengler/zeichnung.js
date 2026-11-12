@@ -211,13 +211,18 @@
       this.istFertig = true;
     }
 
-    treffer(px, py, spiel) {
-      let best = null, bestD = Infinity;
-      for (const e of this.elems) if (e.k === 't' && e.key != null) {
-        const r = textRect(e);
-        const dx = max(max(r[0] - px, px - r[2]), 0), dy = max(max(r[1] - py, py - r[3]), 0);
+    /** Trefferpruefung fuer antippbare Masse. spiel: Rand um das Textrechteck, minHalb: halbe Mindestkante der Tippflaeche (Zeichnungseinheiten,
+     *  44 px am Bildschirm = 22 px je Seite). Liegt der Finger in mehreren Flaechen, gewinnt die Zahl mit der naechsten Mitte (dichte Gruppen). */
+    treffer(px, py, spiel, minHalb, nur) {
+      let best = null, bestScore = Infinity; const mh = minHalb || 0;
+      for (const e of this.elems) if (e.k === 't' && e.key != null && (!nur || nur(e.key, e))) {
+        const r = textRect(e), cx = (r[0] + r[2]) / 2, cy = (r[1] + r[3]) / 2;
+        const hw = max((r[2] - r[0]) / 2, mh), hh = max((r[3] - r[1]) / 2, mh);
+        const dx = max(abs(px - cx) - hw, 0), dy = max(abs(py - cy) - hh, 0);
         const d = hypot(dx, dy);
-        if (d <= spiel && d < bestD) { bestD = d; best = e.key; this.letzterTreffer = e; }
+        if (d > spiel) continue;
+        const score = (d > 0.001 ? 1e6 + d : 0) + hypot(px - cx, py - cy) * (d > 0.001 ? 0 : 1);
+        if (score < bestScore) { bestScore = score; best = e.key; this.letzterTreffer = e; }
       }
       if (best == null) this.letzterTreffer = null;
       return best;
@@ -235,10 +240,11 @@
       return [x0, y0, x1, y1];
     }
 
-    anpassung(bw, bh, rand, maxS) {
+    anpassung(bw, bh, rand, maxS, maxText) {
       maxS = maxS == null ? 1.7 : maxS;
       const r = this.inhalt();
       const iw = max(1, r[2] - r[0]), ih = max(1, r[3] - r[1]);
+      if (maxText) { let tg = 0; for (const e of this.elems) if (e.k === 't' && e.key != null && e.groesse > tg) tg = e.groesse; if (tg > 0) maxS = min(maxS, max(1, maxText / tg)); }   // Schrift am Bildschirm hoechstens maxText px
       const s = max(0.2, min(maxS, min((bw - 2 * rand) / iw, (bh - 2 * rand) / ih)));
       return [s, (bw - iw * s) / 2 - r[0] * s, (bh - ih * s) / 2 - r[1] * s];
     }
@@ -734,15 +740,18 @@
           ctx.fillStyle = an ? FARBEN.AKZENT : '#FFFFFF';
           const x1 = ox + links * scale - 2 * scale, y1 = oy + r[1] * scale, ww = bw + 4 * scale, hh = (r[3] - r[1]) * scale, rr = 3 * scale;
           ctx.beginPath(); ctx.roundRect ? ctx.roundRect(x1, y1, ww, hh, rr) : ctx.rect(x1, y1, ww, hh); ctx.fill();
+          // antippbares Mass: leichte Pille mit feinem Rand (nur Live-Ansicht), aktives Mass kraeftig, Fehler rot
+          const tipp = e.key != null && root.Ze && root.Ze.tippKeys && root.Ze.tippKeys(e.key, e);
+          const fehler = e.key != null && root.Ze && root.Ze.fehlerKey === e.key;
+          if (tipp || an || fehler) {
+            ctx.globalAlpha = alpha; ctx.beginPath(); const px = an || fehler ? 3.5 : 2, x2 = x1 - px, y2 = y1 - 1, w2 = ww + 2 * px, h2 = hh + 2;
+            ctx.roundRect ? ctx.roundRect(x2, y2, w2, h2, h2 / 2) : ctx.rect(x2, y2, w2, h2);
+            ctx.fillStyle = fehler ? 'rgba(176,0,32,.14)' : an ? 'rgba(11,92,171,.22)' : 'rgba(11,92,171,.09)'; ctx.fill();
+            ctx.strokeStyle = fehler ? '#B00020' : FARBEN.AKZENT; ctx.lineWidth = an || fehler ? 2.2 : 1; ctx.globalAlpha = (an || fehler ? 1 : 0.6) * alpha; ctx.stroke();
+          }
         }
-        ctx.globalAlpha = alpha; ctx.fillStyle = TEXTFARBE[e.farbe]; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+        ctx.globalAlpha = alpha; ctx.fillStyle = e.key != null && root.Ze && root.Ze.fehlerKey === e.key ? '#B00020' : TEXTFARBE[e.farbe]; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
         ctx.fillText(e.text, ox + links * scale, by);
-        // antippbares Mass: feine gestrichelte Linie unter der Zahl (root.Ze.tippKeys setzt nur die Live-Ansicht)
-        if (e.key != null && root.Ze && root.Ze.tippKeys && root.Ze.tippKeys(e.key, e)) {
-          const uy = oy + r[3] * scale + 1.5;
-          ctx.globalAlpha = 0.9 * alpha; ctx.strokeStyle = FARBEN.AKZENT; ctx.lineWidth = 1.6; ctx.setLineDash([3, 2.5]);
-          ctx.beginPath(); ctx.moveTo(ox + links * scale, uy); ctx.lineTo(ox + links * scale + bw, uy); ctx.stroke(); ctx.setLineDash([]);
-        }
       }
     }
     ctx.restore();

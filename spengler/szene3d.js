@@ -715,7 +715,13 @@
           const r = c.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, jetzt = performance.now();
           if (letzterTipp && jetzt - letzterTipp.t < 300 && Math.hypot(x - letzterTipp.x, y - letzterTipp.y) < 100) { letzterTipp = null; this.voreinstellung(this.grundYaw, this.grundPitch); return; }
           letzterTipp = { x, y, t: jetzt };
-          for (const [rr, k] of this.pillenOrte) if (x >= rr[0] && x <= rr[2] && y >= rr[1] && y <= rr[3]) { this.beiMass3d(k, rr); return; }
+          // Tippflaeche mindestens 44 x 44 px, bei mehreren Treffern gewinnt die Pille mit der naechsten Mitte
+          let bestP = null, bestD = Infinity;
+          for (const [rr, k] of this.pillenOrte) {
+            const cx = (rr[0] + rr[2]) / 2, cy = (rr[1] + rr[3]) / 2, hw = Math.max((rr[2] - rr[0]) / 2, 22), hh = Math.max((rr[3] - rr[1]) / 2, 22);
+            if (Math.abs(x - cx) <= hw && Math.abs(y - cy) <= hh) { const dd = Math.hypot(x - cx, y - cy); if (dd < bestD) { bestD = dd; bestP = [rr, k]; } }
+          }
+          if (bestP) { this.beiMass3d(bestP[1], bestP[0]); return; }
           this._wahlBei(x, y);
         }
       };
@@ -888,7 +894,7 @@
     }
     _masse3d() {
       const ctx = this.ctx, kam = this.kam, p = [0, 0, 0], belegt = [], d = 1, w = this.w, h = this.h;
-      const sz = 14, hoehe = sz + 9 * d;
+      const sz = 15, hoehe = sz + 14 * d;   // 12.11.: groessere Schrift und Pille (Handy, Tippflaeche)
       ctx.font = '700 ' + sz + 'px Roboto, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
       const scr = v => { kam.projiziere(v, p); return [p[0], p[1]]; };
       for (const ms of this.masse3d) {
@@ -926,6 +932,16 @@
           versuch++;
           const sch = Math.trunc((versuch + 1) / 2) * (hoehe + 2 * d) * (versuch % 2 === 1 ? 1 : -1);
           r = [x - bw / 2, my - hoehe / 2 + sch, x + bw / 2, my + hoehe / 2 + sch];
+        }
+        // noch Ueberlappung: seitlich ausweichen (nach rechts oder links, dann wieder senkrecht suchen)
+        for (const dx of [bw * 0.55, -bw * 0.55, bw * 1.1, -bw * 1.1]) {
+          if (!belegt.some(b => schneidet(b, r))) break;
+          for (let v2 = 0; v2 < 14; v2++) {
+            const sch = Math.trunc((v2 + 1) / 2) * (hoehe + 2 * d) * (v2 % 2 === 1 ? 1 : -1);
+            const x2 = Math.min(hi, Math.max(lo, x + dx));
+            const r2 = [x2 - bw / 2, my - hoehe / 2 + sch, x2 + bw / 2, my + hoehe / 2 + sch];
+            if (!belegt.some(b => schneidet(b, r2))) { r = r2; break; }
+          }
         }
         if (r[1] < 2 * d) { const o = 2 * d - r[1]; r[1] += o; r[3] += o; }
         if (r[3] > h - 2 * d) { const o = h - 2 * d - r[3]; r[1] += o; r[3] += o; }

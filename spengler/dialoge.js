@@ -194,6 +194,19 @@
     const el = h('div', { class: 'vorschau' }, h('div', { style: { fontSize: '14px', color: 'var(--text2)', padding: '10px 16px 8px' }, text: T('pdf_vorschau_tipp') }), vs, zu);
     const e = S.dlgOeffnen(el); setze(); return e;
   };
+  /** Teilen-Dialog: Chrome erlaubt das Teilen nur kurz nach einem Fingertipp (am Samsung 12.11.2026: NotAllowedError, weil das Blatt zu lange gebaut wurde).
+   *  Dann liegt das Blatt hier fertig, und der Tipp auf "Teilen" gibt Bild und DXF ohne Wartezeit ins Teilen-Menue. */
+  S.teilenDialog = (blob, name, titel, dazu) => {
+    const alle = [{ blob, name }].concat(dazu || []);
+    const dateien = () => alle.map(x => new File([x.blob], x.name, { type: x.blob.type }));
+    const box = h('div', { class: 'dk', style: { padding: '20px 20px 12px', textAlign: 'center' } },
+      h('div', { style: { fontSize: '22px', fontWeight: 700, letterSpacing: '.045em' }, text: T('pdf_fertig') }), h('div', { style: { fontSize: '14px', marginTop: '6px' }, text: alle.map(x => x.name).join(', ') }),
+      h('button', { class: 'knopf prim', style: { marginTop: '14px' }, text: T('btn_pdf_teilen'), onclick: async () => {
+        const r = await S.teilen(blob, name, titel, dazu, true); if (r === 'geteilt') S.dlgZu(e); } }),
+      h('button', { class: 'knopf', style: { marginTop: '8px' }, text: T('btn_schliessen'), onclick: () => S.dlgZu(e) }));
+    const sc = scrim(h('div', { class: 'dialog' }, box), () => S.dlgZu(e)); const e = S.dlgOeffnen(sc, () => { });
+    return e;
+  };
   S.pdfDialog = (blob, name, titel, meldung, ohnePush) => {
     const url = URL.createObjectURL(blob);
     const icon = S.erfolgView();
@@ -216,20 +229,20 @@
   };
 
   // ---------------------------------------------------------------- Vollbild mit Pinch-Zoom (ZoomSkizzeView)
-  S.vollbildZeigen = (bauer, aktivKey, ohnePush) => {
+  S.vollbildZeigen = (bauer, aktivKey, ohnePush, view) => {
     const cv = h('canvas', {}); const zu = h('button', { class: 'zu', 'aria-label': T('ss_schliessen'), text: '✕', onclick: () => S.dlgZu(e) });
     const tipp = h('div', { class: 'tipp', text: T('ss_zoom_tipp') });
     const el = h('div', { class: 'vollbild' }, cv, zu, tipp);
-    const e = S.dlgOeffnen(el, () => ro.disconnect(), ohnePush);
+    const e = S.dlgOeffnen(el, () => { ro.disconnect(); if (view && S.band && S.band.offen()) S.band.zu(true); }, ohnePush);
     let s = 1, tx = 0, ty = 0, z = null, w = 0, hh = 0, dpr = 1;
-    const begr = () => { s = Math.min(6, Math.max(1, s)); tx = Math.min(0, Math.max(w * (1 - s), tx)); ty = Math.min(0, Math.max(hh * (1 - s), ty)); };
+    const begr = () => { s = Math.min(6, Math.max(1, s)); tx = Math.min(0, Math.max(w * (1 - s), tx)); ty = Math.min(0, Math.max(hh * (1 - s) - (S.bandAn && !S.vp.quer ? S.bandH : 0), ty)); };
     const zeichne = () => {
       const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, hh);
       if (!z) return;
       const f = z.anpassung(w, hh, 8);
       ctx.save(); ctx.translate(tx, ty); ctx.scale(s, s); Ze_malen(ctx, z, f); ctx.restore();
     };
-    const Ze_malen = (ctx, zz, f) => root.Ze.malen(ctx, zz, f[0], f[1], f[2], aktivKey, 1);
+    const Ze_malen = (ctx, zz, f) => { root.Ze.tippKeys = view && view.feldFuer ? (k, e2) => view.editierbar(k, e2) : null; try { root.Ze.malen(ctx, zz, f[0], f[1], f[2], aktivKey, 1); } finally { root.Ze.tippKeys = null; } };
     const ro = new ResizeObserver(() => { w = el.clientWidth; hh = el.clientHeight; dpr = window.devicePixelRatio || 1; cv.width = Math.round(w * dpr); cv.height = Math.round(hh * dpr); z = bauer(w, hh); s = 1; tx = ty = 0; zeichne(); });
     ro.observe(el);
     const ptr = new Map(); let p0 = null, letzter = null, bewegt = false;
@@ -254,7 +267,30 @@
         } else letzter = { t: n, x: ev.clientX, y: ev.clientY };
       }
     };
-    cv.addEventListener('pointerup', ende); cv.addEventListener('pointercancel', ende);
+    // Masseingabe im Vollbild: Tipp aufs Mass oeffnet dasselbe Eingabeband wie in der Seite (S.band), die Zeichnung wird dabei nicht verkleinert
+    const bild = () => z && z.anpassung(w, hh, 8);
+    const quelle = view ? {
+      feldFuer: k => view.feldFuer ? view.feldFuer(k) : null,
+      schluessel: () => { const f = k => view.feldFuer(k), ks = []; if (z) for (const e of z.elems) if (e.k === 't' && e.key != null && !ks.includes(e.key) && view.editierbar(e.key, e)) ks.push(e.key); return ks.sort((a, b) => { const fa = f(a), fb = f(b); return !fa || !fb ? 0 : (fa.compareDocumentPosition(fb) & 4 ? -1 : 1); }); },
+      einheit: k => view.einheit(k),
+      aktivSetzen: k => { aktivKey = k; view.aktiv = k; zeichne(); },
+      neuZeichnen: () => { z = bauer(w, hh) || z; zeichne(); },
+      sichtbar: k => {
+        const f = bild(), e = z && z.elems.find(x => x.k === 't' && x.key === k); if (!f || !e) return;
+        const sy = ty + s * (f[2] + f[0] * e.y), sx = tx + s * (f[1] + f[0] * e.x), unten = S.vp.h - S.bandH - 50;
+        if (!S.vp.quer && sy > unten) { ty -= sy - unten; }
+        const rechts = S.vp.quer ? w - S.bandB - 60 : w - 40; if (sx > rechts) tx -= sx - rechts; else if (sx < 40) tx += 40 - sx;
+        begr(); zeichne();
+      }
+    } : null;
+    const mass = ev => { 
+      if (!quelle || bewegt || !z) return false;
+      const f = bild(), px = ((ev.clientX - tx) / s - f[1]) / f[0], py = ((ev.clientY - ty) / s - f[2]) / f[0], sp = 18 / (f[0] * s), mh = 22 / (f[0] * s);
+      let k = z.treffer(px, py, sp, mh, (kk, ee) => view.editierbar(kk, ee));
+      if (k == null) return false;
+      S.haptik(8); view._ist3d = false; S.band.oeffne(quelle, k); return true;
+    };
+    cv.addEventListener('pointerup', ev => { if (ev.pointerType !== 'mouse' || ev.button === 0) { if (ptr.size === 1 && mass(ev)) { ptr.delete(ev.pointerId); p0 = null; return; } } ende(ev); }); cv.addEventListener('pointercancel', ende);
     return { e, zoom: (ns, fx, fy) => { const k = ns / s; tx = fx - (fx - tx) * k; ty = fy - (fy - ty) * k; s = ns; begr(); zeichne(); } };
   };
 })(window);

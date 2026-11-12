@@ -433,7 +433,7 @@
       mt(S.rmKarte(art, T(TITEL[name]), () => snapshot()), 12), mt(status, 6));
     const fokusiere = k => { const f = felder[k]; if (!f) return; if (!st.mehr && defs.findIndex(d => d[0] === k) >= 3) { setzeMehr(true); speichere(); } f.input.focus(); };
     R.view.beiMass = fokusiere;
-    R.view.passung = z => z.anpassung(Math.max(160, R.view.w - 56), R.view.h, 8);
+    R.view.passung = z => z.anpassung(Math.max(160, R.view.w - 56), R.view.h, 12, 2.6, 20);
     R.view.feldFuer = k => { const f = felder[k]; return f && f.input ? f.input : null; };
 
     function einheitWechseln(neu) {
@@ -482,7 +482,7 @@
       return s + T('rz_total', String(r.stueck), S.fmtM2(r.m2));
     }
     function skizzeAktualisieren(gueltig) {
-      if (!gueltig) { R.cv2.style.opacity = .4; return; }
+      if (!gueltig) { R.cv2.style.opacity = S.dimm(); return; }
       const id = art, mo = bild.modell, bo = bild.bogen, ha = bild.hals, ho = bild.hose, ke = bild.kegel, en = einheit();
       R.view.bauer = (_, w, hh, t) => root.Ze.WB.rohr(id, mo, bo, ha, ho, ke, c => E().text(en, c), w, hh, t);
       R.cv2.style.opacity = 1; R.view.baue(true);

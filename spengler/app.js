@@ -35,6 +35,13 @@
     if (o.scroll) {
       o.scroll.addEventListener('scroll', () => { const weg = o.scroll.scrollTop > 36; for (const e of [info, flag, kmb]) if (e) e.classList.toggle('weg', weg); }, { passive: true });
     }
+    // Kopfleiste: beim Scrollen laeuft Text unter den Symbolen durch, darum bekommt die Seite oben einen Hintergrund (nur wenn gescrollt)
+    const sc = p.el && p.el.querySelector ? p.el.querySelector('.skscroll') : null;
+    if (o.zurueck && sc) {
+      const balken = h('div', { class: 'ovbalken', 'aria-hidden': 'true' }); ov.unshift(balken);
+      const pruefe = () => balken.classList.toggle('an', sc.scrollTop > 3);
+      sc.addEventListener('scroll', pruefe, { passive: true }); pruefe();
+    }
     for (const e of ov) document.body.append(e);
   }
 
@@ -54,6 +61,7 @@
     const pr = parse();
     const o = optionen(pr);
     S.messe();
+    if (S.band) S.band.reset();
     if (seite && seite.zerstoere) seite.zerstoere();
     S.dlgAlleZu();
     app.innerHTML = ''; seite = null;
@@ -92,8 +100,11 @@
     const alt = letzteQuer;
     S.messe();
     if (seite && alt !== null && S.vp.quer !== alt) { rendere(true); return; }
+    if (S.band) S.band.layout();
     if (seite && seite.layout) seite.layout();
+    if (S.band) S.band.layout();
   }
+  S.umgebung = umgebung;
   window.addEventListener('hashchange', () => { document.body.removeAttribute('data-bereit'); rendere(); });
   window.addEventListener('resize', umgebung);
   if (window.visualViewport) { window.visualViewport.addEventListener('resize', umgebung); window.visualViewport.addEventListener('scroll', umgebung); }

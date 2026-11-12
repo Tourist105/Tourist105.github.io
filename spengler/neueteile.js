@@ -82,6 +82,8 @@
       cv3 = h('canvas', { 'aria-label': S.T('d3_beschreibung') }); karte.append(cv3);
       d3 = new root.Szene3D.Ansicht3D(cv3); d3.leerText = S.T('d3_leer'); d3.fuellend = true; d3.grundZoom = art === "fallrohr" ? 0.78 : 1.0; d3.grundstellung(art === 'mauerabdeckung' || art === 'kehle' ? 0.95 : 0.6, 0.35);
       d3.beiMass3d = (k, rr) => { if (!(rr && view.eingabeBei(cv3, (rr[0] + rr[2]) / 2, (rr[1] + rr[3]) / 2, k))) fokusiere(k); };
+      view.ordnung3d = () => d3.pillenOrte.map(p => p[1]).filter((k, i, a) => a.indexOf(k) === i);
+      view.beiAktiv = k => { d3.leuchteKey = k; d3.zeichnen(); };
     }
     const kippGross = h('button', { class: 'kippgross', 'aria-label': S.T('ss_tipp'), onclick: () => vollbild() }, S.iconVollbild());
     if (!quer) karte.append(kippGross);
@@ -91,7 +93,7 @@
       karte.append(h('div', { class: 'kipp' }, kipp3, kipp2)); view.kopfEinzug = 122;
     }
     const chips = namen.map((n, i) => h('button', { class: 'chip', text: n, onclick: () => waehleAnsicht(i) }));
-    const pdfKnopf = h('button', { class: 'pdfknopf', text: S.T('ss_ansehen'), onclick: () => pdfErstellen() });
+    const pdfKnopf = h('button', { class: 'pdfknopf', text: S.T('ss_ansehen'), 'aria-label': S.T('ss_ansehen_lang'), onclick: () => pdfErstellen() });
     const reiter = h('div', { class: 'reiterzeile' }, chips, pdfKnopf);
     const titel = h('h1', { class: 'sktitel' }, h('span', { text: S.T(TITEL[art]) }));
     const titelSpan = titel.firstChild; S.autosizeTitel(titelSpan, 22, 16); titelSpan.style.display = 'block'; titelSpan.style.overflow = 'hidden'; titelSpan.style.width = '100%'; titelSpan.style.fontSize = '22px';
@@ -269,7 +271,7 @@
 
     const zeigeChips = () => chips.forEach((b, i) => b.classList.toggle('an', !st.ist3d && i === st.ansicht));
     // Hochformat-Handy: die Uebersicht braucht mehr Hoehe als eine einzelne Ansicht, 3D und Tastatur bleiben bei 38 %
-    function karteHoehe() { if (!hoch) return; karte.style.height = (st.ist3d || S.vp.tastatur ? S.karteHoch() : S.karteHochFuer(view, st.ansicht, karte.clientWidth)) + 'px'; view.groesse(karte.clientWidth, karte.clientHeight); }
+    function karteHoehe() { if (!hoch) return; karte.style.height = (st.ist3d || S.kompakt() ? S.karteHoch() : S.karteHochFuer(view, st.ansicht, karte.clientWidth)) + 'px'; view.groesse(karte.clientWidth, karte.clientHeight); }
     function setzeModus(an3, merken) {
       if (!d3) return; st.ist3d = an3;
       cv3.style.display = an3 ? '' : 'none'; cv2.style.visibility = an3 ? 'hidden' : 'visible';
@@ -290,8 +292,10 @@
     }
     function fokusiere(key) { const f = felder[key]; if (!f) return; if (!st.mehr && !prim.includes(key) && art !== 'fallrohr') setzeMehr(true); f.input.focus(); }
     view.beiMass = fokusiere; view.beiLeerTipp = () => vollbild();
+    // Eingabeband offen: die Uebersicht ist zu klein fuer die Masse, es zaehlt die Einzelansicht, in der das Mass steht
+    view.beiBand = key => { if (st.ist3d || st.ansicht !== 0 || artenAlle[0] !== 0) return; for (let i = 1; i < namen.length; i++) { const q = view.zeichnungFuer(i); if (q && q.elems.some(e => e.key === key)) { waehleAnsicht(i); return; } } };
     view.feldFuer = k => { const f = felder[k]; return f && f.input ? f.input : null; };
-    function vollbild() { const a = st.ansicht; S.vollbildZeigen((w, hh) => view.zeichnungMit(a, w, hh), view.aktiv); }
+    function vollbild() { const a = st.ansicht; S.vollbildZeigen((w, hh) => view.zeichnungMit(a, w, hh), view.aktiv, false, view); }
 
     // Rechnung
     const fehlerText = m => {
@@ -337,7 +341,7 @@
       if (meld.length) {
         gueltig = false; leisteLabel.textContent = S.T('ss_leiste_leer'); leisteWert.textContent = '-'; angezeigt = NaN;
         detail.textContent = fehlerText(meld[0]); seiteBauer = null; grossText = ''; zeilen = []; materialBox.innerHTML = '';
-        cv2.style.opacity = .4; if (cv3) cv3.style.opacity = .4; teilenKnopf.disabled = true; teilenKnopf.style.opacity = .5; return;
+        cv2.style.opacity = S.dimm(); if (cv3) cv3.style.opacity = S.dimm(); teilenKnopf.disabled = true; teilenKnopf.style.opacity = .5; return;
       }
       cv2.style.opacity = 1; if (cv3) cv3.style.opacity = 1; teilenKnopf.disabled = false; teilenKnopf.style.opacity = 1; gueltig = true;
       const lb = beschr(); let ml, hinw = [], basis;
@@ -437,16 +441,15 @@
 
     function layout() {
       const vp = S.vp;
-      leiste.style.display = vp.tastatur ? 'none' : '';
-      const insTop = S.inset('top'), insBot = S.inset('bottom');
-      el.style.paddingBottom = (vp.tastatur ? Math.max(vp.ime, 0) : insBot) + 'px';
+      const insTop = S.inset('top'), { rand, kompakt } = S.layoutRahmen(el, leiste);
       if (!quer) {
         const wunsch = vp.voll * (vp.tastatur ? 0.52 : art === 'fallrohr' ? 0.5 : 0.80);
-        const frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
+        const frei = vp.h - insTop - rand - (kompakt ? 0 : leiste.offsetHeight);
         let kh = wunsch; if (frei > 0) kh = Math.min(wunsch, Math.max(300, frei - 96));
+        if (kompakt && frei > 0) kh = frei;
         if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karteHoehe(); } else kopf.style.height = kh + 'px';
-        const klein = !hoch && (vp.tastatur || kh < 420);
-        titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
+        const klein = !hoch && (kompakt || kh < 420);
+        titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : ''; titel.style.display = reiter.style.display = kompakt && hoch ? 'none' : '';
       }
       view.groesse(karte.clientWidth, karte.clientHeight);
       if (d3) d3.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1);

@@ -53,11 +53,9 @@
     const r = { el, inh, kopf, karte, scroll, leiste, lt, ld, knopf, tag, onGroesse: null };
     r.layout = () => {
       const vp = S.vp;
-      leiste.style.display = vp.tastatur ? 'none' : '';
-      const insBot = S.inset('bottom');
-      el.style.paddingBottom = (vp.tastatur ? Math.max(vp.ime, 0) : insBot) + 'px';
-      const hoeheKopf = quer ? 150 : vp.tastatur ? 210 : 270;
-      kopf.style.height = (hoch ? Math.min(hoeheKopf, S.karteHoch()) : hoeheKopf) + 'px';
+      const { kompakt } = S.layoutRahmen(el, leiste);
+      const hoeheKopf = quer ? 150 : kompakt ? 210 : 270;
+      kopf.style.height = (hoch ? (kompakt ? S.karteHoch() : Math.min(hoeheKopf, S.karteHoch())) : kompakt && !quer ? Math.max(hoeheKopf, S.karteHoch()) : hoeheKopf) + 'px';
       if (r.onGroesse) r.onGroesse(karte.clientWidth, karte.clientHeight);
       S.autosizeAlle(el);
     };
@@ -238,7 +236,7 @@
     const fokus = (key, an) => { if (an) R.view.aktiv = key; else if (R.view.aktiv === key) R.view.aktiv = null; };
     const fokusiere = key => { const i = parseInt(key.slice(1), 10); if (isNaN(i)) return; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; if (f) f.input.focus(); };
     R.view.beiMass = fokusiere;
-    R.view.passung = z => z.anpassung(Math.max(160, R.view.w - 56), R.view.h, 8);
+    R.view.passung = z => z.anpassung(Math.max(160, R.view.w - 56), R.view.h, 12, 2.6, 20);
     R.view.feldFuer = key => { const i = parseInt(key.slice(1), 10); if (isNaN(i)) return null; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; return f && f.input ? f.input : null; };
 
     function reihenBauen() {
@@ -277,7 +275,7 @@
       gf(radiusF, 'pf_radius'); gf(lf, 'pf_laenge'); gf(sf, 'pf_stueck');
       meldungBox.innerHTML = '';
       if (meld.length) {
-        letztes = null; R.cv2.style.opacity = .4; zuschnitt.textContent = '-'; summe.textContent = fehlerText(meld[0]); folge.textContent = ''; liste.textContent = '';
+        letztes = null; R.cv2.style.opacity = S.dimm(); zuschnitt.textContent = '-'; summe.textContent = fehlerText(meld[0]); folge.textContent = ''; liste.textContent = '';
         R.leiste_leer(fehlerText(meld[0])); speichere(); return;
       }
       const r = Profil.rechne(e); letztes = r; letzteGueltig = e; R.cv2.style.opacity = 1;
@@ -331,7 +329,7 @@
       let d; try { d = await blattDatei(); } catch (x) { d = null; }
       if (!d) { status.textContent = T('status_pdf_fehler'); return; }
       status.textContent = '';
-      const dx = (letztes && letzteGueltig) ? { blob: new Blob([Profil.dxf(letzteGueltig, letztes, SEITENTITEL)], { type: 'application/dxf' }), name: d.name.replace(/\.pdf$/i, '') + '.dxf' } : null;
+      const dx = (letztes && letzteGueltig) ? { blob: new Blob([Profil.dxf(letzteGueltig, letztes, SEITENTITEL)], { type: 'application/dxf' }), name: d.name.replace(/\.(pdf|png)$/i, '') + '.dxf' } : null;
       R.teilenFertig(async () => { const r = await S.teilen(d.blob, d.name, d.titel, dx ? [dx] : null); if (r === 'download') status.textContent = d.name + (dx ? ', ' + dx.name : ''); });
     }
 

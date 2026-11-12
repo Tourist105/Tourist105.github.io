@@ -24,57 +24,54 @@
         if (!this.d0 || Math.hypot(e.clientX - this.d0.x, e.clientY - this.d0.y) >= 24) return;
         const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top, z = this.aktuell;
         const f = z ? this.passung(z) : [1, 0, 0];
-        const k = z ? z.treffer((x - f[1]) / f[0], (y - f[2]) / f[0], 18 / f[0]) : null;
-        if (this._eing) { this.eingabeZu(true); if (k == null) return; }   // offene Eingabe zuerst uebernehmen, ein Tipp daneben schliesst nur
+        const px = (x - f[1]) / f[0], py = (y - f[2]) / f[0];
+        // erst nur eintippbare Masse (mindestens 44 x 44 px Tippflaeche, dichte Gruppen: naechste Mitte), sonst irgendein Mass mit Schluessel
+        let k = z ? z.treffer(px, py, 18 / f[0], 22 / f[0], (kk, ee) => this.editierbar(kk, ee)) : null;
+        if (k == null && z) k = z.treffer(px, py, 18 / f[0], 22 / f[0]);
+        if (S.band.offen()) { if (k != null) { S.haptik(8); this._ist3d = false; this.eingabe(k, z.letzterTreffer); } return; }   // Tipp daneben aendert nichts
         if (k != null) { S.haptik(8); if (!this.eingabe(k, z.letzterTreffer)) this.beiMass && this.beiMass(k); } else this.beiLeerTipp && this.beiLeerTipp();
       });
     }
-    /**
-     * Mass direkt in der Zeichnung eintippen (Alex 11.11.2026: "direkt in der Zeichnung vermassen, nicht separat").
-     * feldFuer(key) liefert das Eingabefeld der Seite, das zu diesem Mass gehoert. Die Zahl wird an der Stelle des Masses
-     * eingetippt und ueber das input-Ereignis des Feldes uebernommen, damit Rechnung, Pruefung und Speichern gleich bleiben.
-     */
-    /** Antippbar ist ein Mass nur, wenn seine Zahl der Wert des Eingabefeldes ist (ein berechneter Wert mit demselben Schluessel nicht). */
     editierbar(key, e) {
       const feld = this.feldFuer ? this.feldFuer(key) : null; if (!feld || feld.disabled || !e) return false;
       if (String(feld.value).trim() === '') return String(e.text).indexOf('?') >= 0;
       const v = parseFloat(String(feld.value).trim().replace(',', '.')), m = String(e.text).replace(/,/g, '.').match(/\d+(\.\d+)?/g);
       return isFinite(v) && !!m && m.some(x => Math.abs(parseFloat(x) - Math.abs(v)) < 0.051);
     }
+    /** Masseingabe (S.band, masse.js): Tipp aufs Mass in 2D, 3D-Pille oder Vollbild. Der Zustand liegt im Feld der Seite (feldFuer). */
     eingabe(key, treffer) {
-      const feld = this.feldFuer ? this.feldFuer(key) : null, z = this.aktuell;
-      if (!feld || !z || feld.disabled) return false;
+      const z = this.aktuell; if (!z) return false;
       const e = (treffer && treffer.key === key) ? treffer : z.elems.find(x => x.k === 't' && x.key === key);
       if (!e || !this.editierbar(key, e)) return false;
-      const f = this.passung(z), r = Ze.textRect(e);
-      return this.eingabeBei(this.canvas, f[1] + (r[0] + r[2]) / 2 * f[0], f[2] + (r[1] + r[3]) / 2 * f[0], key);
+      return S.band.oeffne(this.quelle(), key);
     }
-    /** Eingabe an einer Stelle (CSS-Pixel im Canvas) oeffnen: 2D-Zeichnung und 3D-Mass-Pille benutzen dasselbe Feld. */
     eingabeBei(canvas, x, y, key) {
       const feld = this.feldFuer ? this.feldFuer(key) : null;
-      if (!feld || feld.disabled || !canvas || !canvas.parentElement) return false;
-      if (this._eing) this.eingabeZu(true);
-      const eltern = canvas.parentElement;
-      if (getComputedStyle(eltern).position === 'static') eltern.style.position = 'relative';
-      const cr = canvas.getBoundingClientRect(), er = eltern.getBoundingClientRect(), bw = 104, bh = 46;
-      const cx = cr.left - er.left + x, cy = cr.top - er.top + y, l0 = cr.left - er.left + 4, t0 = cr.top - er.top + 4;
-      const inp = h('input', { class: 'masseingabe', type: 'text', inputmode: 'decimal', enterkeyhint: 'done', autocomplete: 'off', spellcheck: 'false', 'aria-label': feld.getAttribute('aria-label') || T('ss_masse') });
-      inp.value = feld.value;
-      inp.style.left = Math.round(Math.max(l0, Math.min(l0 + cr.width - bw - 8, cx - bw / 2))) + 'px';
-      inp.style.top = Math.round(Math.max(t0, Math.min(t0 + cr.height - bh - 8, cy - bh / 2))) + 'px';
-      inp.style.width = bw + 'px'; inp.style.height = bh + 'px';
-      eltern.append(inp); this._eing = inp; this._eingFeld = feld; this._eingKey = key; this.aktiv = key;
-      inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); this.eingabeZu(true); } else if (ev.key === 'Escape') { ev.preventDefault(); this.eingabeZu(false); } });
-      inp.addEventListener('blur', () => { if (this._eing === inp) this.eingabeZu(true); });
-      setTimeout(() => { try { inp.focus({ preventScroll: true }); inp.select(); } catch (x2) { /* */ } }, 0);
-      return true;
+      if (!feld || feld.disabled) return false;
+      this._ist3d = canvas !== this.canvas;
+      return S.band.oeffne(this.quelle(), key);
     }
-    eingabeZu(uebernehmen) {
-      const inp = this._eing, feld = this._eingFeld; if (!inp) return;
-      this._eing = null; this._eingFeld = null;
-      const wert = inp.value.trim(); inp.remove();
-      if (this._aktiv === this._eingKey) this.aktiv = null;
-      if (uebernehmen && feld && wert !== '' && wert !== feld.value) { feld.value = wert; feld.dispatchEvent(new Event('input', { bubbles: true })); }
+    /** Schnittstelle fuer das Eingabeband. */
+    quelle() {
+      return this._q || (this._q = {
+        feldFuer: k => (this.feldFuer ? this.feldFuer(k) : null),
+        schluessel: () => this.schluessel(),
+        einheit: k => this.einheit(k),
+        aktivSetzen: k => { if (k && this.beiBand) this.beiBand(k); this.aktiv = k; if (this.beiAktiv) this.beiAktiv(k); },
+        neuZeichnen: () => this.zeichnen()
+      });
+    }
+    schluessel() {
+      const f = k => (this.feldFuer ? this.feldFuer(k) : null), reihe = (a, b) => { const fa = f(a), fb = f(b); if (!fa || !fb) return 0; return fa.compareDocumentPosition(fb) & 4 ? -1 : 1; };
+      let ks = [];
+      if (this._ist3d && this.ordnung3d) ks = this.ordnung3d().filter(k => f(k));
+      else { const z = this.aktuell; if (!z) return []; for (const e of z.elems) if (e.k === 't' && e.key != null && !ks.includes(e.key) && this.editierbar(e.key, e)) ks.push(e.key); }
+      return ks.sort(reihe);
+    }
+    einheit(key) {
+      const z = this.aktuell, e = z && z.elems.find(x => x.k === 't' && x.key === key);
+      const feld = this.feldFuer ? this.feldFuer(key) : null, l = feld ? (feld.getAttribute('aria-label') || '') : '';
+      return (e && String(e.text).indexOf('°') >= 0) || /winkel|angle|°/i.test(l) ? '°' : 'mm';
     }
     set aktiv(v) { if (this._aktiv !== v) { this._aktiv = v; this.zeichnen(); } } get aktiv() { return this._aktiv; }
     groesse(w, hh) {
@@ -83,16 +80,34 @@
       this.w = w; this.h = hh; this.dpr = dpr; this.canvas.width = Math.max(1, Math.round(w * dpr)); this.canvas.height = Math.max(1, Math.round(hh * dpr));
       this.baue(false);
     }
-    zeichnungMit(a, w, hh) { return this.bauer ? this.bauer(this.arten[a] == null ? 0 : this.arten[a], w, hh, 14) : null; }
+    zeichnungMit(a, w, hh, t) { return this.bauer ? this.bauer(this.arten[a] == null ? 0 : this.arten[a], w, hh, t || 14) : null; }
     // Auf der Karte liegt oben links der 3D/2D-Schalter: der erste Abschnittstitel der Uebersicht rueckt daneben
-    zeichnungFuer(a) { Ze.kopfEinzug = this.kopfEinzug || 0; try { return this.zeichnungMit(a, this.w, this.h); } finally { Ze.kopfEinzug = 0; } }
-    passung(z) { return z.anpassung(this.w, this.h, 8); }
+    // Mindestschrift der Masse am Handy 15 px (Befund 6): die Zeichnung wird mit groesserer Schrift neu gebaut, die Rechnung bleibt dieselbe.
+    zeichnungFuer(a) {
+      Ze.kopfEinzug = this.kopfEinzug || 0;
+      try {
+        let t = 14, z = this.zeichnungMit(a, this.w, this.h, t);
+        // nur uebernehmen, wenn die groessere Schrift keine zusaetzlichen Ueberlappungen bringt (sonst bleibt es bei der alten Grösse)
+        const zaehle = q => { try { return q.kollisionen().filter(s => /^(Text auf Text|ausserhalb)/.test(s)).length; } catch (e) { return 0; } };
+        let beste = z, basis = z ? zaehle(z) : 0;
+        for (let i = 0; z && i < 4 && this.w <= 700; i++) {
+          let mg = Infinity; for (const e of z.elems) if (e.k === 't' && e.key != null && e.groesse < mg) mg = e.groesse;
+          if (!isFinite(mg)) break;
+          const px = mg * this.passung(z)[0]; if (px >= 15) break;
+          t = Math.min(26, t * 15.2 / px); z = this.zeichnungMit(a, this.w, this.h, t);
+          if (zaehle(z) > basis) { z = beste; break; }
+          beste = z;
+        }
+        return beste || z;
+      } finally { Ze.kopfEinzug = 0; }
+    }
+    passung(z) { return z.anpassung(this.w, this.h, 12, 2.6, 20); }
     baue(animiert) {
       if (!this.w || !this.h) return;
       const neu = this.zeichnungFuer(this.ansicht); if (!neu) return;
       if (this.stopp) { this.stopp(); this.stopp = null; }
       this.von = this.aktuell; this.ziel = neu;
-      if (animiert && this.von) this.stopp = S.anim(240, S.decel, (e, t) => { this.aktuell = Ze.Zeichnung.mischen(this.von, this.ziel, t); this.zeichnen(); }, () => { this.aktuell = this.ziel; this.zeichnen(); });
+      if (animiert && this.von && !S.bandAn) this.stopp = S.anim(240, S.decel, (e, t) => { this.aktuell = Ze.Zeichnung.mischen(this.von, this.ziel, t); this.zeichnen(); }, () => { this.aktuell = this.ziel; this.zeichnen(); });
       else { this.aktuell = neu; this.zeichnen(); }
     }
     zeichnen() {
@@ -185,6 +200,8 @@
       cv3 = h('canvas', { 'aria-label': T('d3_beschreibung') }); karte.append(cv3);
       d3 = new root.Szene3D.Ansicht3D(cv3); d3.leerText = T('d3_leer'); d3.fuellend = true; d3.grundZoom = 1.2; d3.grundstellung(0.5, 0.2);
       d3.beiMass3d = (k, rr) => { if (!(rr && view.eingabeBei(cv3, (rr[0] + rr[2]) / 2, (rr[1] + rr[3]) / 2, k))) fokusiere(k); };
+      view.ordnung3d = () => d3.pillenOrte.map(p => p[1]).filter((k, i, a) => a.indexOf(k) === i);
+      view.beiAktiv = k => { d3.leuchteKey = k; d3.zeichnen(); };
     }
     const kippGross = h('button', { class: 'kippgross', 'aria-label': T('ss_tipp'), onclick: () => vollbild() }, S.iconVollbild());
     if (!quer) karte.append(kippGross);
@@ -195,7 +212,7 @@
       karte.append(h('div', { class: 'kipp' }, kipp3, kipp2)); view.kopfEinzug = 122;
     }
     const chips = namen.map((n, i) => h('button', { class: 'chip', text: n, onclick: () => waehleAnsicht(i) }));
-    const pdfKnopf = h('button', { class: 'pdfknopf', text: T('ss_ansehen'), onclick: () => pdfErstellen() });
+    const pdfKnopf = h('button', { class: 'pdfknopf', text: T('ss_ansehen'), 'aria-label': T('ss_ansehen_lang'), onclick: () => pdfErstellen() });
     const reiter = h('div', { class: 'reiterzeile' }, chips, pdfKnopf);
     const titel = h('h1', { class: 'sktitel' }, h('span', { text: T(TITEL[art]) }));
     const titelSpan = titel.firstChild; S.autosizeTitel(titelSpan, 22, 16); titelSpan.style.display = 'block'; titelSpan.style.overflow = 'hidden'; titelSpan.style.width = '100%'; titelSpan.style.fontSize = '22px';
@@ -267,7 +284,7 @@
     // -------------------------------------------------------- Modus, Ansicht, Fokus
     const zeigeChips = () => chips.forEach((b, i) => b.classList.toggle('an', !st.ist3d && i === st.ansicht));
     // Hochformat-Handy: die Uebersicht braucht mehr Hoehe als eine einzelne Ansicht, 3D und Tastatur bleiben bei 38 %
-    function karteHoehe() { if (!hoch) return; karte.style.height = (st.ist3d || S.vp.tastatur ? S.karteHoch() : S.karteHochFuer(view, st.ansicht, karte.clientWidth)) + 'px'; view.groesse(karte.clientWidth, karte.clientHeight); }
+    function karteHoehe() { if (!hoch) return; karte.style.height = (st.ist3d || S.kompakt() ? S.karteHoch() : S.karteHochFuer(view, st.ansicht, karte.clientWidth)) + 'px'; view.groesse(karte.clientWidth, karte.clientHeight); }
     function setzeModus(an3, merken) {
       if (!d3) return; st.ist3d = an3;
       cv3.style.display = an3 ? '' : 'none'; cv2.style.visibility = an3 ? 'hidden' : 'visible';
@@ -294,13 +311,15 @@
       f.input.focus();
     }
     view.beiMass = fokusiere; view.beiLeerTipp = () => vollbild();
+    // Eingabeband offen: die Uebersicht ist zu klein fuer die Masse, es zaehlt die Einzelansicht, in der das Mass steht
+    view.beiBand = key => { if (st.ist3d || st.ansicht !== 0 || artenAlle[0] !== 0) return; for (let i = 1; i < namen.length; i++) { const q = view.zeichnungFuer(i); if (q && q.elems.some(e => e.key === key)) { waehleAnsicht(i); return; } } };
     view.feldFuer = k => { const f = felder[k]; return f ? f.input : null; };
     // Einzelansichten lassen rechts Platz fuer den Vollbild-Knopf (sonst liegt ein Mass darunter), die Uebersicht nutzt die ganze Breite
-    view.passung = z => z.anpassung(st.ansicht === 0 ? view.w : Math.max(160, view.w - 56), view.h, 8);
+    view.passung = z => z.anpassung(st.ansicht === 0 ? view.w : Math.max(160, view.w - 56), view.h, 12, 2.6, 20);
 
     function vollbild() {
       const ansicht = st.ansicht;
-      S.vollbildZeigen((w, hh) => view.zeichnungMit(ansicht, w, hh), view.aktiv);
+      S.vollbildZeigen((w, hh) => view.zeichnungMit(ansicht, w, hh), view.aktiv, false, view);
     }
 
     // -------------------------------------------------------- Rechnung
@@ -338,7 +357,7 @@
       if (meld.length) {
         gueltig = false; leisteLabel.textContent = T('ss_leiste_leer'); leisteWert.textContent = '-'; angezeigt = NaN;
         detail.textContent = fehlerText(meld[0]); seiteBauer = null; weitereSeiten = null; grossText = ''; zeilen = []; if (art === 'skizze_hals') materialBox.innerHTML = '';
-        cv2.style.opacity = .4; if (cv3) cv3.style.opacity = .4; teilenKnopf.disabled = true; teilenKnopf.style.opacity = .5; return;
+        cv2.style.opacity = S.dimm(); if (cv3) cv3.style.opacity = S.dimm(); teilenKnopf.disabled = true; teilenKnopf.style.opacity = .5; return;
       }
       cv2.style.opacity = 1; if (cv3) cv3.style.opacity = 1; teilenKnopf.disabled = false; teilenKnopf.style.opacity = 1; gueltig = true;
       const lb = beschr(), breitSchirm = 420, Bl = root.Blatt;
@@ -409,18 +428,17 @@
     // -------------------------------------------------------- Layout (kopfAnpassen, Tastatur, Sichtbarkeit)
     function layout() {
       const vp = S.vp;
-      leiste.style.display = vp.tastatur ? 'none' : '';
-      const insTop = S.inset('top'), insBot = S.inset('bottom');
-      el.style.paddingBottom = (vp.tastatur ? Math.max(vp.ime, 0) : insBot) + 'px';
+      const insTop = S.inset('top'), { rand, kompakt } = S.layoutRahmen(el, leiste);
       if (!quer) {
         const anteil = art === 'skizze_hals' ? 0.84 : 0.80, tAnteil = 0.52;
         const wunsch = vp.voll * (vp.tastatur ? tAnteil : anteil);
-        const frei = vp.h - insTop - (vp.tastatur ? vp.ime : insBot) - (vp.tastatur ? 0 : leiste.offsetHeight);
+        const frei = vp.h - insTop - rand - (kompakt ? 0 : leiste.offsetHeight);
         let kh = wunsch;
         if (frei > 0 && S.opt.kopf !== 'alt') { kh = Math.min(wunsch, Math.max(300, frei - 96)); }   // wie Android Ui.kt kopfAnpassen: 96 dp der naechsten Karte lugen hervor
+        if (kompakt && frei > 0) kh = frei;
         if (hoch) { kopf.style.height = ''; karte.style.flex = 'none'; karteHoehe(); } else kopf.style.height = kh + 'px';
-        const klein = !hoch && (vp.tastatur || kh < 420);   // wie Android TeilKopf: Kopf unter 420 dp oder Tastatur = Titel und Reiter weg
-        titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : '';
+        const klein = !hoch && (kompakt || kh < 420);   // wie Android TeilKopf: Kopf unter 420 dp oder Tastatur = Titel und Reiter weg
+        titel.style.visibility = klein ? 'hidden' : ''; reiter.style.visibility = klein ? 'hidden' : ''; titel.style.display = reiter.style.display = kompakt && hoch ? 'none' : '';
       }
       view.groesse(karte.clientWidth, karte.clientHeight);
       if (d3) d3.setzeGroesse(karte.clientWidth, karte.clientHeight, window.devicePixelRatio || 1);
