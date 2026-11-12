@@ -263,6 +263,13 @@
       inh.append(h('div', { style: { marginTop: '10px' } }, S.karte(S.text(T('ss_fragen_titel'), 18, true), h('div', { style: { fontSize: '14px', color: 'var(--text2)' }, text: T('ss_fragen_info') }), lat, dec, S.text(T('l_material'), 16, true), matSp)));
     }
     const L = (de, en) => S.sprache() === 'en' ? en : de;
+    // DXF der Abwicklung (nur Dunstrohr: dort liegt die Kontur im Rechenkern vor)
+    const dxfName = () => 'Dunstrohr_' + S.zeitName() + '.dxf';
+    const dxfBlob = () => new Blob([dxfLiefern()], { type: 'application/dxf' });
+    const dxfBox = S.karte(S.text('DXF', 18, true), S.knopf(L('DXF der Abwicklung teilen', 'Share DXF of the flat pattern'), false, () => dxfTeilen()),
+      h('div', { style: { fontSize: '14px', marginTop: '8px', color: 'var(--text2)' }, text: L('Abwicklung des Stutzens in mm für CAD und CNC.', 'Flat pattern of the pipe in mm for CAD and CNC.') }));
+    dxfBox.style.display = 'none';
+    async function dxfTeilen() { if (!dxfLiefern) { status.textContent = T('status_leer'); return; } const name = dxfName(), r = await S.teilen(dxfBlob(), name, T(TITEL[art])); if (r === 'download') status.textContent = name; }
     const normBox = h('div', {}), materialBox = h('div', {});
     const statusZeile = (sx, q, gr) => h('div', { style: { fontSize: (gr || 12.5) + 'px', color: FARBE[sx], marginTop: '2px' }, text: NT.statusText(sx) + ': ' + EN.t(q) });
     const mtop = (e, px) => { e.style.marginTop = px + 'px'; return e; };
@@ -295,6 +302,7 @@
     inh.append(h('div', { style: { marginTop: '10px' } }, S.karte(S.text(T('ss_ergebnis'), 18, true), detail)),
       ...(art === 'skizze_hals' ? [h('div', { style: { marginTop: '10px' } }, S.karte(S.text(L('Normteile wählen', 'Choose standard parts'), 18, true), mtop(normBox, 8))) , h('div', { style: { marginTop: '10px' } }, S.karte(S.text(L('Materialliste', 'Bill of materials'), 18, true), mtop(materialBox, 8))) ] : []),
       h('div', { style: { marginTop: '10px' } }, S.karte(S.text(T('ss_annahmen_titel'), 18, true), S.text(T(ANN[art]), 15))),
+      h('div', { style: { marginTop: '10px' } }, dxfBox),
       h('div', { style: { marginTop: '10px' } }, S.karte(S.feld(T('ss_notiz'), st.notiz, { text: true, ende: true, onChange: v => { st.notiz = v; } }))),
       h('div', { style: { marginTop: '12px' } }, S.rmKarte(art, T(TITEL[art]), () => snapshot())),
       status,
@@ -362,7 +370,7 @@
     const blattTexte = (label, gross, zeilen, legende, zuschnitt, stutzen) => ({ titel: T(TITEL[art]), datum: datum(), kunde: T('ss_kunde'), ergebnisLabel: label, gross, zeilen, annahmenTitel: T('ss_annahmen_titel'), annahmen: T(ANN[art]), legende,
       aufrissTitel: T('ss_aufriss'), grundrissTitel: T('ss_grundriss'), zuschnittTitel: zuschnitt || '', stutzenTitel: stutzen || '', faltlinie: T('ss_leg_falz'), fuss: T('ss_fuss') });
 
-    let gueltig = false, grossText = '', zeilen = [], seiteBauer = null, weitereSeiten = null, angezeigt = NaN, ergLabel = '', zaehlStopp = null;
+    let gueltig = false, grossText = '', zeilen = [], seiteBauer = null, weitereSeiten = null, angezeigt = NaN, ergLabel = '', zaehlStopp = null, dxfLiefern = null;
     function zaehleHoch(ziel, text) {
       const von = isNaN(angezeigt) ? ziel : angezeigt;
       if (zaehlStopp) zaehlStopp();
@@ -371,6 +379,7 @@
         () => { angezeigt = ziel; leisteWert.textContent = text(ziel); leisteWert.style.transform = ''; });
     }
     function aktualisiere() {
+      dxfLiefern = null; dxfBox.style.display = 'none';
       let meld;
       if (art === 'skizze_kamin') meld = K.KaminSkizze.pruefe(zahl('k'), zahl('t'), zahl('sl'), zahl('sr'), zahl('ah'), zahl('av'), zahl('h'), zahl('u'), zahl('o'));
       else if (art === 'skizze_hals') meld = K.SchwanenhalsSkizze.pruefe(zahl('a'), bogenGrad(), zahl('r'), zahl('s'));
@@ -413,6 +422,7 @@
           return Bl.hals(hs, blattTexte(ergLabel, fmtTrim(hs.rohrZuschnitt, 1) + ' mm', z, [['AUFKANT', T('ss_leg_bogen')], ['BLECH', T('ss_leg_rohr')], ['UMSCHLAG', T('ss_leg_steckung')]], T('ss_zuschnitt')), lb); };
       } else {
         const d = K.DunstrohrSkizze(zahl('d'), zahl('b'), zahl('t'), zahl('s'), zahl('h'), zahl('u'), zahl('n'), zahl('z'), zahl('o'));
+        dxfLiefern = () => root.Dxf.dunst(d, T(TITEL[art])); dxfBox.style.display = '';
         view.bauer = (a, w, hh, t) => a === 0 ? Ze.dunstBlatt(d, w, hh, t, lb, w >= breitSchirm) : a === 1 ? Ze.dunstAufriss(d, w, hh, t, lb, w >= breitSchirm) : a === 2 ? Ze.dunstGrundriss(d, w, hh, t, lb) : Ze.dunstStutzen(d, w, hh, t, lb);
         grossText = T('ss_dunst_gross', fmtTrim(d.stutzenBreite, 1), fmtTrim(d.rohrHoehe, 1));
         zeilen = [T('ss_dunst_detail', fmtTrim(d.hoeheHoch, 1), fmtTrim(d.hoeheTief, 1), fmtTrim(d.lochQuer, 1), fmtTrim(d.lochLaengs, 1), fmtM2(d.plattenMm2 / 1e6), fmtM2(d.gesamtM2))];
@@ -439,7 +449,8 @@
       status.textContent = ''; S.haptik(20);
       const vorher = teilenKnopf.textContent; teilenKnopf.textContent = '✓  ' + T('ss_blatt_fertig'); teilenKnopf.classList.add('ok');
       teilenKnopf.style.transform = 'scale(1.05)'; setTimeout(() => { teilenKnopf.style.transform = ''; }, 140);
-      setTimeout(async () => { const r = await S.teilen(d.blob, d.name, T(TITEL[art])); if (r === 'download') status.textContent = d.name; }, 420);
+      const dx = dxfLiefern ? { blob: dxfBlob(), name: dxfName() } : null;
+      setTimeout(async () => { const r = await S.teilen(d.blob, d.name, T(TITEL[art]), dx ? [dx] : undefined); if (r === 'download') status.textContent = d.name + (dx ? ', ' + dx.name : ''); }, 420);
       setTimeout(() => { teilenKnopf.textContent = vorher; teilenKnopf.classList.remove('ok'); }, 2200);
     }
     async function pdfErstellen(ohnePush) {

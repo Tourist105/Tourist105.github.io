@@ -328,7 +328,7 @@
 
   S.seiteRohr = function (name, opt) {
     const primBox0 = h('div', { class: 'primbox' });
-    const R = S.weitereShell({ titel: T(TITEL[name]), tabs: [T('ansicht_skizze'), T('ansicht_3d')], dreiD: 1, primBox: primBox0, beiPdf: () => pdfErstellen(), beiTeilen: () => blattTeilen(),
+    const R = S.weitereShell({ titel: T(TITEL[name]), tabs: [T('ansicht_skizze'), T('ansicht_3d')], dreiD: 1, primBox: primBox0, beiPdf: () => pdfErstellen(), beiDxf: () => dxfTeilen(), beiTeilen: () => blattTeilen(),
       beiTab: (i, ist3, merken) => { st.d3 = ist3; if (ist3) S.nachLayout(() => { live.setzeGroesse(R.karte.clientWidth, R.karte.clientHeight, window.devicePixelRatio || 1); live.zeichnen(); }); if (merken) speichere(); } });
     const { inh } = R, mt = S.mt, grau = S.grau, text = S.text, art = ART[name], defs = FELDER[name], quer = S.vp.quer;
     const eingabe = {}, st = { mat: 0, dicke: 1, einheit: 1, d3: false, mehr: false };
@@ -531,12 +531,20 @@
       status.textContent = '';
       try { const d = await blattDatei(); S.pdfDialog(d.blob, d.name, d.titel, m => { status.textContent = m; }); } catch (x) { status.textContent = T('status_pdf_fehler'); }
     }
+    // DXF der Segmente in mm (Rechenkern liefert die Kontur in cm, dxfteile.js rechnet um)
+    const dxfText = () => (ergebnis ? root.Dxf.rohr(bild, T(TITEL[name])) : null);
+    const dxfName = () => 'Rohr_' + name + '_' + S.zeitName() + '.dxf';
+    async function dxfTeilen() {
+      const x = dxfText(); if (!x) { status.textContent = T('status_leer'); return; }
+      const nm = dxfName(), r = await S.teilen(new Blob([x], { type: 'application/dxf' }), nm, T(TITEL[name])); if (r === 'download') status.textContent = nm;
+    }
     async function blattTeilen() {
       if (!ergebnis) { status.textContent = T('status_leer'); return; }
       let d; try { d = await blattDatei(); } catch (x) { d = null; }
       if (!d) { status.textContent = T('status_pdf_fehler'); return; }
       status.textContent = '';
-      R.teilenFertig(async () => { const r = await S.teilen(d.blob, d.name, d.titel); if (r === 'download') status.textContent = d.name; });
+      const xt = dxfText(), dx = xt ? { blob: new Blob([xt], { type: 'application/dxf' }), name: dxfName() } : null;
+      R.teilenFertig(async () => { const r = await S.teilen(d.blob, d.name, d.titel, dx ? [dx] : undefined); if (r === 'download') status.textContent = d.name + (dx ? ', ' + dx.name : ''); });
     }
 
     S.nachLayout(() => { d3Groesse(); d3.zeichnen(); });

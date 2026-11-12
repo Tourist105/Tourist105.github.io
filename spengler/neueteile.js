@@ -250,6 +250,12 @@
     }
     if (art === 'fallrohr') baueTeileBox();
 
+    const dxfName = () => art + '_' + S.zeitName() + '.dxf';
+    const dxfBlob = () => new Blob([dxfLiefern()], { type: 'application/dxf' });
+    const dxfBox = S.karte(S.text('DXF', 18, true), S.knopf(L('DXF der Abwicklung teilen', 'Share DXF of the flat pattern'), false, () => dxfTeilen()),
+      h('div', { style: { fontSize: '14px', marginTop: '8px', color: 'var(--text2)' }, text: L('Abwicklung in mm für CAD und CNC, Biegelinien auf eigener Lage. Die Rechnung ist dieselbe wie auf dem Blatt.', 'Flat pattern in mm for CAD and CNC, fold lines on their own layer. The calculation is the same as on the sheet.') }));
+    dxfBox.style.display = 'none';
+    async function dxfTeilen() { if (!dxfLiefern) { status.textContent = S.T('status_leer'); return; } const name = dxfName(), r = await S.teilen(dxfBlob(), name, S.T(TITEL[art])); if (r === 'download') status.textContent = name; }
     const annahmenListe = () => EN.ann(art === 'fallrohr' ? FR.annahmenListe() : art === 'dachrinne' ? K.RinneSkizze.annahmenListe() : art === 'mauerabdeckung' ? K.MauerSkizze.annahmenListe() : K.KehleSkizze.annahmenListe());
     const belegText = b => b === 'QUELLE' ? NT.statusText('beleg') : b === 'HERLEITUNG' ? L('Eigene Herleitung', 'Own derivation') : NT.statusText('annahme');
     const annBox = h('div', {});
@@ -261,6 +267,7 @@
     inh.append(...(art === 'fallrohr' ? [mt(S.karte(S.text(L('Bauteile von oben nach unten', 'Parts from top to bottom'), 18, true), mt(teileBox, 8)), 10)] : []), mt(S.karte(chipKarte), 10), mt(S.karte(S.text(L('Normteile wählen', 'Choose standard parts'), 18, true), mt(normBox, 8)), 10),
       mt(S.karte(S.text(S.T('ss_ergebnis'), 18, true), detail), 10), mt(hinweisBox, 10), mt(S.karte(S.text(L('Materialliste', 'Bill of materials'), 18, true), mt(materialBox, 8)), 10),
       mt(S.karte(S.text(L('Annahmen und Quellen', 'Assumptions and sources'), 18, true), mt(annBox, 8)), 10),
+      mt(dxfBox, 10),
       mt(S.karte(S.feld(S.T('ss_notiz'), st.notiz, { text: true, ende: true, onChange: v => { st.notiz = v; } })), 10),
       mt(S.rmKarte(art, S.T(TITEL[art]), () => snapshot()), 12), status,
       mt(S.warnband(L('Die Werte sind Gesprächsgrundlage, noch keine geprüften Masse. Wo "Annahme, Alex prüft" steht, bestimmt Alex.', 'These values are a basis for discussion, not checked dimensions. Where it says "Assumption, Alex to check", Alex decides.'), 14), 12));
@@ -321,7 +328,7 @@
     const matTexte = () => ({ summen: L('Summen', 'Totals'), hinweise: L('Hinweise', 'Notes'), annahmen: L('Annahmen und Quellen', 'Assumptions and sources'), status: s => NT.statusText(s), beleg: b => belegText(b) });
     const wahl = () => ({ dn: st.dn, werkstoff: norm.werkstoffe[st.mat].id, rinneStueck: st.stueck, rohrStueck: 2000 });
 
-    let gueltig = false, grossText = '', zeilen = [], seiteBauer = null, angezeigt = NaN, ergLabel = '', zaehlStopp = null, letzteListe = null;
+    let gueltig = false, grossText = '', zeilen = [], seiteBauer = null, angezeigt = NaN, ergLabel = '', zaehlStopp = null, letzteListe = null, dxfLiefern = null;
     function zaehleHoch(ziel, text) {
       const von = isNaN(angezeigt) ? ziel : angezeigt;
       if (zaehlStopp) zaehlStopp();
@@ -335,6 +342,7 @@
     const Neu = Ze.Neu;
 
     function aktualisiere() {
+      dxfLiefern = null; dxfBox.style.display = 'none';
       const meld = art === 'fallrohr' ? FR.pruefe(fallEin()) : art === 'dachrinne' ? K.RinneSkizze.pruefe(rinneEin()) : art === 'mauerabdeckung' ? K.MauerSkizze.pruefe(mauerEin()) : K.KehleSkizze.pruefe(kehleEin());
       for (const k in felder) { const m = meld.find(x => x.feld === k); felder[k].fehler(m ? fehlerText(m) : null); }
       hinweisBox.innerHTML = ''; chipsAkt();
@@ -359,7 +367,7 @@
       } else if (art === 'dachrinne') {
         const r = K.RinneSkizze(rinneEin());
         view.bauer = (a, w, hh, t) => a === 0 ? Neu.rinneBlatt(r, w, hh, t, lb) : a === 1 ? Neu.rinneAnsicht(r, w, hh, t, lb) : Neu.rinneAbwicklung(r, w, hh, t, lb);
-        ml = NT.rinne(r, wahl());
+        ml = NT.rinne(r, wahl()); dxfLiefern = () => root.Dxf.rinne(r, st.stueck, S.T(TITEL[art]));
         zeilen = [L('Blech: ' + fmtM2(r.blechNettoM2) + ' m² netto, ' + fmtM2(r.blechM2) + ' m² mit Verschnitt', 'Sheet: ' + fmtM2(r.blechNettoM2) + ' m² net, ' + fmtM2(r.blechM2) + ' m² with waste'),
           L('Rinnenhalter: ' + r.halter, 'Gutter brackets: ' + r.halter),
           L('Höhenunterschied: ' + fmtTrim(r.hoehenunterschied, 1) + ' mm auf ' + fmtTrim(r.wirksameLaengeM, 1) + ' m', 'Height difference: ' + fmtTrim(r.hoehenunterschied, 1) + ' mm over ' + fmtTrim(r.wirksameLaengeM, 1) + ' m'),
@@ -370,7 +378,7 @@
       } else if (art === 'mauerabdeckung') {
         const m = K.MauerSkizze(mauerEin());
         view.bauer = (a, w, hh, t) => a === 0 ? Neu.mauerBlatt(m, w, hh, t, lb) : a === 1 ? Neu.mauerQuerschnitt(m, w, hh, t, lb) : Neu.mauerAbwicklung(m, w, hh, t, lb);
-        ml = NT.mauer(m, wahl());
+        ml = NT.mauer(m, wahl()); dxfLiefern = () => root.Dxf.mauer(m, S.T(TITEL[art]));
         zeilen = [L('Abwicklung: ' + fmtTrim(m.abwicklung, 1) + ' mm (je Seite ' + fmtTrim(m.seitenabwicklung, 1) + ' mm)', 'Girth: ' + fmtTrim(m.abwicklung, 1) + ' mm (' + fmtTrim(m.seitenabwicklung, 1) + ' mm each side)'),
           L('Höhenunterschied der Oberseite: ' + fmtTrim(m.hoehenunterschied, 1) + ' mm', 'Height difference of the top: ' + fmtTrim(m.hoehenunterschied, 1) + ' mm'),
           L('Blech: ' + fmtM2(m.blechNettoM2) + ' m² netto, ' + fmtM2(m.blechM2) + ' m² mit Verschnitt', 'Sheet: ' + fmtM2(m.blechNettoM2) + ' m² net, ' + fmtM2(m.blechM2) + ' m² with waste'),
@@ -381,7 +389,7 @@
       } else {
         const k = K.KehleSkizze(kehleEin());
         view.bauer = (a, w, hh, t) => a === 0 ? Neu.kehleBlatt(k, w, hh, t, lb) : a === 1 ? Neu.kehleQuerschnitt(k, w, hh, t, lb) : a === 2 ? Neu.kehleAbwicklung(k, w, hh, t, lb) : Neu.kehleStuecke(k, w, hh, t, lb);
-        ml = NT.kehle(k, wahl());
+        ml = NT.kehle(k, wahl()); dxfLiefern = () => root.Dxf.kehle(k, S.T(TITEL[art]));
         zeilen = [L('Abwicklung: ' + fmtTrim(k.e.abwicklung, 1) + ' mm, Schenkel je Seite ' + fmtTrim(k.schenkel, 1) + ' mm', 'Girth: ' + fmtTrim(k.e.abwicklung, 1) + ' mm, leg each side ' + fmtTrim(k.schenkel, 1) + ' mm'),
           L('Stücke: ' + k.stuecke + ', Blechlänge: ' + fmtTrim(k.blechLaenge / 1000, 2) + ' m', 'Pieces: ' + k.stuecke + ', sheet length: ' + fmtTrim(k.blechLaenge / 1000, 2) + ' m'),
           L('Blech: ' + fmtM2(k.blechNettoM2) + ' m² netto, ' + fmtM2(k.blechM2) + ' m² mit Verschnitt', 'Sheet: ' + fmtM2(k.blechNettoM2) + ' m² net, ' + fmtM2(k.blechM2) + ' m² with waste')];
@@ -389,6 +397,7 @@
         zaehleHoch(k.e.abwicklung, v => fmtTrim(v, 1) + ' mm × ' + k.stuecke); hinw = k.hinweise().map(x => EN.t(x.text));
         basis = () => [Bl.neu.kehle(k, blattTexte(ergLabel, grossText, zeilen, [['BLECH', L('Kehlblech', 'Valley flashing')], ['AUFKANT', L('Aufkantung', 'Upstand')]]), lb)];
       }
+      dxfBox.style.display = dxfLiefern ? '' : 'none';
       letzteListe = ml; ml = EN.liste(ml);   // Anzeige und Blatt englisch, der Schnappschuss (letzteListe) bleibt deutsch
       seiteBauer = () => {
         const tx = blattTexte(ergLabel, grossText, zeilen, []); tx.titel = S.T(TITEL[art]) + ': ' + L('Materialliste', 'Bill of materials');
@@ -430,7 +439,8 @@
       if (!d) { status.textContent = S.T(gueltig ? 'status_pdf_fehler' : 'status_leer'); return; }
       status.textContent = ''; S.haptik(20);
       const vorher = teilenKnopf.textContent; teilenKnopf.textContent = '✓  ' + S.T('ss_blatt_fertig'); teilenKnopf.classList.add('ok');
-      setTimeout(async () => { const r = await S.teilen(d.blob, d.name, S.T(TITEL[art])); if (r === 'download') status.textContent = d.name; }, 420);
+      const dx = dxfLiefern ? { blob: dxfBlob(), name: dxfName() } : null;
+      setTimeout(async () => { const r = await S.teilen(d.blob, d.name, S.T(TITEL[art]), dx ? [dx] : undefined); if (r === 'download') status.textContent = d.name + (dx ? ', ' + dx.name : ''); }, 420);
       setTimeout(() => { teilenKnopf.textContent = vorher; teilenKnopf.classList.remove('ok'); }, 2200);
     }
     async function pdfErstellen(ohnePush) {
