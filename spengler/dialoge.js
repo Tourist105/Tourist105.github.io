@@ -230,12 +230,23 @@
 
   // ---------------------------------------------------------------- Vollbild mit Pinch-Zoom (ZoomSkizzeView)
   S.vollbildZeigen = (bauer, aktivKey, ohnePush, view) => {
+    // Aufbau (Pruefer 12.11.): Kopfstreifen mit Hinweis und Schliessen-Knopf, darunter das Zeichenfeld. Die Zeichnung liegt NIE unter Knopf oder Hinweis.
+    // Bei offenem Eingabeband schrumpft das ganze Innere (Hochformat: bis ueber das Band, Querformat: bis links vom Band), die Zeichnung wird in den freien Platz eingepasst.
+    // Beobachtet wird das Feld (nicht das Canvas): das Canvas liegt mit width/height 100 % darin, darum keine Rueckkopplung der Groesse.
     const cv = h('canvas', {}); const zu = h('button', { class: 'zu', 'aria-label': T('ss_schliessen'), text: '✕', onclick: () => S.dlgZu(e) });
     const tipp = h('div', { class: 'tipp', text: T('ss_zoom_tipp') });
-    const el = h('div', { class: 'vollbild' }, cv, zu, tipp);
-    const e = S.dlgOeffnen(el, () => { ro.disconnect(); if (view && S.band && S.band.offen()) S.band.zu(true); }, ohnePush);
+    const feldEl = h('div', { class: 'vbfeld' }, cv);
+    const innen = h('div', { class: 'vbinnen' }, h('div', { class: 'vbkopf' }, tipp, zu), feldEl);
+    const el = h('div', { class: 'vollbild' }, innen);
+    const e = S.dlgOeffnen(el, () => { ro.disconnect(); S.vollbildPlatz = null; if (view && S.band && S.band.offen()) S.band.zu(true); }, ohnePush);
+    /** Platz fuer das Eingabeband freihalten (wird von masse.js bei jedem Layout und beim Schliessen gerufen). */
+    S.vollbildPlatz = () => {
+      const b = document.querySelector('.mband'), r = b ? b.getBoundingClientRect() : null;
+      innen.style.bottom = r && !S.vp.quer ? Math.max(0, window.innerHeight - r.top) + 'px' : '';
+      innen.style.right = r && S.vp.quer ? Math.max(0, window.innerWidth - r.left) + 'px' : '';
+    };
     let s = 1, tx = 0, ty = 0, z = null, w = 0, hh = 0, dpr = 1;
-    const begr = () => { s = Math.min(6, Math.max(1, s)); tx = Math.min(0, Math.max(w * (1 - s), tx)); ty = Math.min(0, Math.max(hh * (1 - s) - (S.bandAn && !S.vp.quer ? S.bandH : 0), ty)); };
+    const begr = () => { s = Math.min(6, Math.max(1, s)); tx = Math.min(0, Math.max(w * (1 - s), tx)); ty = Math.min(0, Math.max(hh * (1 - s), ty)); };
     const zeichne = () => {
       const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, hh);
       if (!z) return;
@@ -243,31 +254,42 @@
       ctx.save(); ctx.translate(tx, ty); ctx.scale(s, s); Ze_malen(ctx, z, f); ctx.restore();
     };
     const Ze_malen = (ctx, zz, f) => { root.Ze.tippKeys = view && view.feldFuer ? (k, e2) => view.editierbar(k, e2) : null; try { root.Ze.malen(ctx, zz, f[0], f[1], f[2], aktivKey, 1); } finally { root.Ze.tippKeys = null; } };
-    const ro = new ResizeObserver(() => { w = el.clientWidth; hh = el.clientHeight; dpr = window.devicePixelRatio || 1; cv.width = Math.round(w * dpr); cv.height = Math.round(hh * dpr); z = bauer(w, hh); s = 1; tx = ty = 0; zeichne(); });
-    ro.observe(el);
+    /** Zeigerort im Zeichenfeld (das Feld beginnt unter dem Kopfstreifen). */
+    const lok = ev => { const r = feldEl.getBoundingClientRect(); return [ev.clientX - r.left, ev.clientY - r.top]; };
+    let erst = true;
+    const ro = new ResizeObserver(() => {
+      const w0 = w, h0 = hh; w = feldEl.clientWidth; hh = feldEl.clientHeight; if (!w || !hh) return;
+      dpr = window.devicePixelRatio || 1; cv.width = Math.round(w * dpr); cv.height = Math.round(hh * dpr); z = bauer(w, hh);
+      // andere Groesse durch das Eingabeband: Zoom und Ausschnitt bleiben (nur der Rand wird neu begrenzt), sonst Neustart bei 1
+      if (erst || s === 1 || Math.abs(w - w0) > 80) { s = 1; tx = ty = 0; erst = false; } else { tx = tx * (w / w0); ty = ty * (hh / h0); }
+      begr(); zeichne();
+      if (view && S.band && S.band.offen() && S.band.aktuell && S.band.aktuell() != null && quelle) setTimeout(() => quelle.sichtbar(S.band.aktuell()), 0);
+    });
+    ro.observe(feldEl);
     const ptr = new Map(); let p0 = null, letzter = null, bewegt = false;
-    cv.addEventListener('pointerdown', ev => { cv.setPointerCapture(ev.pointerId); ptr.set(ev.pointerId, { x: ev.clientX, y: ev.clientY }); if (ptr.size === 2) { const [a, b] = [...ptr.values()]; p0 = Math.hypot(a.x - b.x, a.y - b.y); } bewegt = false; });
+    cv.addEventListener('pointerdown', ev => { cv.setPointerCapture(ev.pointerId); const [x, y] = lok(ev); ptr.set(ev.pointerId, { x, y }); if (ptr.size === 2) { const [a, b] = [...ptr.values()]; p0 = Math.hypot(a.x - b.x, a.y - b.y); } bewegt = false; });
     cv.addEventListener('pointermove', ev => {
       const p = ptr.get(ev.pointerId); if (!p) return;
+      const [mx, my] = lok(ev);
       if (ptr.size >= 2) {
-        p.x = ev.clientX; p.y = ev.clientY; const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y), fx = (a.x + b.x) / 2, fy = (a.y + b.y) / 2;
+        p.x = mx; p.y = my; const [a, b] = [...ptr.values()], d = Math.hypot(a.x - b.x, a.y - b.y), fx = (a.x + b.x) / 2, fy = (a.y + b.y) / 2;
         if (p0 > 0) { const alt = s; s = Math.min(6, Math.max(1, s * d / p0)); const k = s / alt; tx = fx - (fx - tx) * k; ty = fy - (fy - ty) * k; p0 = d; begr(); zeichne(); }
         bewegt = true; return;
       }
-      const dx = ev.clientX - p.x, dy = ev.clientY - p.y; p.x = ev.clientX; p.y = ev.clientY;
+      const dx = mx - p.x, dy = my - p.y; p.x = mx; p.y = my;
       if (Math.abs(dx) + Math.abs(dy) > 0) bewegt = bewegt || true;
       tx += dx; ty += dy; begr(); zeichne();
     });
     const ende = ev => {
       if (!ptr.has(ev.pointerId)) return; ptr.delete(ev.pointerId); p0 = null;
       if (ev.type === 'pointerup' && ptr.size === 0) {
-        const n = performance.now();
-        if (letzter && n - letzter.t < 300 && Math.hypot(ev.clientX - letzter.x, ev.clientY - letzter.y) < 60) {
-          const ziel = s > 1.5 ? 1 : 2.5, k = ziel / s; tx = ev.clientX - (ev.clientX - tx) * k; ty = ev.clientY - (ev.clientY - ty) * k; s = ziel; begr(); zeichne(); letzter = null;
-        } else letzter = { t: n, x: ev.clientX, y: ev.clientY };
+        const n = performance.now(), [x, y] = lok(ev);
+        if (letzter && n - letzter.t < 300 && Math.hypot(x - letzter.x, y - letzter.y) < 60) {
+          const ziel = s > 1.5 ? 1 : 2.5, k = ziel / s; tx = x - (x - tx) * k; ty = y - (y - ty) * k; s = ziel; begr(); zeichne(); letzter = null;
+        } else letzter = { t: n, x, y };
       }
     };
-    // Masseingabe im Vollbild: Tipp aufs Mass oeffnet dasselbe Eingabeband wie in der Seite (S.band), die Zeichnung wird dabei nicht verkleinert
+    // Masseingabe im Vollbild: Tipp aufs Mass oeffnet dasselbe Eingabeband wie in der Seite (S.band), die Zeichnung wird in den Platz ueber dem Band eingepasst
     const bild = () => z && z.anpassung(w, hh, 8);
     const quelle = view ? {
       feldFuer: k => view.feldFuer ? view.feldFuer(k) : null,
@@ -277,15 +299,15 @@
       neuZeichnen: () => { z = bauer(w, hh) || z; zeichne(); },
       sichtbar: k => {
         const f = bild(), e = z && z.elems.find(x => x.k === 't' && x.key === k); if (!f || !e) return;
-        const sy = ty + s * (f[2] + f[0] * e.y), sx = tx + s * (f[1] + f[0] * e.x), unten = S.vp.h - S.bandH - 50;
-        if (!S.vp.quer && sy > unten) { ty -= sy - unten; }
-        const rechts = S.vp.quer ? w - S.bandB - 60 : w - 40; if (sx > rechts) tx -= sx - rechts; else if (sx < 40) tx += 40 - sx;
+        const sy = ty + s * (f[2] + f[0] * e.y), sx = tx + s * (f[1] + f[0] * e.x);
+        if (sy > hh - 40) ty -= sy - (hh - 40); else if (sy < 40) ty += 40 - sy;
+        if (sx > w - 40) tx -= sx - (w - 40); else if (sx < 40) tx += 40 - sx;
         begr(); zeichne();
       }
     } : null;
-    const mass = ev => { 
+    const mass = ev => {
       if (!quelle || bewegt || !z) return false;
-      const f = bild(), px = ((ev.clientX - tx) / s - f[1]) / f[0], py = ((ev.clientY - ty) / s - f[2]) / f[0], sp = 18 / (f[0] * s), mh = 22 / (f[0] * s);
+      const [x, y] = lok(ev), f = bild(), px = ((x - tx) / s - f[1]) / f[0], py = ((y - ty) / s - f[2]) / f[0], sp = 18 / (f[0] * s), mh = 22 / (f[0] * s);
       let k = z.trefferMass(px, py, sp, mh, (kk, ee) => view.editierbar(kk, ee));
       if (k == null) return false;
       S.haptik(8); view._ist3d = false; S.band.oeffne(quelle, k); return true;

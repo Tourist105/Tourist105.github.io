@@ -149,9 +149,13 @@ button { font: inherit; color: inherit; border: 0; background: none; padding: 0;
 .info a, .info .ilink { color: #5AA7F0; font-weight: 700; letter-spacing: .045em; font-size: 15px; display: block; padding: 8px 0; text-decoration: none; text-align: left; }
 .info .iok { display: block; margin-left: auto; padding: 10px 24px; color: #5AA7F0; font-weight: 700; letter-spacing: .045em; font-size: 14px; }
 .vollbild { position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 120; background: #fff; touch-action: none; }
-.vollbild canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
-.vollbild .zu { position: absolute; top: 28px; right: calc(var(--si-right) + 12px); width: 56px; height: 56px; border-radius: 28px; background: var(--tonal); color: var(--pri); font-size: 22px; }
-.vollbild .tipp { position: absolute; bottom: 0; padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0; text-align: center; font-size: 13px; color: var(--text2); pointer-events: none; animation: tippaus .6s ease 4s forwards; }
+.vbinnen { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; flex-direction: column; }
+.vbkopf { flex: none; display: flex; align-items: center; gap: 10px; box-sizing: border-box; min-height: 64px; padding: calc(var(--si-top) + 4px) calc(var(--si-right) + 10px) 4px calc(var(--si-left) + 16px); background: #fff; border-bottom: 1px solid var(--tonal); }
+.vbfeld { flex: 1 1 0; min-height: 0; position: relative; overflow: hidden; }
+.vbfeld canvas { position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: block; }
+.vollbild .zu { flex: none; width: 52px; height: 52px; border-radius: 26px; background: var(--tonal); color: var(--pri); font-size: 22px; margin-left: auto; }
+.vollbild .tipp { flex: 1 1 0; min-width: 0; font-size: 14px; line-height: 1.25; color: var(--text2); pointer-events: none; }
+@media (orientation: landscape) and (max-height: 600px) { .vbkopf { min-height: 56px; } .vollbild .zu { width: 44px; height: 44px; } .vollbild .tipp { font-size: 12px; } }
 @keyframes tippaus { to { opacity: 0; } }
 .vorschau { position: fixed; inset: 0; z-index: 120; background: var(--bg); display: flex; flex-direction: column; padding: var(--si-top) var(--si-right) var(--si-bottom) var(--si-left); }
 .vorschau .vs { flex: 1 1 0; overflow: auto; background: #D0D6DE; -webkit-overflow-scrolling: touch; }

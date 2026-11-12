@@ -179,8 +179,10 @@
       el.style.cssText = 'left:0;right:0;padding-bottom:' + (insB + 6) + 'px;top:auto;bottom:auto';
       const hh = el.offsetHeight; el.style.top = (oben + vp.h - kb - hh) + 'px'; S.bandH = hh; S.bandB = 0;
     }
+    if (S.vollbildPlatz) S.vollbildPlatz();
   };
   E.offen = () => !!el;
+  E.aktuell = () => (el ? key : null);
   E.oeffne = (quelle, k) => {
     const f = quelle.feldFuer(k); if (!f || f.disabled) return false;
     if (rueck) { rueck.el.remove(); rueck = null; }
@@ -225,6 +227,7 @@
     if (scrollEl && scrollEl._bandWacht) { scrollEl.removeEventListener('scroll', scrollEl._bandWacht); scrollEl.scrollTop = scrollVor; }
     el.remove(); el = null; inp = null; Ze.fehlerKey = null;
     S.bandAn = false; S.bandH = 0; S.bandB = 0; document.body.classList.remove('eingabe');
+    if (S.vollbildPlatz) S.vollbildPlatz();
     qu.aktivSetzen(null); qu.neuZeichnen(); q = null; key = null; feld = null; syncSpaeter();
     try { document.activeElement && document.activeElement.blur && document.activeElement.blur(); } catch (x) { /* */ }
     if (S.umgebung) S.umgebung();
@@ -249,6 +252,7 @@
     if (el) el.remove(); if (rueck) rueck.el.remove();
     el = null; rueck = null; q = null; key = null; feld = null; inp = null; Ze.fehlerKey = null;
     S.bandAn = false; S.bandH = 0; S.bandB = 0; document.body.classList.remove('eingabe'); E.sync();
+    if (S.vollbildPlatz) S.vollbildPlatz();
   };
   S.band = E;
 })(window);
