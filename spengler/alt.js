@@ -237,7 +237,7 @@
     const fokusiere = key => { const i = parseInt(key.slice(1), 10); if (isNaN(i)) return; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; if (f) f.input.focus(); };
     R.view.beiMass = fokusiere;
     R.view.passung = z => z.anpassung(Math.max(160, R.view.w - 56), R.view.h, 12, 2.6, 20);
-    R.view.feldFuer = key => { const i = parseInt(key.slice(1), 10); if (isNaN(i)) return null; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; return f && f.input ? f.input : null; };
+    R.view.feldFuer = key => { if (typeof key !== 'string') return null; const i = parseInt(key.slice(1), 10); if (isNaN(i)) return null; const f = (key[0] === 's' ? schenkelFelder : winkelFelder)[i]; return f && f.input ? f.input : null; };
 
     function reihenBauen() {
       schenkelReihe.innerHTML = ''; winkelBox.innerHTML = ''; schenkelFelder = []; winkelFelder = [];
